@@ -13,7 +13,6 @@ import {
 import { MODEL_RECOMMENDATIONS, RECOMMENDED_MODELS } from '../constants';
 /**
  * QNN variant tiers — mirrors local-dream's chipsetModelSuffixes map exactly.
- * Source: https://github.com/xororz/local-dream — Model.kt getChipsetSuffix()
  *
  * - 8gen2: SM8550, SM8650, SM8735, SM8750, SM8845, SM8850
  * - 8gen1: SM8450, SM8475

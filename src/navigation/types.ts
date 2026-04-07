@@ -10,6 +10,10 @@ export type RootStackParamList = {
   ProjectChats: { projectId: string };
   KnowledgeBase: { projectId: string };
   DocumentPreview: { filePath: string; fileName: string; fileSize: number };
+  // CharactersStack
+  CharacterDetail: { characterId: string };
+  CharacterEdit: { characterId?: string };
+  CharacterChats: { characterId: string };
   // Former SettingsStack
   ModelSettings: undefined;
   RemoteServers: undefined;
@@ -20,13 +24,17 @@ export type RootStackParamList = {
   // Already in RootStack
   DownloadManager: undefined;
   Gallery: { conversationId?: string } | undefined;
+  Math: undefined;
+  Projects: undefined;
+  Characters: undefined;
+  ImageStudio: undefined;
 };
 
 // Tab navigator — simple, no sub-stacks
 export type MainTabParamList = {
   HomeTab: undefined;
   ChatsTab: undefined;
-  ProjectsTab: undefined;
+  ArtifactsTab: undefined;
   ModelsTab: { initialTab?: 'text' | 'image' } | undefined;
   SettingsTab: undefined;
 };

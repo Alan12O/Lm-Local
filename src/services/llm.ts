@@ -192,6 +192,25 @@ class LLMService {
       if (hasImages && !this.multimodalInitialized) logger.warn('[LLM] Images attached but multimodal not initialized - falling back to text-only');
       logger.log('[LLM] Generation mode:', hasImages && this.multimodalInitialized ? 'VISION' : 'TEXT-ONLY');
       const oaiMessages = this.convertToOAIMessages(managed);
+      
+      // Session caching: try to load previous state
+      await this.ensureSessionCacheDir();
+      let loadedSession = false;
+      if (oaiMessages.length > 1) {
+        const prevMsgsStr = JSON.stringify(oaiMessages.slice(0, oaiMessages.length - 1));
+        const prevHash = this.hashString(prevMsgsStr);
+        const loadPath = this.getSessionPath(prevHash);
+        if (await RNFS.exists(loadPath)) {
+          try {
+            await (ctx as any).loadSession(loadPath);
+            logger.log(`[LLM] Loaded session cache for hash ${prevHash}`);
+            loadedSession = true;
+          } catch (e) {
+            logger.warn(`[LLM] Failed to load session:`, e);
+          }
+        }
+      }
+
       const { settings } = useAppStore.getState();
       const startTime = Date.now();
       let firstTokenMs = 0, tokenCount = 0, firstReceived = false;
@@ -214,6 +233,19 @@ class LLMService {
       this.performanceStats = recordGenerationStats(startTime, firstTokenMs, tokenCount);
       if (completionResult?.context_full) { logger.log('[LLM] Context full detected — signalling for compaction'); throw new Error('Context is full'); }
       const result = { content: cr?.content || cr?.text || fullContent, reasoningContent: cr?.reasoning_content || fullReasoningContent };
+      
+      // Save session cache for the new state
+      const newAssistantMsg = { role: 'assistant', content: result.content };
+      const newMsgsStr = JSON.stringify([...oaiMessages, newAssistantMsg]);
+      const newHash = this.hashString(newMsgsStr);
+      const savePath = this.getSessionPath(newHash);
+      try {
+        await (ctx as any).saveSession(savePath);
+        logger.log(`[LLM] Saved session cache to hash ${newHash}`);
+      } catch (e) {
+        logger.warn(`[LLM] Failed to save session:`, e);
+      }
+
       onComplete?.(result);
       return result.content;
     })();

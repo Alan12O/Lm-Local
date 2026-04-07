@@ -1,28 +1,19 @@
 <div align="center">
 
-<img src="src/assets/logo.png" alt="Off Grid Logo" width="120" />
+<img src="src/assets/logo.png" alt="Lm-Local Logo" width="120" />
 
-# Off Grid
+# Lm-Local
 
 ### The Swiss Army Knife of On-Device AI
 
 **Chat. Generate images. Use tools. See. Listen. All on your phone or Mac. All offline. Zero data leaves your device.**
-
-[![GitHub stars](https://img.shields.io/github/stars/alichherawalla/off-grid-mobile?style=social)](https://github.com/alichherawalla/off-grid-mobile)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Google Play](https://img.shields.io/badge/Google%20Play-Download-brightgreen?logo=google-play)](https://play.google.com/store/apps/details?id=ai.offgridmobile)
-[![App Store](https://img.shields.io/badge/App%20Store-Download-blue?logo=apple)](https://apps.apple.com/us/app/off-grid-local-ai/id6759299882)
-[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20macOS-green.svg)](#install)
-[![codecov](https://codecov.io/gh/alichherawalla/off-grid-mobile/graph/badge.svg)](https://codecov.io/gh/alichherawalla/off-grid-mobile)
-[![Slack](https://img.shields.io/badge/Slack-Join%20Community-4A154B?logo=slack)](https://join.slack.com/t/off-grid-mobile/shared_invite/zt-3q7kj5gr6-rVzx5gl5LKPQh4mUE2CCvA)
-
 </div>
 
 ---
 
 ## Not just another chat app
 
-Most "local LLM" apps give you a text chatbot and call it a day. Off Grid is a **complete offline AI suite** — text generation, image generation, vision AI, voice transcription, tool calling, and document analysis, all running natively on your phone's or Mac's hardware.
+Most "local LLM" apps give you a text chatbot and call it a day. Lm-Local is a **complete offline AI suite** — text generation, image generation, vision AI, voice transcription, tool calling, and document analysis, all running natively on your phone's or Mac's hardware.
 
 ---
 
@@ -61,22 +52,6 @@ Most "local LLM" apps give you a text chatbot and call it a day. Off Grid is a *
 
 **AI Prompt Enhancement** — Simple prompt in, detailed Stable Diffusion prompt out. Your text model automatically enhances image generation prompts.
 
----
-
-## Performance
-
-| Task | Flagship | Mid-range |
-|------|----------|-----------|
-| Text generation | 15-30 tok/s | 5-15 tok/s |
-| Image gen (NPU) | 5-10s | — |
-| Image gen (CPU) | ~15s | ~30s |
-| Vision inference | ~7s | ~15s |
-| Voice transcription | Real-time | Real-time |
-
-Tested on Snapdragon 8 Gen 2/3, Apple A17 Pro. Results vary by model size and quantization.
-
----
-
 <a name="install"></a>
 ## Install
 
@@ -86,16 +61,11 @@ Tested on Snapdragon 8 Gen 2/3, Apple A17 Pro. Results vary by model size and qu
 <td align="center"><a href="https://play.google.com/store/apps/details?id=ai.offgridmobile"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" width="220" /></a></td>
 </tr></table>
 </div>
-
-Or grab the latest APK from [**GitHub Releases**](https://github.com/alichherawalla/off-grid-mobile/releases/latest).
-
-> **macOS**: The iOS App Store version runs natively on Apple Silicon Macs via Mac Catalyst / iPad compatibility.
-
 ### Build from source
 
 ```bash
-git clone https://github.com/alichherawalla/off-grid-mobile.git
-cd off-grid-mobile
+git clone https://github.com/Alan12O/Lm-Local.git
+cd Lm-Local
 npm install
 
 # Android
@@ -113,8 +83,8 @@ npm run ios
 
 ## Testing
 
-[![CI](https://github.com/alichherawalla/off-grid-mobile/actions/workflows/ci.yml/badge.svg)](https://github.com/alichherawalla/off-grid-mobile/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/alichherawalla/off-grid-mobile/graph/badge.svg)](https://codecov.io/gh/alichherawalla/off-grid-mobile)
+[![CI](https://github.com/Alan12O/Lm-Local/actions/workflows/ci.yml/badge.svg)](https://github.com/Alan12O/Lm-Local/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Alan12O/Lm-Local/graph/badge.svg)](https://codecov.io/gh/Alan12O/Lm-Local)
 
 Tests run across three platforms on every PR:
 
@@ -140,39 +110,4 @@ npm run test:e2e      # Run Maestro E2E flows (requires running app)
 | [Codebase Guide](docs/standards/CODEBASE_GUIDE.md) | Comprehensive code walkthrough |
 | [Design System](docs/design/DESIGN_PHILOSOPHY_SYSTEM.md) | Brutalist design philosophy, theme system, tokens |
 | [Visual Hierarchy Standard](docs/design/VISUAL_HIERARCHY_STANDARD.md) | Visual hierarchy and layout standards |
-
----
-
-## Community
-
-Join the conversation on [**Slack**](https://join.slack.com/t/off-grid-mobile/shared_invite/zt-3q7kj5gr6-rVzx5gl5LKPQh4mUE2CCvA) — ask questions, share feedback, and connect with other Off Grid users and contributors.
-
----
-
-## Contributing
-
-Contributions welcome! Fork, branch, PR. See [development guidelines](docs/ARCHITECTURE.md#contributing) for code style and the [codebase guide](docs/standards/CODEBASE_GUIDE.md) for patterns.
-
----
-
-## Acknowledgments
-
-Built on the shoulders of giants:
-[llama.cpp](https://github.com/ggerganov/llama.cpp) | [whisper.cpp](https://github.com/ggerganov/whisper.cpp) | [llama.rn](https://github.com/mybigday/llama.rn) | [whisper.rn](https://github.com/mybigday/whisper.rn) | [local-dream](https://github.com/xororz/local-dream) | [ml-stable-diffusion](https://github.com/apple/ml-stable-diffusion) | [MNN](https://github.com/alibaba/MNN) | [Hugging Face](https://huggingface.co)
-
----
-
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=alichherawalla/off-grid-mobile&type=date&legend=top-left)](https://www.star-history.com/#alichherawalla/off-grid-mobile&type=date&legend=top-left)
-
-<div align="center">
-
-**Off Grid** — Your AI, your device, your data.
-
-*No cloud. No subscription. No data harvesting. Just AI that works anywhere.*
-
-[Join the Community on Slack](https://join.slack.com/t/off-grid-mobile/shared_invite/zt-3q7kj5gr6-rVzx5gl5LKPQh4mUE2CCvA)
-
 </div>

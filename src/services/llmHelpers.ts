@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import { APP_CONFIG } from '../constants';
 import { Message } from '../types';
 import { MultimodalSupport, LLMPerformanceStats } from './llmTypes';
+import { hardwareService } from './hardware';
 import logger from '../utils/logger';
 
 export const SYSTEM_PROMPT_RESERVE = 256;
@@ -13,7 +14,11 @@ const DEFAULT_THREADS = 4; // targets performance cores only; over-threading ont
 const DEFAULT_BATCH = 512;
 export const DEFAULT_GPU_LAYERS = Platform.OS === 'ios' ? 99 : 0;
 export function getOptimalThreadCount(): number { return DEFAULT_THREADS; }
-export function getOptimalBatchSize(): number { return DEFAULT_BATCH; }
+export function getOptimalBatchSize(): number {
+  const ramGB = hardwareService.getTotalMemoryGB();
+  if (ramGB > 0 && ramGB < 6) return 256;
+  return DEFAULT_BATCH;
+}
 const REPACKABLE_QUANTS = ['q4_0', 'iq4_nl'];
 /** Detect repackable quant formats where disabling mmap improves inference speed. */
 export function shouldDisableMmap(modelPath: string): boolean {
@@ -317,8 +322,8 @@ export { validateModelFile, checkMemoryForModel, safeCompletion } from './llmSaf
 export const STOP_TOKENS = ['</s>', '<|end|>', '<|eot_id|>'];
 export function buildCompletionParams(settings: {
   maxTokens?: number; temperature?: number; topP?: number; repeatPenalty?: number;
-}, options?: { disableCtxShift?: boolean }): Record<string, any> {
-  return {
+}, options?: { disableCtxShift?: boolean; loadStatePath?: string; saveStatePath?: string; }): Record<string, any> {
+  const result: Record<string, any> = {
     n_predict: settings.maxTokens || RESPONSE_RESERVE,
     temperature: settings.temperature ?? 0.7,
     top_k: 40,
@@ -327,6 +332,9 @@ export function buildCompletionParams(settings: {
     stop: STOP_TOKENS,
     ctx_shift: options?.disableCtxShift ? false : true,
   };
+  if (options?.loadStatePath) result.load_state_path = options.loadStatePath;
+  if (options?.saveStatePath) result.save_state_path = options.saveStatePath;
+  return result;
 }
 export function recordGenerationStats(
   startTime: number,

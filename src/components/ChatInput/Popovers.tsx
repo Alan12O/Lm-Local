@@ -227,3 +227,66 @@ export const AttachPickerPopover: React.FC<AttachPickerPopoverProps> = ({
     </Modal>
   );
 };
+
+// ─── Character Actions Popover ──────────────────────────────────────────────
+
+interface CharacterActionsPopoverProps {
+  visible: boolean;
+  onClose: () => void;
+  anchorY: number;
+  anchorX: number;
+  onAction: (text: string) => void;
+}
+
+export const CharacterActionsPopover: React.FC<CharacterActionsPopoverProps> = ({
+  visible, onClose, anchorY, anchorX, onAction,
+}) => {
+  const { colors } = useTheme();
+
+  if (!visible) return null;
+
+  return (
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={popoverStyles.overlay}>
+          <TouchableWithoutFeedback>
+            <View style={[popoverStyles.popover, {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              bottom: anchorY + 8,
+              left: anchorX,
+            }]}>
+              <TouchableOpacity
+                testID="rp-action-star"
+                style={popoverStyles.row}
+                onPress={() => { triggerHaptic('impactLight'); onClose(); onAction('* *'); }}
+              >
+                <Icon name="star" size={16} color={colors.primary} />
+                <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Insertar Acción</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                testID="rp-system-describe"
+                style={popoverStyles.row}
+                onPress={() => { triggerHaptic('impactLight'); onClose(); onAction('(Sistema: describe con más detalle)'); }}
+              >
+                <Icon name="info" size={16} color={colors.textMuted} />
+                <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Describe más</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                testID="rp-system-continue"
+                style={popoverStyles.row}
+                onPress={() => { triggerHaptic('impactLight'); onClose(); onAction('(Sistema: continúa la historia)'); }}
+              >
+                <Icon name="play" size={16} color={colors.textMuted} />
+                <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Continuar</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
+};
+

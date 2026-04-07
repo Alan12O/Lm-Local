@@ -20,7 +20,7 @@ import {
   retrievalService,
 } from '../../services';
 import { embeddingService } from '../../services/rag/embedding';
-import { useChatStore, useProjectStore, useRemoteServerStore } from '../../stores';
+import { useChatStore, useProjectStore, useRemoteServerStore, useCharacterStore } from '../../stores';
 import { Message, MediaAttachment, Project, DownloadedModel, RemoteModel, ModelLoadingStrategy, CacheType } from '../../types';
 import logger from '../../utils/logger';
 import { shouldUseToolsForMessage } from './toolUsage';
@@ -50,6 +50,7 @@ export type GenerationDeps = {
     imageSteps?: number;
     imageGuidanceScale?: number;
     enabledTools?: string[];
+    toolsEnabled?: boolean;
     cacheType?: CacheType;
   };
   downloadedModels: DownloadedModel[];
@@ -225,17 +226,48 @@ async function injectRagContext(projectId: string | undefined, query: string, pr
   return prompt;
 }
 function resolveToolsAndPrompt(deps: GenerationDeps, conversation: any): { enabledTools: string[]; rawPrompt: string } {
-  const project = conversation?.projectId ? useProjectStore.getState().getProject(conversation.projectId) : null;
+  let project: any = conversation?.projectId ? useProjectStore.getState().getProject(conversation.projectId) : null;
+  if (!project && conversation?.projectId) {
+    project = useCharacterStore.getState().getCharacter(conversation.projectId);
+    if (project) {
+      let mergedPrompt = project.systemPrompt;
+      if (project.firstMessage) {
+        mergedPrompt += `\n\nTu saludo inicial fue: "${project.firstMessage}"`;
+      }
+      if (project.userRole) {
+        mergedPrompt += `\n\n--- Rol del Usuario ---\n${project.userRole}`;
+      }
+      if (project.examples) {
+        mergedPrompt += `\n\n--- Ejemplos de Diálogo ---\n${project.examples}`;
+      }
+      project = { ...project, systemPrompt: mergedPrompt };
+    }
+  }
   const { activeServerId, activeRemoteTextModelId } = useRemoteServerStore.getState();
-  const localToolCalling = llmService.supportsToolCalling();
   const isRemoteActive = !!(activeServerId && activeRemoteTextModelId);
-  const canUseTools = localToolCalling || isRemoteActive;
+  const remoteModel = isRemoteActive ? useRemoteServerStore.getState().getModelById(activeServerId!, activeRemoteTextModelId!) : null;
+  const remoteToolCalling = remoteModel?.capabilities?.supportsToolCalling ?? false;
+  const localToolCalling = llmService.supportsToolCalling();
+  
+  // Respetar explícitamente el switch de herramientas y la capacidad del modelo activo
+  const toolsFeatureTurnedOn = deps.settings.toolsEnabled ?? true;
+  const canUseTools = (isRemoteActive ? remoteToolCalling : localToolCalling) && toolsFeatureTurnedOn;
+  
   let enabledTools = canUseTools ? (deps.settings.enabledTools || []) : [];
   if (conversation?.projectId && canUseTools && !enabledTools.includes('search_knowledge_base')) {
     enabledTools = [...enabledTools, 'search_knowledge_base'];
   }
   const rawPrompt = project?.systemPrompt || deps.settings.systemPrompt || APP_CONFIG.defaultSystemPrompt;
-  return { enabledTools, rawPrompt };
+
+  // Si es un personaje y tiene contexto adicional, lo inyectamos al final del prompt
+  const characterContext = (project && !useProjectStore.getState().getProject(conversation?.projectId))
+    ? (project as any).context as string | undefined
+    : undefined;
+  const finalPrompt = characterContext?.trim()
+    ? `${rawPrompt}\n\n--- Contexto del personaje ---\n${characterContext.trim()}`
+    : rawPrompt;
+
+  return { enabledTools, rawPrompt: finalPrompt };
 }
 
 export async function startGenerationFn(deps: GenerationDeps, call: StartGenerationCall): Promise<void> {

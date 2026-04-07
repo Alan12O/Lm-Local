@@ -12,6 +12,7 @@ import { MessageContent } from './components/MessageContent';
 import { GenerationMeta } from './components/GenerationMeta';
 import { ActionMenuSheet, EditSheet } from './components/ActionMenuSheet';
 import { MarkdownText } from '../MarkdownText';
+import { TYPOGRAPHY } from '../../constants';
 import { parseThinkingContent, formatTime, formatDuration, buildMessageData } from './utils';
 import { ThinkingBlock } from './components/ThinkingBlock';
 import type { ChatMessageProps } from './types';
@@ -181,6 +182,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   canGenerateImage = false,
   showGenerationDetails = false,
   animateEntry = false,
+  themeColor,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -196,9 +198,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   const hasAttachments = Boolean(message.attachments?.length);
   const bubbleStyle = [
     styles.bubble,
-    isUser ? styles.userBubble : styles.assistantBubble,
+    isUser ? [styles.userBubble, themeColor && { backgroundColor: themeColor }] : styles.assistantBubble,
     hasAttachments ? styles.bubbleWithAttachments : undefined,
-  ];
+  ] as any;
 
   const handleCopy = () => {
     Clipboard.setString(displayContent);
@@ -252,16 +254,23 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       onToggle={() => setShowThinking(!showThinking)} styles={styles} colors={colors} />;
   }
   const messageBody = (
-    <TouchableOpacity
-      testID={isUser ? 'user-message' : 'assistant-message'}
-      style={[
-        styles.container,
-        isUser ? styles.userContainer : styles.assistantContainer,
-      ]}
-      activeOpacity={0.8}
-      onLongPress={handleLongPress}
-      delayLongPress={300}
-    >
+    <View style={[styles.container, isUser ? styles.userContainer : styles.assistantContainer]}>
+      {!isUser && (
+        <View style={{
+          width: 32, height: 32, borderRadius: 8, backgroundColor: colors.background,
+          borderWidth: 1, borderColor: colors.primary, justifyContent: 'center', alignItems: 'center',
+          marginRight: 10, marginTop: 4,
+        }}>
+          <Text style={{ ...TYPOGRAPHY.h3, color: colors.primary, fontWeight: '700' as const }}>A</Text>
+        </View>
+      )}
+      <View style={{ flex: 1, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
+        <TouchableOpacity
+          testID={isUser ? 'user-message' : 'assistant-message'}
+          activeOpacity={0.8}
+          onLongPress={handleLongPress}
+          delayLongPress={300}
+        >
       <View style={bubbleStyle}>
         {hasAttachments && (
           <MessageAttachments
@@ -282,6 +291,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           showThinking={showThinking}
           onToggleThinking={() => setShowThinking(!showThinking)}
           styles={styles}
+          themeColor={themeColor}
         />
       </View>
 
@@ -296,7 +306,21 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       {showGenerationDetails && !isUser && message.generationMeta && (
         <GenerationMeta generationMeta={message.generationMeta} styles={styles} />
       )}
-    </TouchableOpacity>
+        </TouchableOpacity>
+        
+        {/* Controles rápidos parecidos a Claude */}
+        {showActions && !isStreaming && (
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 4, opacity: 0.7, alignSelf: isUser ? 'flex-end' : 'flex-start' }}>
+                <TouchableOpacity onPress={handleCopy} style={{ padding: 4 }}><Icon name="copy" size={14} color={colors.textMuted} /></TouchableOpacity>
+                {!isUser && canGenerateImage && <TouchableOpacity onPress={handleGenerateImage} style={{ padding: 4 }}><Icon name="image" size={14} color={colors.textMuted} /></TouchableOpacity>}
+                {!isUser && <TouchableOpacity onPress={handleRetry} style={{ padding: 4 }}><Icon name="refresh-cw" size={14} color={colors.textMuted} /></TouchableOpacity>}
+                {!isUser && <TouchableOpacity style={{ padding: 4 }}><Icon name="thumbs-up" size={14} color={colors.textMuted} /></TouchableOpacity>}
+                {!isUser && <TouchableOpacity style={{ padding: 4 }}><Icon name="thumbs-down" size={14} color={colors.textMuted} /></TouchableOpacity>}
+                {isUser && <TouchableOpacity onPress={handleEdit} style={{ padding: 4 }}><Icon name="edit-2" size={14} color={colors.textMuted} /></TouchableOpacity>}
+            </View>
+        )}
+      </View>
+    </View>
   );
 
   return (

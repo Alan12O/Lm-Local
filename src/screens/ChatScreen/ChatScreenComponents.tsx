@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DrawerActions } from '@react-navigation/native';
 import { AttachStep } from 'react-native-spotlight-tour';
 import { ModelSelectorModal } from '../../components';
 import { AnimatedEntry } from '../../components/AnimatedEntry';
@@ -117,36 +118,29 @@ export const ChatHeader: React.FC<{
 }> = ({ styles, colors, activeConversation, activeModel, activeModelName, activeImageModel, activeProject, navigation, setShowModelSelector, setShowSettingsPanel, setShowProjectSelector, isRemote }) => (
   <View style={styles.header}>
     <View style={styles.headerRow}>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Icon name="arrow-left" size={20} color={colors.text} />
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+        <Icon name="menu" size={24} color={colors.text} />
       </TouchableOpacity>
-      <View style={styles.headerLeft}>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {activeConversation?.title || 'New Chat'}
-        </Text>
-        <View style={styles.headerSubtitleRow}>
-          <TouchableOpacity style={styles.modelSelector} onPress={() => setShowModelSelector(true)} testID="model-selector">
-            {isRemote && (
-              <Icon name="cloud" size={12} color={colors.primary} style={styles.remoteIcon} />
-            )}
-            <Text style={styles.headerSubtitle} numberOfLines={1} testID="model-loaded-indicator">
-              {activeModelName || activeModel?.name || 'Unknown'}
-            </Text>
-            {activeImageModel && (
-              <View style={styles.headerImageBadge}>
-                <Icon name="image" size={10} color={colors.primary} />
-              </View>
-            )}
-            <Text style={styles.modelSelectorArrow}>▼</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerSubtitleDivider}>·</Text>
-          <TouchableOpacity style={styles.headerProjectRow} onPress={() => setShowProjectSelector(true)}>
-            <Icon name="folder" size={11} color={activeProject ? colors.primary : colors.textMuted} />
-            <Text style={[styles.headerSubtitle, { color: activeProject ? colors.primary : colors.textMuted }]} numberOfLines={1}>
-              {activeProject ? activeProject.name : 'Default'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+
+      <View style={[styles.headerLeft, { flex: 1, alignItems: 'center' }]}>
+        <TouchableOpacity 
+          style={[styles.modelSelector, { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }]} 
+          onPress={() => setShowModelSelector(true)} 
+          testID="model-selector"
+        >
+          {isRemote && (
+            <Icon name="cloud" size={14} color={colors.primary} style={styles.remoteIcon} />
+          )}
+          <Text style={[styles.headerTitle, { fontSize: 16 }]} numberOfLines={1} testID="model-loaded-indicator">
+            {activeModelName || activeModel?.name || '⚠️ Ningún modelo'}
+          </Text>
+          {activeImageModel && (
+            <View style={styles.headerImageBadge}>
+              <Icon name="image" size={10} color={colors.primary} />
+            </View>
+          )}
+          <Icon name="chevron-down" size={16} color={colors.textMuted} style={{ marginLeft: 6 }} />
+        </TouchableOpacity>
       </View>
       <View style={styles.headerActions}>
         <AttachStep index={16}>
@@ -167,42 +161,78 @@ export const EmptyChat: React.FC<{
   activeProject: any;
   setShowProjectSelector: (v: boolean) => void;
   isRemote?: boolean;
-}> = ({ styles, colors, activeModel, activeModelName, activeProject, setShowProjectSelector, isRemote }) => (
-  <View style={styles.emptyChat}>
-    <AnimatedEntry index={0} staggerMs={60}>
-      <View style={styles.emptyChatIconContainer}>
-        <Icon name="message-square" size={32} color={colors.textMuted} />
-      </View>
-    </AnimatedEntry>
-    <AnimatedEntry index={1} staggerMs={60}>
-      <Text style={styles.emptyChatTitle}>Start a Conversation</Text>
-    </AnimatedEntry>
-    <AnimatedEntry index={2} staggerMs={60}>
-      <Text style={styles.emptyChatText}>
-        Type a message below to begin chatting with {activeModelName || activeModel?.name || 'Unknown'}.
-      </Text>
-    </AnimatedEntry>
-    <AnimatedEntry index={3} staggerMs={60}>
-      <TouchableOpacity style={styles.projectHint} onPress={() => setShowProjectSelector(true)}>
-        <View style={styles.projectHintIcon}>
-          <Text style={styles.projectHintIconText}>
-            {activeProject?.name?.charAt(0).toUpperCase() || 'D'}
-          </Text>
-        </View>
-        <Text style={styles.projectHintText}>
-          Project: {activeProject?.name || 'Default'} — tap to change
+  onQuickAction?: (text: string) => void;
+}> = ({ styles, colors, activeModel, activeModelName, activeProject, setShowProjectSelector, isRemote, onQuickAction }) => {
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Buenos días';
+    if (hour < 19) return 'Buenas tardes';
+    return 'Buenas noches';
+  };
+
+  const quickActions = [
+    { icon: 'code', text: 'Ayuda con código' },
+    { icon: 'align-left', text: 'Resumir texto' },
+    { icon: 'edit-3', text: 'Redactar correo' },
+    { icon: 'pie-chart', text: 'Analizar datos' },
+  ];
+
+  return (
+    <View style={[styles.emptyChat, { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }]}>
+      {/* Saludo Principal */}
+      <AnimatedEntry index={0} staggerMs={60}>
+        <Text style={[styles.emptyChatTitle, { fontSize: 28, fontWeight: '300', marginBottom: 32 }]}>
+          {getGreeting()}
         </Text>
-      </TouchableOpacity>
-    </AnimatedEntry>
-    <AnimatedEntry index={4} staggerMs={60}>
-      <Text style={styles.privacyText}>
-        {isRemote
-          ? 'This conversation uses a remote model. Your messages will be sent to the remote server.'
-          : 'This conversation is completely private. All processing happens on your device.'}
-      </Text>
-    </AnimatedEntry>
-  </View>
-);
+      </AnimatedEntry>
+
+      {/* Quick Actions */}
+      <AnimatedEntry index={1} staggerMs={60}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, width: '100%', maxWidth: 600 }}>
+          {quickActions.map((action, idx) => (
+            <TouchableOpacity 
+              key={idx}
+              onPress={() => onQuickAction?.(action.text)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: colors.surfaceLight,
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 100,
+                borderWidth: 0.5,
+                borderColor: colors.borderLight,
+              }}
+            >
+              <Icon name={action.icon} size={14} color={colors.textSecondary} style={{ marginRight: 4 }} />
+              <Text numberOfLines={1} style={{ fontSize: 13, color: colors.textSecondary, flexShrink: 0 }}>{action.text}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </AnimatedEntry>
+
+      {/* Indicador de Personaje / Proyecto (si aplica) */}
+      {activeProject && (
+        <AnimatedEntry index={2} staggerMs={60}>
+          <TouchableOpacity 
+            style={[styles.projectHint, { marginTop: 32 }]} 
+            onPress={() => setShowProjectSelector(true)}
+          >
+            <View style={styles.projectHintIcon}>
+              <Text style={styles.projectHintIconText}>
+                {activeProject.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <Text style={styles.projectHintText}>
+              Conversando en: {activeProject.name} — tocar para instrucciones
+            </Text>
+          </TouchableOpacity>
+        </AnimatedEntry>
+      )}
+
+    </View>
+  );
+};
 
 export const ImageProgressIndicator: React.FC<{
   styles: StylesType;

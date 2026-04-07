@@ -1,6 +1,5 @@
 export { OnboardingScreen } from './OnboardingScreen';
 export { ModelDownloadScreen } from './ModelDownloadScreen';
-export { HomeScreen } from './HomeScreen';
 export { ModelsScreen } from './ModelsScreen';
 export { ChatScreen } from './ChatScreen';
 export { SettingsScreen } from './SettingsScreen';
@@ -21,3 +20,11 @@ export { DeviceInfoScreen } from './DeviceInfoScreen';
 export { StorageSettingsScreen } from './StorageSettingsScreen';
 export { SecuritySettingsScreen } from './SecuritySettingsScreen';
 export { RemoteServersScreen } from './RemoteServersScreen';
+
+export { ArtifactsScreen } from './ArtifactsScreen';
+export { MathScreen } from './MathScreen';
+export { CharactersScreen } from './CharactersScreen';
+export { CharacterDetailScreen } from './CharacterDetailScreen';
+export { CharacterEditScreen } from './CharacterEditScreen';
+export { CharacterChatsScreen } from './CharacterChatsScreen';
+export { ImageStudioScreen } from './ImageStudioScreen';

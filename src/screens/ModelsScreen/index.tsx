@@ -47,7 +47,7 @@ export const ModelsScreen: React.FC = () => {
       <View style={isShowingDetail ? collapsedStyle.hidden : undefined}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Models</Text>
+          <Text style={styles.title}>Modelos</Text>
           <AttachStep index={10}>
             <TouchableOpacity
               style={styles.downloadManagerButton}
@@ -84,7 +84,7 @@ export const ModelsScreen: React.FC = () => {
           ) : (
             <TouchableOpacity style={styles.importButton} onPress={vm.handleImportLocalModel} testID="import-local-model">
               <Icon name="folder-plus" size={20} color={colors.primary} />
-              <Text style={styles.importButtonText}>Import Local File</Text>
+              <Text style={styles.importButtonText}>Importar Archivo Local</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -100,7 +100,7 @@ export const ModelsScreen: React.FC = () => {
               vm.setImageFiltersVisible(false);
             }}
           >
-            <Text style={[styles.tabText, vm.activeTab === 'text' && styles.tabTextActive]}>Text Models</Text>
+            <Text style={[styles.tabText, vm.activeTab === 'text' && styles.tabTextActive]}>Modelos de Texto</Text>
             {vm.activeTab === 'text' && <View style={styles.tabIndicator} />}
           </TouchableOpacity>
           <AttachStep index={4}>
@@ -113,7 +113,7 @@ export const ModelsScreen: React.FC = () => {
                 vm.setImageFiltersVisible(false);
               }}
             >
-              <Text style={[styles.tabText, vm.activeTab === 'image' && styles.tabTextActive]}>Image Models</Text>
+              <Text style={[styles.tabText, vm.activeTab === 'image' && styles.tabTextActive]}>Modelos de Imagen</Text>
               {vm.activeTab === 'image' && <View style={styles.tabIndicator} />}
             </TouchableOpacity>
           </AttachStep>
@@ -207,7 +207,7 @@ export const ModelsScreen: React.FC = () => {
       <CustomAlert
         visible={vm.showNotifRationale}
         title="Download notifications"
-        message={"Off Grid can show download progress in your notification tray while you use other apps.\n\nThis is optional — downloads work fine without it."}
+        message={"LM Local can show download progress in your notification tray while you use other apps.\n\nThis is optional — downloads work fine without it."}
         onClose={vm.handleNotifRationaleDismiss}
         buttons={[
           { text: 'No thanks', style: 'cancel', onPress: vm.handleNotifRationaleDismiss },

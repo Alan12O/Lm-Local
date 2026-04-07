@@ -12,6 +12,7 @@ export interface ChatMessageProps {
   canGenerateImage?: boolean;
   showGenerationDetails?: boolean;
   animateEntry?: boolean;
+  themeColor?: string;
 }
 
 export interface ParsedContent {

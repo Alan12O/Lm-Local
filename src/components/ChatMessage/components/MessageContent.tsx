@@ -15,6 +15,7 @@ interface MessageContentProps {
   showThinking: boolean;
   onToggleThinking: () => void;
   styles: any;
+  themeColor?: string;
 }
 
 export function MessageContent({
@@ -26,11 +27,12 @@ export function MessageContent({
   showThinking,
   onToggleThinking,
   styles,
+  themeColor,
 }: Readonly<MessageContentProps>) {
   if (isThinking) {
     return (
       <View testID="thinking-indicator">
-        <ThinkingIndicator text={content} />
+        <ThinkingIndicator text={content} themeColor={themeColor} />
       </View>
     );
   }
@@ -80,7 +82,7 @@ export function MessageContent({
         if (isStreaming && !parsedContent.isThinkingComplete) {
           return (
             <View testID="streaming-thinking-hint" style={styles.streamingThinkingHint}>
-              <ThinkingIndicator />
+              <ThinkingIndicator themeColor={themeColor} />
             </View>
           );
         }

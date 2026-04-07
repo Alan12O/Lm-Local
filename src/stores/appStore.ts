@@ -22,6 +22,7 @@ type AppSettings = {
   enableGpu: boolean; gpuLayers: number; flashAttn: boolean;
   cacheType: CacheType; showGenerationDetails: boolean; enabledTools: string[];
   thinkingEnabled: boolean;
+  toolsEnabled: boolean;
 };
 
 type ThemeMode = 'system' | 'light' | 'dark';
@@ -90,8 +91,6 @@ interface AppState {
   imageGenerationCount: number;
   incrementTextGenerationCount: () => number;
   incrementImageGenerationCount: () => number;
-  hasEngagedSharePrompt: boolean;
-  setHasEngagedSharePrompt: (v: boolean) => void;
   loadedSettings: Partial<AppSettings> | null;
   setLoadedSettings: (settings: Partial<AppSettings> | null) => void;
 }
@@ -128,11 +127,16 @@ const DEFAULT_SETTINGS: AppSettings = {
   showGenerationDetails: false,
   enabledTools: ['web_search', 'calculator', 'get_current_datetime', 'get_device_info', 'read_url', 'search_knowledge_base'],
   thinkingEnabled: true,
+  toolsEnabled: true,
 };
 
 function migrateEnabledTools(merged: any): void {
   if (merged.settings?.enabledTools && !merged.settings.enabledTools.includes('search_knowledge_base')) {
     merged.settings = { ...merged.settings, enabledTools: [...merged.settings.enabledTools, 'search_knowledge_base'] };
+  }
+  // Migrar usuarios que no tienen toolsEnabled guardado → asumir habilitado
+  if (merged.settings && merged.settings.toolsEnabled === undefined) {
+    merged.settings = { ...merged.settings, toolsEnabled: true };
   }
 }
 function migratePersistedState(persistedState: any, currentState: AppState): AppState {
@@ -319,8 +323,6 @@ export const useAppStore = create<AppState>()(
       imageGenerationCount: 0,
       incrementTextGenerationCount: () => { const c = get().textGenerationCount + 1; set({ textGenerationCount: c }); return c; },
       incrementImageGenerationCount: () => { const c = get().imageGenerationCount + 1; set({ imageGenerationCount: c }); return c; },
-      hasEngagedSharePrompt: false,
-      setHasEngagedSharePrompt: (v) => set({ hasEngagedSharePrompt: v }),
       loadedSettings: null,
       setLoadedSettings: (settings) => set({ loadedSettings: settings }),
     }),
@@ -342,7 +344,6 @@ export const useAppStore = create<AppState>()(
         generatedImages: state.generatedImages,
         shownSpotlights: state.shownSpotlights,
         textGenerationCount: state.textGenerationCount, imageGenerationCount: state.imageGenerationCount,
-        hasEngagedSharePrompt: state.hasEngagedSharePrompt,
         loadedSettings: state.loadedSettings,
       }),
     }

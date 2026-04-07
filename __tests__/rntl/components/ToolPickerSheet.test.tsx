@@ -53,6 +53,8 @@ describe('ToolPickerSheet', () => {
   const defaultProps = {
     visible: true,
     onClose: jest.fn(),
+    toolsEnabled: true,
+    onToggleAllTools: jest.fn(),
     enabledTools: ['web_search', 'calculator'],
     onToggleTool: jest.fn(),
   };
@@ -91,11 +93,12 @@ describe('ToolPickerSheet', () => {
     );
 
     const switches = getAllByRole('switch');
-    // AVAILABLE_TOOLS order: web_search, calculator, get_current_datetime, get_device_info
-    expect(switches[0].props.value).toBe(true);  // web_search - enabled
-    expect(switches[1].props.value).toBe(true);  // calculator - enabled
-    expect(switches[2].props.value).toBe(false); // get_current_datetime - disabled
-    expect(switches[3].props.value).toBe(false); // get_device_info - disabled
+    // switches[0] = switch maestro (toolsEnabled), luego siguen las herramientas individuales
+    // AVAILABLE_TOOLS order: web_search, calculator, get_current_datetime, get_device_info...
+    expect(switches[1].props.value).toBe(true);  // web_search - enabled
+    expect(switches[2].props.value).toBe(true);  // calculator - enabled
+    expect(switches[3].props.value).toBe(false); // get_current_datetime - disabled
+    expect(switches[4].props.value).toBe(false); // get_device_info - disabled
   });
 
   it('calls onToggleTool with correct tool ID when switch is toggled', () => {
@@ -105,7 +108,9 @@ describe('ToolPickerSheet', () => {
     );
 
     const switches = getAllByRole('switch');
-    fireEvent(switches[2], 'valueChange', true);
+    // switches[0] = switch maestro, switches[1..] = herramientas individuales
+    // get_current_datetime es el tercer tool (índice 2 en AVAILABLE_TOOLS) → switches[3]
+    fireEvent(switches[3], 'valueChange', true);
 
     expect(onToggleTool).toHaveBeenCalledTimes(1);
     expect(onToggleTool).toHaveBeenCalledWith('get_current_datetime');

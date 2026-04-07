@@ -17,6 +17,7 @@ type MessageRendererProps = {
   onEdit: (message: Message, newContent: string) => void;
   onGenerateImage: (prompt: string) => void;
   onImagePress: (uri: string) => void;
+  themeColor?: string;
 };
 
 export const MessageRenderer: React.FC<MessageRendererProps> = ({
@@ -33,6 +34,7 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
   onEdit,
   onGenerateImage,
   onImagePress,
+  themeColor,
 }) => (
   <ChatMessage
     message={item as Message}
@@ -45,5 +47,6 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
     canGenerateImage={imageModelLoaded && !isStreaming && !isGeneratingImage}
     showGenerationDetails={showGenerationDetails}
     animateEntry={animateLastN > 0 && index >= displayMessagesLength - animateLastN}
+    themeColor={themeColor}
   />
 );

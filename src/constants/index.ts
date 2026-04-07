@@ -15,48 +15,13 @@ export const HF_API = {
 
 // Model credibility configuration
 // LM Studio community - highest credibility for GGUF models
-export const LMSTUDIO_AUTHORS = [
-  'lmstudio-community',
-  'lmstudio-ai',
-];
+export const LMSTUDIO_AUTHORS: string[] = [];
 
 // Official model creators - these are the original model authors
-export const OFFICIAL_MODEL_AUTHORS: Record<string, string> = {
-  'meta-llama': 'Meta',
-  'microsoft': 'Microsoft',
-  'google': 'Google',
-  'Qwen': 'Alibaba',
-  'mistralai': 'Mistral AI',
-  'HuggingFaceTB': 'Hugging Face',
-  'HuggingFaceH4': 'Hugging Face',
-  'bigscience': 'BigScience',
-  'EleutherAI': 'EleutherAI',
-  'tiiuae': 'TII UAE',
-  'stabilityai': 'Stability AI',
-  'databricks': 'Databricks',
-  'THUDM': 'Tsinghua University',
-  'baichuan-inc': 'Baichuan',
-  'internlm': 'InternLM',
-  '01-ai': '01.AI',
-  'deepseek-ai': 'DeepSeek',
-  'CohereForAI': 'Cohere',
-  'allenai': 'Allen AI',
-  'nvidia': 'NVIDIA',
-  'apple': 'Apple',
-};
+export const OFFICIAL_MODEL_AUTHORS: Record<string, string> = {};
 
 // Verified quantizers - trusted community members who quantize models
-export const VERIFIED_QUANTIZERS: Record<string, string> = {
-  'TheBloke': 'TheBloke',
-  'bartowski': 'bartowski',
-  'QuantFactory': 'QuantFactory',
-  'mradermacher': 'mradermacher',
-  'second-state': 'Second State',
-  'MaziyarPanahi': 'Maziyar Panahi',
-  'Triangle104': 'Triangle104',
-  'unsloth': 'Unsloth',
-  'ggml-org': 'GGML (HuggingFace)',
-};
+export const VERIFIED_QUANTIZERS: Record<string, string> = {};
 
 // Credibility level labels
 export const CREDIBILITY_LABELS = {
@@ -68,7 +33,7 @@ export const CREDIBILITY_LABELS = {
   official: {
     label: 'Official',
     description: 'From the original model creator',
-    color: '#22C55E', // green
+    color: '#3B82F6', // blue
   },
   'verified-quantizer': {
     label: 'Verified',
@@ -143,27 +108,27 @@ export const TYPOGRAPHY = {
 
   // Headings
   h1: {
-    fontSize: 24,
+    fontSize: 28,
     fontFamily: FONTS.mono,
     fontWeight: '300' as const,
     letterSpacing: -0.5,
   },
   h2: {
-    fontSize: 16,
+    fontSize: 22,
     fontFamily: FONTS.mono,
-    fontWeight: '400' as const,
+    fontWeight: '500' as const,
     letterSpacing: -0.2,
   },
   h3: {
-    fontSize: 13,
+    fontSize: 18,
     fontFamily: FONTS.mono,
-    fontWeight: '400' as const,
-    letterSpacing: -0.2,
+    fontWeight: '500' as const,
+    letterSpacing: -0.1,
   },
 
   // Body text
   body: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: FONTS.mono,
     fontWeight: '400' as const,
   },

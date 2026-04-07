@@ -122,10 +122,10 @@ export const ProjectsScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Projects</Text>
+        <Text style={styles.title}>Proyectos</Text>
         <AttachStep index={7}>
           <Button
-            title="New"
+            title="Nuevo"
             variant="primary"
             size="small"
             onPress={handleNewProject}
@@ -135,7 +135,7 @@ export const ProjectsScreen: React.FC = () => {
       </View>
 
       <Text style={styles.subtitle}>
-        Projects group related chats with shared context and instructions.
+        Los proyectos agrupan chats relacionados con un contexto e instrucciones compartidas.
       </Text>
 
       {projects.length === 0 ? (

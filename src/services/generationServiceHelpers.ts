@@ -174,7 +174,6 @@ export async function generateResponseImpl(
         svc.forceFlushTokens();
         const generationTime = svc.state.startTime ? Date.now() - svc.state.startTime : undefined;
         chatStore.finalizeStreamingMessage(conversationId, generationTime, buildGenerationMetaImpl(svc));
-        svc.checkSharePrompt();
         svc.resetState();
       },
     );
@@ -245,7 +244,6 @@ export async function generateRemoteResponseImpl(
         svc.forceFlushTokens();
         const generationTime = svc.state.startTime ? Date.now() - svc.state.startTime : undefined;
         chatStore.finalizeStreamingMessage(conversationId, generationTime, buildGenerationMetaImpl(svc));
-        svc.checkSharePrompt();
         svc.resetState();
       },
       onError: (error: Error) => {
@@ -307,7 +305,6 @@ export async function generateRemoteWithToolsImpl(
     useChatStore.getState().finalizeStreamingMessage(
       conversationId, generationTime, buildGenerationMetaImpl(svc),
     );
-    svc.checkSharePrompt();
     svc.resetState();
   }
 }

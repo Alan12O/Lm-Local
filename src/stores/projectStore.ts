@@ -59,7 +59,7 @@ Guidelines:
 - If the code looks good, say so
 
 Keep feedback actionable and specific.`,
-    icon: '#10B981', // Emerald
+    icon: '#3B82F6', // Blue
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },

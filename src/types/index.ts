@@ -197,6 +197,7 @@ export interface Conversation {
   createdAt: string;
   updatedAt: string;
   projectId?: string;
+  characterId?: string;
   compactionSummary?: string;
   compactionCutoffMessageId?: string;
 }
@@ -319,6 +320,23 @@ export interface Project {
   description: string;
   systemPrompt: string;
   icon?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AICharacter {
+  id: string;
+  name: string;
+  description: string;
+  systemPrompt: string;
+  firstMessage?: string;
+  examples?: string;
+  /** Contexto adicional de fondo: datos, lore, investigación que la IA debe conocer */
+  context?: string;
+  /** Rol del usuario para indicar a la IA con quién está hablando realmente en la simulación */
+  userRole?: string;
+  icon?: string;
+  themeColor?: string;
   createdAt: string;
   updatedAt: string;
 }

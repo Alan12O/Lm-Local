@@ -11,7 +11,12 @@ import { createStyles, PILL_ICONS_WIDTH, ANIM_DURATION_IN, ANIM_DURATION_OUT } f
 import { QueueRow } from './Toolbar';
 import { AttachmentPreview, useAttachments } from './Attachments';
 import { useVoiceInput } from './Voice';
-import { QuickSettingsPopover, AttachPickerPopover } from './Popovers';
+import {
+  QuickSettingsPopover,
+  AttachPickerPopover,
+  CharacterActionsPopover,
+  popoverStyles,
+} from './Popovers';
 import { useKeyboardAwarePopover } from './useKeyboardAwarePopover';
 
 interface ChatInputProps {
@@ -34,6 +39,8 @@ interface ChatInputProps {
   supportsThinking?: boolean;
   /** When set, mounts a single AttachStep for that index. Only one at a time to avoid waypoint dots. */
   activeSpotlight?: number | null;
+  /** Whether we are chatting with a character (enables RP tools) */
+  isCharacterMode?: boolean;
 }
 
 const IMAGE_MODE_CYCLE: ImageModeState[] = ['auto', 'force', 'disabled'];
@@ -59,6 +66,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   supportsToolCalling = false,
   supportsThinking = false,
   activeSpotlight = null,
+  isCharacterMode = false,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -67,6 +75,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
   const quickSettings = useKeyboardAwarePopover();
   const attachPicker = useKeyboardAwarePopover();
+  const charActions = useKeyboardAwarePopover();
   const inputRef = useRef<TextInput>(null);
   const hasText = message.length > 0;
   const iconsAnim = useRef(new Animated.Value(0)).current;
@@ -126,8 +135,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const handleQuickSettingsPress = () => quickSettings.show();
-
   const handleAttachPress = () => attachPicker.show();
+  const handleCharActionsPress = () => charActions.show();
+  const insertText = (text: string) => setMessage(prev => prev + text);
 
   const actionButton = canSend ? (
     <TouchableOpacity
@@ -135,15 +145,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       style={styles.circleButton}
       onPress={handleSend}
     >
-      <Icon name="send" size={18} color={colors.background} />
+      <Icon name="arrow-up" size={18} color={colors.background} />
     </TouchableOpacity>
   ) : isGenerating && onStop ? (
     <TouchableOpacity
       testID="stop-button"
-      style={[styles.circleButton, styles.circleButtonStop]}
+      style={[styles.circleButton, styles.circleButtonStop, { backgroundColor: 'transparent' }]}
       onPress={handleStop}
     >
-      <Icon name="square" size={18} color={colors.background} />
+      <Icon name="square" size={18} color={colors.error} />
     </TouchableOpacity>
   ) : (
     <VoiceRecordButton
@@ -169,13 +179,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         queuedTexts={queuedTexts}
         onClearQueue={onClearQueue}
       />
-      <View style={styles.mainRow}>
-        {/* Pill: text input + right icons */}
-        <View style={styles.pill}>
-          <TextInput
+      <View style={{
+        backgroundColor: colors.surface,
+        borderRadius: 16,
+        borderWidth: 0.5,
+        borderColor: colors.border,
+        padding: 12,
+        paddingTop: 8,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2,
+      }}>
+        <TextInput
             ref={inputRef}
             testID="chat-input"
-            style={styles.pillInput}
+            style={[styles.pillInput, { minHeight: 48, paddingBottom: 16 }]}
             value={message}
             onChangeText={setMessage}
             placeholder={placeholder}
@@ -184,52 +200,29 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             scrollEnabled
             editable={!disabled}
             blurOnSubmit={false}
-            returnKeyType="default"
-          />
-          {/* Icons collapse when user starts typing, reappear when input is empty */}
-          <Animated.View
-            pointerEvents={hasText ? 'none' : 'auto'}
-            style={[styles.pillIcons, {
-              width: iconsAnim.interpolate({ inputRange: [0, 1], outputRange: [PILL_ICONS_WIDTH, 0] }),
-              opacity: iconsAnim.interpolate({ inputRange: [0, 0.4], outputRange: [1, 0], extrapolate: 'clamp' }),
-              overflow: 'hidden' as const,
-            }]}
-          >
-            {/* Attach button — opens picker for image or document */}
-            <TouchableOpacity
-              ref={attachPicker.triggerRef}
-              testID="attach-button"
-              style={styles.pillIconButton}
-              onPress={handleAttachPress}
-              disabled={disabled}
-              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-            >
-              <Icon
-                name="plus"
-                size={20}
-                color={disabled ? colors.textMuted : colors.textSecondary}
-              />
-            </TouchableOpacity>
+        />
 
-            {/* Quick settings button */}
-            <TouchableOpacity
-              ref={quickSettings.triggerRef}
-              testID="quick-settings-button"
-              style={styles.pillIconButton}
-              onPress={handleQuickSettingsPress}
-              disabled={disabled}
-              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-            >
-              <Icon name="settings" size={18} color={disabled ? colors.textMuted : colors.textSecondary} />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity onPress={handleAttachPress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Icon name="paperclip" size={18} color={disabled ? colors.textMuted : colors.textSecondary} />
             </TouchableOpacity>
-
-          </Animated.View>
+            <TouchableOpacity onPress={handleQuickSettingsPress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Icon name="settings" size={18} color={disabled ? colors.textMuted : colors.textSecondary} />
+            </TouchableOpacity>
+            {isCharacterMode && (
+              <TouchableOpacity onPress={handleCharActionsPress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Icon name="zap" size={18} color={disabled ? colors.textMuted : colors.primary} />
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          <View>
+            {activeSpotlight === 12 ? (
+              <AttachStep index={12} style={spotlightStyles.centered}>{actionButton}</AttachStep>
+            ) : actionButton}
+          </View>
         </View>
-
-        {/* Circular action button — conditionally wrapped with AttachStep */}
-        {activeSpotlight === 12 ? (
-          <AttachStep index={12} style={spotlightStyles.centered}>{actionButton}</AttachStep>
-        ) : actionButton}
       </View>
 
       <AttachPickerPopover
@@ -254,6 +247,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         supportsToolCalling={supportsToolCalling}
         enabledToolCount={enabledToolCount}
         onToolsPress={onToolsPress}
+      />
+
+      <CharacterActionsPopover
+        visible={charActions.visible}
+        onClose={charActions.hide}
+        anchorY={charActions.anchor.y}
+        anchorX={charActions.anchor.x}
+        onAction={insertText}
       />
 
       <CustomAlert

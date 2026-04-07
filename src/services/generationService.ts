@@ -6,7 +6,6 @@ import { runToolLoop } from './generationToolLoop';
 import type { ToolResult } from './tools/types';
 import { providerRegistry } from './providers';
 import logger from '../utils/logger';
-import { shouldShowSharePrompt, emitSharePrompt } from '../utils/sharePrompt';
 import {
   buildGenerationMetaImpl,
   buildToolLoopHandlersImpl,
@@ -16,8 +15,6 @@ import {
   generateRemoteWithToolsImpl,
   type GenerationWithToolsRequest,
 } from './generationServiceHelpers';
-
-const SHARE_PROMPT_DELAY_MS = 1500;
 type StreamChunk = string | { content?: string; reasoningContent?: string };
 
 export interface QueuedMessage {
@@ -124,11 +121,6 @@ class GenerationService {
     this.notifyListeners();
   }
 
-  private checkSharePrompt(delayMs = SHARE_PROMPT_DELAY_MS): void {
-    const s = useAppStore.getState();
-    if (s.hasEngagedSharePrompt) return;
-    if (shouldShowSharePrompt(s.incrementTextGenerationCount())) setTimeout(() => emitSharePrompt('text'), delayMs);
-  }
 
   private buildToolLoopHandlers() { return buildToolLoopHandlersImpl(this); }
   private buildGenerationMeta(): GenerationMeta { return buildGenerationMetaImpl(this); }
@@ -142,11 +134,25 @@ class GenerationService {
     messages: Message[],
     onFirstToken?: () => void,
   ): Promise<void> {
-    // Route to remote provider if active
-    if (this.isUsingRemoteProvider()) {
-      return this.generateRemoteResponse(conversationId, messages, onFirstToken);
+    const isRemote = this.isUsingRemoteProvider();
+    let finalMessages = messages;
+    if (!isRemote) {
+      const usage = await llmService.estimateContextUsage(messages);
+      if (usage.percentUsed > 85) {
+        logger.log('[GenerationService] Proactive compaction triggered (context >85%)');
+        const systemPrompt = messages.find(m => m.role === 'system')?.content || '';
+        const conv = useChatStore.getState().conversations.find((c: any) => c.id === conversationId);
+        finalMessages = await require('./contextCompaction').contextCompactionService.compact({
+          conversationId, systemPrompt, allMessages: messages, previousSummary: conv?.compactionSummary
+        });
+      }
     }
-    return generateResponseImpl(this, { conversationId, messages, onFirstToken });
+
+    // Route to remote provider if active
+    if (isRemote) {
+      return this.generateRemoteResponse(conversationId, finalMessages, onFirstToken);
+    }
+    return generateResponseImpl(this, { conversationId, messages: finalMessages, onFirstToken });
   }
 
   /** Generate a response with tool calling support (LLM → tools → repeat, max 5 iterations). */
@@ -161,9 +167,23 @@ class GenerationService {
       onFirstToken?: () => void;
     },
   ): Promise<void> {
+    const isRemote = this.isUsingRemoteProvider();
+    let finalMessages = messages;
+    if (!isRemote) {
+      const usage = await llmService.estimateContextUsage(messages);
+      if (usage.percentUsed > 85) {
+        logger.log('[GenerationService] Proactive compaction triggered (context >85%)');
+        const systemPrompt = messages.find(m => m.role === 'system')?.content || '';
+        const conv = useChatStore.getState().conversations.find((c: any) => c.id === conversationId);
+        finalMessages = await require('./contextCompaction').contextCompactionService.compact({
+          conversationId, systemPrompt, allMessages: messages, previousSummary: conv?.compactionSummary
+        });
+      }
+    }
+
     // Route to remote provider if active
-    if (this.isUsingRemoteProvider()) {
-      return this.generateRemoteWithTools(conversationId, messages, options);
+    if (isRemote) {
+      return this.generateRemoteWithTools(conversationId, finalMessages, options);
     }
     // Local generation with tools
     const { enabledToolIds, projectId, ...callbacks } = options;
@@ -173,7 +193,7 @@ class GenerationService {
     try {
       await runToolLoop({
         conversationId,
-        messages,
+        messages: finalMessages,
         enabledToolIds,
         projectId,
         callbacks,
@@ -185,7 +205,6 @@ class GenerationService {
         this.forceFlushTokens();
         const generationTime = this.state.startTime ? Date.now() - this.state.startTime : undefined;
         useChatStore.getState().finalizeStreamingMessage(conversationId, generationTime, this.buildGenerationMeta());
-        this.checkSharePrompt();
         this.resetState();
       }
     } catch (error) {
@@ -230,7 +249,6 @@ class GenerationService {
     const chatStore = useChatStore.getState();
     if (conversationId && streamingContent.trim()) {
       chatStore.finalizeStreamingMessage(conversationId, generationTime, this.buildGenerationMeta());
-      this.checkSharePrompt();
     } else {
       chatStore.clearStreamingMessage();
     }

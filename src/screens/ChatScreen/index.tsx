@@ -3,9 +3,8 @@ import { FlatList, KeyboardAvoidingView, InteractionManager } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSpotlightTour } from 'react-native-spotlight-tour';
-import { CustomAlert, hideAlert, SharePromptSheet } from '../../components';
+import { CustomAlert, hideAlert } from '../../components';
 import { consumePendingSpotlight } from '../../components/onboarding/spotlightState';
-import { subscribeSharePrompt } from '../../utils/sharePrompt';
 import { VOICE_HINT_STEP_INDEX, IMAGE_SETTINGS_STEP_INDEX } from '../../components/onboarding/spotlightConfig';
 import { useAppStore } from '../../stores/appStore';
 import type { Conversation, Message } from '../../types';
@@ -29,9 +28,6 @@ export const ChatScreen: React.FC = () => {
   const chat = useChatScreen();
   const { goTo, current } = useSpotlightTour();
   const pendingNextRef = useRef<number | null>(null);
-
-  const [sharePromptVisible, setSharePromptVisible] = useState(false);
-  useEffect(() => subscribeSharePrompt(() => setSharePromptVisible(true)), []);
   // Only ONE AttachStep mounted at a time to avoid waypoint dots/lines.
   // chatSpotlight controls which index is active (3, 12, 15, or 16).
   const [chatSpotlight, setChatSpotlight] = useState<number | null>(null);
@@ -110,24 +106,6 @@ export const ChatScreen: React.FC = () => {
       onClose={() => chat.setAlertState(hideAlert())}
     />
   );
-  if (!chat.hasActiveModel) {
-    return (
-      <>
-        <NoModelScreen
-          styles={styles} colors={colors}
-          navigation={chat.navigation}
-          downloadedModelsCount={chat.downloadedModels.length}
-          showModelSelector={chat.showModelSelector}
-          setShowModelSelector={chat.setShowModelSelector}
-          onSelectModel={chat.handleModelSelect}
-          onUnloadModel={chat.handleUnloadModel}
-          isModelLoading={chat.isModelLoading}
-        />
-        {alertEl}
-      </>
-    );
-  }
-
   if (chat.isModelLoading) {
     const sizeSource = chat.loadingModel ?? chat.activeModel;
     const modelName = chat.loadingModel?.name || chat.activeModelName || 'Unknown';
@@ -165,6 +143,7 @@ export const ChatScreen: React.FC = () => {
       onEdit={chat.handleEditMessage}
       onGenerateImage={chat.handleGenerateImageFromMessage}
       onImagePress={chat.handleImagePress}
+      themeColor={chat.themeColor}
     />
   );
 
@@ -226,7 +205,6 @@ export const ChatScreen: React.FC = () => {
         />
       </KeyboardAvoidingView>
       {alertEl}
-      <SharePromptSheet visible={sharePromptVisible} onClose={() => setSharePromptVisible(false)} />
     </SafeAreaView>
   );
 };

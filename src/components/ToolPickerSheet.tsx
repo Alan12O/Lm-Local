@@ -10,6 +10,8 @@ import type { ThemeColors, ThemeShadows } from '../theme';
 interface ToolPickerSheetProps {
   visible: boolean;
   onClose: () => void;
+  toolsEnabled: boolean;
+  onToggleAllTools: (enabled: boolean) => void;
   enabledTools: string[];
   onToggleTool: (toolId: string) => void;
 }
@@ -17,6 +19,8 @@ interface ToolPickerSheetProps {
 export const ToolPickerSheet: React.FC<ToolPickerSheetProps> = ({
   visible,
   onClose,
+  toolsEnabled,
+  onToggleAllTools,
   enabledTools,
   onToggleTool,
 }) => {
@@ -28,19 +32,46 @@ export const ToolPickerSheet: React.FC<ToolPickerSheetProps> = ({
       visible={visible}
       onClose={onClose}
       enableDynamicSizing
-      title="Tools"
+      title="Herramientas"
     >
       <View style={styles.container}>
+        {/* Switch maestro */}
+        <View style={[styles.masterRow, { borderBottomColor: colors.border }]}>
+          <View style={styles.masterLeft}>
+            <Icon name="zap" size={20} color={toolsEnabled ? colors.primary : colors.textMuted} />
+            <View style={styles.masterTextGroup}>
+              <Text style={[styles.masterTitle, { color: colors.text }]}>Activar herramientas</Text>
+              <Text style={[styles.masterDesc, { color: colors.textMuted }]}>
+                {toolsEnabled ? 'El modelo puede usar herramientas' : 'Sin acceso a herramientas'}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            testID="tools-master-switch"
+            value={toolsEnabled}
+            onValueChange={onToggleAllTools}
+            trackColor={{ false: colors.border, true: `${colors.primary}80` }}
+            thumbColor={toolsEnabled ? colors.primary : colors.textMuted}
+          />
+        </View>
+
+        {/* Lista de herramientas individuales */}
         {AVAILABLE_TOOLS.map(tool => {
-          const isEnabled = enabledTools.includes(tool.id);
+          const isEnabled = toolsEnabled && enabledTools.includes(tool.id);
           return (
-            <View key={tool.id} style={styles.toolRow} testID={`tool-picker-row-${tool.id}`}>
+            <View
+              key={tool.id}
+              style={[styles.toolRow, !toolsEnabled && styles.toolRowDisabled]}
+              testID={`tool-picker-row-${tool.id}`}
+            >
               <View style={styles.toolIcon}>
                 <Icon name={tool.icon} size={20} color={isEnabled ? colors.primary : colors.textMuted} />
               </View>
               <View style={styles.toolInfo}>
                 <View style={styles.toolNameRow}>
-                  <Text style={styles.toolName} testID={`tool-picker-name-${tool.id}`}>{tool.displayName}</Text>
+                  <Text style={[styles.toolName, { color: toolsEnabled ? colors.text : colors.textMuted }]} testID={`tool-picker-name-${tool.id}`}>
+                    {tool.displayName}
+                  </Text>
                   {tool.requiresNetwork && (
                     <Icon name="wifi" size={12} color={colors.textMuted} style={styles.networkIcon} />
                   )}
@@ -49,6 +80,7 @@ export const ToolPickerSheet: React.FC<ToolPickerSheetProps> = ({
               </View>
               <Switch
                 value={isEnabled}
+                disabled={!toolsEnabled}
                 onValueChange={() => onToggleTool(tool.id)}
                 trackColor={{ false: colors.border, true: `${colors.primary}80` }}
                 thumbColor={isEnabled ? colors.primary : colors.textMuted}
@@ -66,12 +98,42 @@ const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     paddingHorizontal: 16,
     paddingBottom: 24,
   },
+  masterRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    paddingVertical: 16,
+    marginBottom: 4,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.border,
+  },
+  masterLeft: {
+    flex: 1,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 12,
+  },
+  masterTextGroup: {
+    flex: 1,
+  },
+  masterTitle: {
+    fontSize: 15,
+    fontFamily: FONTS.mono,
+    fontWeight: '700' as const,
+  },
+  masterDesc: {
+    fontSize: 11,
+    fontFamily: FONTS.mono,
+    marginTop: 2,
+  },
   toolRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  toolRowDisabled: {
+    opacity: 0.4,
   },
   toolIcon: {
     width: 40,
@@ -94,7 +156,6 @@ const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     fontSize: 15,
     fontFamily: FONTS.mono,
     fontWeight: '600' as const,
-    color: colors.text,
   },
   networkIcon: {
     marginLeft: 6,
@@ -106,3 +167,4 @@ const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     marginTop: 2,
   },
 });
+

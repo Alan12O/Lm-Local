@@ -827,6 +827,7 @@ describe('ModelSettingsScreen', () => {
           enhanceImagePrompts: undefined as any,
           enabledTools: undefined as any,
           thinkingEnabled: undefined as any,
+          toolsEnabled: undefined as any,
         },
       });
 

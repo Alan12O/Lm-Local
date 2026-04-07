@@ -2,6 +2,7 @@ import RNFS from 'react-native-fs';
 import { Platform } from 'react-native';
 import { DownloadedModel, ModelFile, ONNXImageModel } from '../../types';
 import { buildDownloadedModel, persistDownloadedModel, loadDownloadedModels, saveModelsList } from './storage';
+import { resolveContentUri } from './pathResolver';
 
 export function isMMProjFile(fileName: string): boolean {
   const lower = fileName.toLowerCase();
@@ -201,13 +202,39 @@ export interface ImportLocalModelOpts {
   mmProjFileName?: string;
 }
 
-async function resolveAndroidUri(uri: string, cacheFileName: string): Promise<{ resolved: string; tempPath: string | null }> {
-  if (Platform.OS !== 'android' || !uri.startsWith('content://')) {
-    return { resolved: uri, tempPath: null };
+/**
+ * Resuelve una URI de documento a una ruta real del filesystem.
+ * - Si ya es accesible directamente (almacenamiento externo) → devuelve la ruta sin crear copia.
+ * - Si es una content:// opaca (proveedor interno, OTG, nube…) → copia a caché temporal
+ *   para que RNFS pueda leer del descriptor, y señala que hay un temp que limpiar.
+ */
+async function resolveForImport(
+  uri: string,
+  cacheFileName: string,
+): Promise<{ resolved: string; tempPath: string | null; isDirectAccess: boolean }> {
+  // En iOS no hay content:// — la URI ya es un path o file://
+  if (Platform.OS !== 'android') {
+    const path = uri.startsWith('file://') ? uri.replace('file://', '') : uri;
+    return { resolved: path, tempPath: null, isDirectAccess: true };
   }
+
+  // Intenta resolver a un path real (p. ej. /storage/emulated/0/Download/model.gguf)
+  const { realPath, isDirectAccess } = await resolveContentUri(uri, cacheFileName);
+
+  if (realPath && isDirectAccess) {
+    // El archivo vive en el almacenamiento externo → podemos usarlo directamente
+    return { resolved: realPath, tempPath: null, isDirectAccess: true };
+  }
+
+  if (realPath) {
+    // Path resuelto pero en almacenamiento interno de otra app → copia igual por seguridad
+    return { resolved: realPath, tempPath: null, isDirectAccess: false };
+  }
+
+  // No se pudo resolver → copiar a caché temporal para poder operar con él
   const tempPath = `${RNFS.CachesDirectoryPath}/${Date.now()}_${cacheFileName}`;
   await RNFS.copyFile(uri, tempPath);
-  return { resolved: tempPath, tempPath };
+  return { resolved: tempPath, tempPath, isDirectAccess: false };
 }
 
 
@@ -218,34 +245,46 @@ export async function importLocalModel(opts: ImportLocalModelOpts): Promise<Down
     throw new Error('Only .gguf files can be imported');
   }
 
-  const { resolved: resolvedSource, tempPath: tempCachePath } = await resolveAndroidUri(sourceUri, fileName);
-  const { resolved: resolvedMmProjSource, tempPath: tempMmProjCachePath } = mmProjSourceUri && mmProjFileName
-    ? await resolveAndroidUri(mmProjSourceUri, mmProjFileName)
-    : { resolved: mmProjSourceUri, tempPath: null };
+  const { resolved: resolvedSource, tempPath: tempCachePath, isDirectAccess: mainIsDirect } =
+    await resolveForImport(sourceUri, fileName);
+
+  const mmProjResolved = mmProjSourceUri && mmProjFileName
+    ? await resolveForImport(mmProjSourceUri, mmProjFileName)
+    : { resolved: mmProjSourceUri as string | undefined, tempPath: null, isDirectAccess: false };
+  const { resolved: resolvedMmProjSource, tempPath: tempMmProjCachePath, isDirectAccess: mmProjIsDirect } = mmProjResolved;
 
   try {
-    const destPath = `${modelsDir}/${fileName}`;
-    if (await RNFS.exists(destPath)) throw new Error(`A model file named "${fileName}" already exists`);
-    if (mmProjFileName && await RNFS.exists(`${modelsDir}/${mmProjFileName}`)) {
-      throw new Error(`A file named "${mmProjFileName}" already exists`);
-    }
-
-    // Copy main model: progress 0→0.5 when mmproj present, 0→1 otherwise
-    const mainProgressScale = mmProjFileName ? 0.5 : 1;
-    await copyFileWithProgress(
-      resolvedSource,
-      destPath,
-      onProgress ? (fraction) => onProgress({ fraction: fraction * mainProgressScale, fileName }) : undefined,
-    );
-
     const quantMatch = fileName.match(/[_-](Q\d+[_\w]*|f16|f32)/i);
     const quantization = quantMatch ? quantMatch[1].toUpperCase() : 'Unknown';
     const modelName = fileName.replace(/\.gguf$/i, '').replace(/[_-]Q\d+.*/i, '');
-    const destStat = await RNFS.stat(destPath);
-    const fileSize = parseSizeInt(destStat.size);
+
+    let finalFilePath: string;
+    let fileSize: number;
+
+    if (mainIsDirect) {
+      // ── Acceso directo: registrar el archivo sin copiarlo ──────────────────
+      const stat = await RNFS.stat(resolvedSource);
+      fileSize = parseSizeInt(stat.size);
+      finalFilePath = resolvedSource;
+      onProgress?.({ fraction: 0.5, fileName });
+    } else {
+      // ── Sin acceso directo: copiar al directorio interno de la app ─────────
+      const destPath = `${modelsDir}/${fileName}`;
+      if (await RNFS.exists(destPath)) throw new Error(`A model file named "${fileName}" already exists`);
+
+      const mainProgressScale = mmProjFileName ? 0.5 : 1;
+      await copyFileWithProgress(
+        resolvedSource,
+        destPath,
+        onProgress ? (fraction) => onProgress({ fraction: fraction * mainProgressScale, fileName }) : undefined,
+      );
+      const destStat = await RNFS.stat(destPath);
+      fileSize = parseSizeInt(destStat.size);
+      finalFilePath = destPath;
+    }
 
     const pseudoFile: ModelFile = { name: fileName, size: fileSize, quantization, downloadUrl: '' };
-    const model = await buildDownloadedModel({ modelId: 'local_import', file: pseudoFile, resolvedLocalPath: destPath });
+    const model = await buildDownloadedModel({ modelId: 'local_import', file: pseudoFile, resolvedLocalPath: finalFilePath });
     const builtModel: DownloadedModel = {
       ...model,
       id: `local_import/${fileName}`,
@@ -254,21 +293,37 @@ export async function importLocalModel(opts: ImportLocalModelOpts): Promise<Down
       credibility: { source: 'community', isOfficial: false, isVerifiedQuantizer: false },
     };
 
-    // Copy mmproj and link it to the model: progress 0.5→1
+    // ── mmproj opcional ────────────────────────────────────────────────────
     if (mmProjFileName && resolvedMmProjSource) {
-      const mmProjDestPath = `${modelsDir}/${mmProjFileName}`;
-      await copyFileWithProgress(
-        resolvedMmProjSource,
-        mmProjDestPath,
-        onProgress
-          ? (fraction) => onProgress({ fraction: 0.5 + fraction * 0.5, fileName: mmProjFileName })
-          : undefined,
-      );
-      const mmProjStat = await RNFS.stat(mmProjDestPath);
-      builtModel.mmProjPath = mmProjDestPath;
-      builtModel.mmProjFileName = mmProjFileName;
-      builtModel.mmProjFileSize = parseSizeInt(mmProjStat.size);
+      let finalMmProjPath: string;
+
+      if (mmProjIsDirect) {
+        // Apuntar directamente al archivo en el almacenamiento externo
+        const mmStat = await RNFS.stat(resolvedMmProjSource);
+        builtModel.mmProjPath = resolvedMmProjSource;
+        builtModel.mmProjFileName = mmProjFileName;
+        builtModel.mmProjFileSize = parseSizeInt(mmStat.size);
+        finalMmProjPath = resolvedMmProjSource;
+        onProgress?.({ fraction: 1, fileName: mmProjFileName });
+      } else {
+        const mmProjDestPath = `${modelsDir}/${mmProjFileName}`;
+        if (await RNFS.exists(mmProjDestPath)) throw new Error(`A file named "${mmProjFileName}" already exists`);
+        await copyFileWithProgress(
+          resolvedMmProjSource,
+          mmProjDestPath,
+          onProgress
+            ? (fraction) => onProgress({ fraction: 0.5 + fraction * 0.5, fileName: mmProjFileName })
+            : undefined,
+        );
+        const mmProjStat = await RNFS.stat(mmProjDestPath);
+        finalMmProjPath = mmProjDestPath;
+        builtModel.mmProjPath = mmProjDestPath;
+        builtModel.mmProjFileName = mmProjFileName;
+        builtModel.mmProjFileSize = parseSizeInt(mmProjStat.size);
+      }
+
       builtModel.isVisionModel = true;
+      void finalMmProjPath; // usado arriba, evita lint de unused
     }
 
     await persistDownloadedModel(builtModel, modelsDir);

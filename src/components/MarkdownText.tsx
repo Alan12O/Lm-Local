@@ -4,6 +4,7 @@ import Markdown from '@ronradtke/react-native-markdown-display';
 import { useTheme } from '../theme';
 import type { ThemeColors } from '../theme';
 import { TYPOGRAPHY, SPACING, FONTS } from '../constants';
+import { MathRenderer } from './MathRenderer';
 
 /**
  * Escape asterisks used as multiplication operators (digit*digit) so
@@ -11,7 +12,19 @@ import { TYPOGRAPHY, SPACING, FONTS } from '../constants';
  * Lookahead handles chains like 5*5*5*5 in a single pass.
  */
 export function preprocessMarkdown(text: string): string {
-  return text.replaceAll(/(\d)\*(?=\d)/g, String.raw`$1\*`);
+  if (!text) return '';
+  let processed = text;
+  // 1. Convert block math $$...$$ to specialized code fences
+  // Absorbe posibles backticks o asteriscos extra que arruinarían el layout.
+  processed = processed.replace(/(?:\*\*|__)?[´`']?\$\$\s*([\s\S]+?)\s*\$\$[´`']?(?:\*\*|__)?/g, '\n\n```math-block\n$1\n```\n\n');
+  
+  // 2. Convert inline math $...$ to specialized code fences as well
+  // WebViews cannot be nested inside <Text> nodes reliably in React Native (Android),
+  // so we force all LaTeX to be rendered as standalone blocks by ensuring paragraph breaks (`\n\n`).
+  processed = processed.replace(/(?:\*\*|__)?[´`']?\$([^\$\n]+?)\$[´`']?(?:\*\*|__)?/g, '\n\n```math-inline\n$1\n```\n\n');
+
+  // 3. Original escape for asterisks
+  return processed.replaceAll(/(\d)\*(?=\d)/g, String.raw`$1\*`);
 }
 
 const linkWrapperStyles = StyleSheet.create({
@@ -50,7 +63,33 @@ export function MarkdownText({ children, dimmed }: MarkdownTextProps) {
   }, []);
 
   const processed = useMemo(() => preprocessMarkdown(children), [children]);
-  const rules = useMemo(() => ({ link: createLinkRule(handleLinkPress) }), [handleLinkPress]);
+  
+  const rules = useMemo(() => ({ 
+    link: createLinkRule(handleLinkPress),
+    fence: (node: any, _children: any, _parent: any, styles: any) => {
+      // Handle block math
+      if (node.content && node.attributes?.language === 'math-block') {
+        const latex = node.content.trim();
+        return <MathRenderer key={node.key} latex={latex} inline={false} />;
+      }
+      // Handle inline math forced as blocks
+      if (node.content && node.attributes?.language === 'math-inline') {
+        const latex = node.content.trim();
+        return <MathRenderer key={node.key} latex={latex} inline={true} />;
+      }
+      // Render normal code blocks explicitly (the library does NOT fallback
+      // when a custom rule returns false — it just renders nothing)
+      let content = node.content;
+      if (typeof content === 'string' && content.endsWith('\n')) {
+        content = content.slice(0, -1);
+      }
+      return (
+        <Text key={node.key} style={styles.fence}>
+          {content}
+        </Text>
+      );
+    },
+  }), [handleLinkPress]);
 
   return (
     <Markdown style={markdownStyles} onLinkPress={handleLinkPress} rules={rules}>
@@ -70,29 +109,28 @@ function createMarkdownStyles(colors: ThemeColors, dimmed?: boolean) {
       flexShrink: 1,
     },
     heading1: {
-      ...TYPOGRAPHY.h2,
-      fontWeight: '600' as const,
+      ...TYPOGRAPHY.h1,
       color: textColor,
-      marginTop: SPACING.sm,
-      marginBottom: SPACING.xs,
+      marginTop: SPACING.md,
+      marginBottom: SPACING.sm,
     },
     heading2: {
       ...TYPOGRAPHY.h2,
       color: textColor,
-      marginTop: SPACING.sm,
+      marginTop: SPACING.md,
       marginBottom: SPACING.xs,
     },
     heading3: {
       ...TYPOGRAPHY.h3,
       fontWeight: '600' as const,
       color: textColor,
-      marginTop: SPACING.xs,
+      marginTop: SPACING.sm,
       marginBottom: 2,
     },
     heading4: {
       ...TYPOGRAPHY.h3,
       color: textColor,
-      marginTop: SPACING.xs,
+      marginTop: SPACING.sm,
       marginBottom: 2,
     },
     strong: {

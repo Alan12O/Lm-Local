@@ -168,7 +168,9 @@ const createThinkingStyles = (colors: ThemeColors) => ({
     fontStyle: 'italic' as const,
   },
   thinkingBlock: {
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: `${colors.primary}10`, // Tinted background
+    borderWidth: 0.5,
+    borderColor: colors.borderLight,
     borderRadius: 8,
     marginBottom: 8,
     overflow: 'hidden' as const,
@@ -222,8 +224,10 @@ const createThinkingStyles = (colors: ThemeColors) => ({
     fontStyle: 'italic' as const,
   },
   thinkingBlockContent: {
-    padding: SPACING.sm,
+    padding: SPACING.md,
     paddingTop: 0,
+    borderTopWidth: 0.5,
+    borderTopColor: colors.borderLight,
   },
   streamingThinkingHint: {
     marginTop: 8,

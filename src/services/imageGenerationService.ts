@@ -5,10 +5,7 @@ import { llmService } from './llm';
 import { useAppStore, useChatStore } from '../stores';
 import { GeneratedImage } from '../types';
 import logger from '../utils/logger';
-import { shouldShowSharePrompt, emitSharePrompt } from '../utils/sharePrompt';
 import { buildEnhancementMessages, getConversationContext, cleanEnhancedPrompt, buildImageGenMeta } from './imageGenerationHelpers';
-
-const SHARE_PROMPT_DELAY_MS = 2000;
 
 export interface ImageGenerationState {
   isGenerating: boolean;
@@ -98,11 +95,6 @@ class ImageGenerationService {
     if ('previewPath' in partial) appStore.setImagePreviewPath(this.state.previewPath);
   }
 
-  private _checkSharePrompt(): void {
-    if (useAppStore.getState().hasEngagedSharePrompt) return;
-    const count = useAppStore.getState().incrementImageGenerationCount();
-    if (shouldShowSharePrompt(count)) setTimeout(() => emitSharePrompt('image'), SHARE_PROMPT_DELAY_MS);
-  }
 
   private async _resetLlmAfterEnhancement(): Promise<void> {
     logger.log('[ImageGen] 🔄 Starting cleanup - generating:', llmService.isCurrentlyGenerating());
@@ -203,7 +195,6 @@ class ImageGenerationService {
     if (params.conversationId) result.conversationId = params.conversationId;
     useAppStore.getState().addGeneratedImage(result);
     useAppStore.getState().completeChecklistStep('triedImageGen');
-    this._checkSharePrompt();
     if (params.conversationId) {
       const genTime = Date.now() - meta.startTime;
       useChatStore.getState().addMessage(params.conversationId, {

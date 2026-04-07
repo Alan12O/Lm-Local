@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { AlertState, initialAlertState } from '../../components';
-import { useAppStore, useChatStore, useProjectStore, useRemoteServerStore } from '../../stores';
+import { useAppStore, useChatStore, useProjectStore, useRemoteServerStore, useCharacterStore } from '../../stores';
 import logger from '../../utils/logger';
 import {
   llmService, generationService, imageGenerationService, activeModelService,
@@ -78,9 +78,12 @@ export const useChatScreen = () => {
   } = useChatStore();
 
   const { projects, getProject } = useProjectStore();
+  const { getCharacter } = useCharacterStore();
   addMessageRef.current = addMessage;
 
   const activeConversation = conversations.find(c => c.id === activeConversationId);
+  const activeCharacter = activeConversation?.projectId ? getCharacter(activeConversation.projectId) : null;
+  const themeColor = activeCharacter?.themeColor;
 
   // Compute active model from either local or remote source
   const activeModelInfo = useMemo((): ActiveModelInfo => {
@@ -122,6 +125,7 @@ export const useChatScreen = () => {
   const imageModelLoaded = !!activeImageModel;
   const isGeneratingImage = imageGenState.isGenerating;
   const isStreamingForThisConversation = streamingForConversationId === activeConversationId;
+  const isCharacterMode = !!(activeConversation?.projectId && useCharacterStore.getState().getCharacter(activeConversation.projectId));
 
   const genDeps = {
     activeModelId: activeModelInfo.modelId, activeModel, activeModelInfo, hasActiveModel, activeConversationId, activeConversation, activeProject,
@@ -130,6 +134,7 @@ export const useChatScreen = () => {
     setAppIsGeneratingImage, addMessage, clearStreamingMessage, deleteConversation,
     setActiveConversation, removeImagesByConversationId, generatingForConversationRef, navigation, setShowSettingsPanel,
     ensureModelLoaded: async () => ensureModelLoadedFn(modelDeps),
+    isCharacterMode,
   };
 
   const modelDeps = {
@@ -197,10 +202,14 @@ export const useChatScreen = () => {
     await startGenerationFn(genDeps, { setDebugInfo, targetConversationId, messageText });
   };
   startGenerationRef.current = startGeneration;
-  const enabledTools = supportsToolCalling ? (settings.enabledTools || []) : [];
+  const toolsEnabled = settings.toolsEnabled ?? true;
+  const enabledTools = supportsToolCalling && toolsEnabled ? (settings.enabledTools || []) : [];
   const handleToggleTool = (toolId: string) => {
     const cur = settings.enabledTools || [];
     useAppStore.getState().updateSettings({ enabledTools: cur.includes(toolId) ? cur.filter((id: string) => id !== toolId) : [...cur, toolId] });
+  };
+  const handleToggleAllTools = (enabled: boolean) => {
+    useAppStore.getState().updateSettings({ toolsEnabled: enabled });
   };
   // Check if there are pending settings that require model reload
   const hasPendingSettings = (() => {
@@ -238,10 +247,11 @@ export const useChatScreen = () => {
     showScrollToBottom, setShowScrollToBottom,
     isClassifying, animateLastN, queueCount, queuedTexts,
     viewerImageUri, setViewerImageUri, imageGenState,
-    enabledTools, handleToggleTool,
+    toolsEnabled, enabledTools, handleToggleTool, handleToggleAllTools,
     activeModelId: activeModelInfo.modelId, activeConversationId, activeConversation, activeModel,
     activeModelInfo, hasActiveModel, activeRemoteModel, activeModelName,
     activeProject, activeImageModel, imageModelLoaded, isGeneratingImage,
+    themeColor,
     imageGenerationProgress: imageGenState.progress,
     imageGenerationStatus: imageGenState.status,
     imagePreviewPath: imageGenState.previewPath,
@@ -265,5 +275,7 @@ export const useChatScreen = () => {
       handleGenerateImageFromMsgFn(prompt, genDeps, { activeConversationId, activeImageModel, setAlertState }),
     handleImagePress: (uri: string) => setViewerImageUri(uri),
     handleSaveImage: () => saveImageToGallery(viewerImageUri, setAlertState),
+    isRemote: activeModelInfo.isRemote,
+    isCharacterMode,
   };
 };

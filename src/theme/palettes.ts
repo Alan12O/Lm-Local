@@ -15,16 +15,16 @@ export type ThemeShadows = {
 
 // ── Light palette ──────────────────────────────────────────────────
 export const COLORS_LIGHT = {
-  // Primary accent
-  primary: '#059669',
-  primaryDark: '#047857',
-  primaryLight: '#34D399',
+  // Primary accent (Crimson Red)
+  primary: '#D32F2F',
+  primaryDark: '#B71C1C',
+  primaryLight: '#EF5350',
 
   // Backgrounds
   background: '#FFFFFF',
-  surface: '#F5F5F5',
-  surfaceLight: '#EBEBEB',
-  surfaceHover: '#E0E0E0',
+  surface: '#FDFCFB',
+  surfaceLight: '#F5F4F0',
+  surfaceHover: '#EBEAE4',
 
   // Text hierarchy
   text: '#0A0A0A',
@@ -33,9 +33,9 @@ export const COLORS_LIGHT = {
   textDisabled: '#BFBFBF',
 
   // Borders
-  border: '#E5E5E5',
-  borderLight: '#D4D4D4',
-  borderFocus: '#059669',
+  border: 'rgba(0,0,0,0.12)',
+  borderLight: 'rgba(0,0,0,0.08)',
+  borderFocus: '#D32F2F',
 
   // Semantic colors
   success: '#525252',
@@ -51,27 +51,27 @@ export const COLORS_LIGHT = {
 
 // ── Dark palette ───────────────────────────────────────────────────
 export const COLORS_DARK = {
-  // Primary accent
-  primary: '#34D399',
-  primaryDark: '#10B981',
-  primaryLight: '#6EE7B7',
+  // Primary accent (Crimson Red)
+  primary: '#EF5350',
+  primaryDark: '#D32F2F',
+  primaryLight: '#E57373',
 
-  // Backgrounds
-  background: '#0A0A0A',
-  surface: '#141414',
-  surfaceLight: '#1E1E1E',
-  surfaceHover: '#252525',
+  // Backgrounds (Warm Blacks)
+  background: '#1A1A1A',
+  surface: '#222222',
+  surfaceLight: '#2C2C2C',
+  surfaceHover: '#363636',
 
   // Text hierarchy
-  text: '#FFFFFF',
-  textSecondary: '#B0B0B0',
-  textMuted: '#808080',
-  textDisabled: '#4A4A4A',
+  text: '#F1EFE8',
+  textSecondary: '#D4D2CB',
+  textMuted: '#A6A49E',
+  textDisabled: '#6E6D68',
 
   // Borders
-  border: '#1E1E1E',
-  borderLight: '#2A2A2A',
-  borderFocus: '#34D399',
+  border: 'rgba(255,255,255,0.1)',
+  borderLight: 'rgba(255,255,255,0.06)',
+  borderFocus: '#EF5350',
 
   // Semantic colors
   success: '#B0B0B0',
@@ -99,7 +99,7 @@ export const SHADOWS_LIGHT: ThemeShadows = {
     boxShadow: '0px 4px 18px 0px rgba(0,0,0,0.35)',
   },
   glow: {
-    boxShadow: '0px 0px 12px 0px rgba(5,150,105,0.25)',
+    boxShadow: '0px 0px 12px 0px rgba(37,99,235,0.25)',
   },
 };
 
@@ -115,7 +115,7 @@ export const SHADOWS_DARK: ThemeShadows = {
     boxShadow: '0px 0px 10px 0px rgba(255,255,255,0.25)',
   },
   glow: {
-    boxShadow: '0px 0px 8px 0px rgba(52,211,153,0.30)',
+    boxShadow: '0px 0px 8px 0px rgba(96,165,250,0.30)',
   },
 };
 
@@ -129,17 +129,17 @@ export function createElevation(colors: ThemeColors) {
     },
     level1: {
       backgroundColor: colors.surface,
-      borderWidth: 1,
+      borderWidth: 0.5,
       borderColor: colors.border,
     },
     level2: {
       backgroundColor: colors.surfaceLight,
-      borderWidth: 1,
+      borderWidth: 0.5,
       borderColor: colors.borderLight,
     },
     level3: {
       backgroundColor: `${colors.surface}F2`,
-      borderTopWidth: 1,
+      borderTopWidth: 0.5,
       borderColor: colors.borderLight,
       borderRadius: 16,
       blur: {
@@ -149,7 +149,7 @@ export function createElevation(colors: ThemeColors) {
     },
     level4: {
       backgroundColor: `${colors.surface}FA`,
-      borderTopWidth: 1,
+      borderTopWidth: 0.5,
       borderColor: colors.primary,
       borderRadius: 16,
       blur: {

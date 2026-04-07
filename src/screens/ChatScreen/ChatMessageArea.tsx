@@ -40,6 +40,7 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
           activeProject={chat.activeProject}
           setShowProjectSelector={chat.setShowProjectSelector}
           isRemote={chat.activeModelInfo?.isRemote}
+          onQuickAction={(text) => chat.handleSend(text)}
         />
       ) : (
         <FlatList
@@ -115,16 +116,19 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
             onClearQueue={() => generationService.clearQueue()}
             placeholder={getPlaceholderText(chat.hasActiveModel, chat.supportsVision)}
             onToolsPress={() => chat.setShowToolPicker(true)}
-            enabledToolCount={chat.enabledTools.length}
+            enabledToolCount={chat.toolsEnabled ? chat.enabledTools.length : 0}
             supportsToolCalling={chat.supportsToolCalling}
             supportsThinking={chat.supportsThinking}
             activeSpotlight={chatSpotlight === 12 ? chatSpotlight : null}
+            isCharacterMode={chat.isCharacterMode}
           />
         </AttachStep>
       </View>
       <ToolPickerSheet
         visible={chat.showToolPicker}
         onClose={() => chat.setShowToolPicker(false)}
+        toolsEnabled={chat.toolsEnabled}
+        onToggleAllTools={chat.handleToggleAllTools}
         enabledTools={chat.enabledTools}
         onToggleTool={chat.handleToggleTool}
       />

@@ -74,14 +74,21 @@ class ModelManager {
     const model = models.find(m => m.id === modelId);
 
     if (!model) throw new Error('Model not found');
-    if (!model.filePath.startsWith(this.modelsDir)) {
-      throw new Error('Invalid model path: outside app directory');
+
+    const isInternalFile = model.filePath.startsWith(this.modelsDir);
+    const isMmProjInternal = !model.mmProjPath || model.mmProjPath.startsWith(this.modelsDir);
+
+    if (isInternalFile) {
+      // Archivo gestionado por la app (descargado o copiado) → borrar físicamente
+      await RNFS.unlink(model.filePath);
     }
-    if (model.mmProjPath && !model.mmProjPath.startsWith(this.modelsDir)) {
-      throw new Error('Invalid mmproj path: outside app directory');
+    // Si NO es interno (archivo importado desde Descargas u otro directorio externo),
+    // solo quitamos el registro sin tocar el archivo del usuario.
+
+    if (model.mmProjPath && isMmProjInternal) {
+      await RNFS.unlink(model.mmProjPath).catch(() => {});
     }
-    await RNFS.unlink(model.filePath);
-    if (model.mmProjPath) await RNFS.unlink(model.mmProjPath).catch(() => {});
+
     await saveModelsList(models.filter(m => m.id !== modelId));
   }
 

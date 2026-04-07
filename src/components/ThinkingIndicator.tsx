@@ -1,63 +1,111 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+  withRepeat,
+  Easing,
+} from 'react-native-reanimated';
 import { useTheme } from '../theme';
 
 interface ThinkingIndicatorProps {
   text?: string;
   textStyle?: any;
+  themeColor?: string;
 }
 
+const SHAPE_SIZE = 24;
+
 export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
-  text = 'Thinking...',
-  textStyle
+  text,
+  textStyle,
+  themeColor
 }) => {
   const { colors } = useTheme();
-  const dot1Anim = useRef(new Animated.Value(0.3)).current;
-  const dot2Anim = useRef(new Animated.Value(0.3)).current;
-  const dot3Anim = useRef(new Animated.Value(0.3)).current;
+  const color = themeColor || colors.primary;
+
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    const duration = 400;
-    const sequence = Animated.loop(
-      Animated.sequence([
-        Animated.timing(dot1Anim, { toValue: 1, duration, useNativeDriver: true }),
-        Animated.timing(dot1Anim, { toValue: 0.3, duration, useNativeDriver: true }),
-      ])
+    progress.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 1200, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
     );
-    const sequence2 = Animated.loop(
-      Animated.sequence([
-        Animated.delay(150),
-        Animated.timing(dot2Anim, { toValue: 1, duration, useNativeDriver: true }),
-        Animated.timing(dot2Anim, { toValue: 0.3, duration, useNativeDriver: true }),
-      ])
-    );
-    const sequence3 = Animated.loop(
-      Animated.sequence([
-        Animated.delay(300),
-        Animated.timing(dot3Anim, { toValue: 1, duration, useNativeDriver: true }),
-        Animated.timing(dot3Anim, { toValue: 0.3, duration, useNativeDriver: true }),
-      ])
-    );
-    sequence.start();
-    sequence2.start();
-    sequence3.start();
-
-    return () => {
-      sequence.stop();
-      sequence2.stop();
-      sequence3.stop();
-    };
-
   }, []);
+
+  const leftStyle = useAnimatedStyle(() => {
+    const shiftX = progress.value * -6;
+    const shiftY = progress.value * 2;
+    const rotate = progress.value * -15;
+    return {
+      transform: [
+        { translateX: shiftX },
+        { translateY: shiftY },
+        { rotate: `${rotate}deg` }
+      ]
+    };
+  });
+
+  const rightStyle = useAnimatedStyle(() => {
+    const shiftX = progress.value * 6;
+    const shiftY = progress.value * 2;
+    const rotate = progress.value * 15;
+    return {
+      transform: [
+        { translateX: shiftX },
+        { translateY: shiftY },
+        { rotate: `${rotate}deg` }
+      ]
+    };
+  });
+
+  const crossStyle = useAnimatedStyle(() => {
+    const shiftY = progress.value * 6;
+    const scaleX = 1 - (progress.value * 0.5);
+    return {
+      transform: [
+        { translateY: shiftY },
+        { scaleX }
+      ]
+    };
+  });
+
+  const lineThickness = 2.5;
+  const lineLength = 18;
 
   return (
     <View style={styles.thinkingContainer}>
-      <View style={styles.thinkingDots}>
-        <Animated.View style={[styles.thinkingDot, { opacity: dot1Anim, backgroundColor: colors.primary }]} />
-        <Animated.View style={[styles.thinkingDot, { opacity: dot2Anim, backgroundColor: colors.primary }]} />
-        <Animated.View style={[styles.thinkingDot, { opacity: dot3Anim, backgroundColor: colors.primary }]} />
+      <View style={[styles.logoContainer, { width: SHAPE_SIZE, height: SHAPE_SIZE }]}>
+        <Animated.View style={[styles.lineWrapper, { left: 6, bottom: 2, height: lineLength, justifyContent: 'flex-end' }, leftStyle]}>
+          <View style={[styles.line, { 
+            width: lineThickness, height: lineLength, 
+            backgroundColor: color,
+            transform: [{ rotate: '25deg' }, { translateY: 0 }] 
+          }]} />
+        </Animated.View>
+
+        <Animated.View style={[styles.lineWrapper, { right: 6, bottom: 2, height: lineLength, justifyContent: 'flex-end' }, rightStyle]}>
+          <View style={[styles.line, { 
+            width: lineThickness, height: lineLength, 
+            backgroundColor: color,
+            transform: [{ rotate: '-25deg' }, { translateY: 0 }] 
+          }]} />
+        </Animated.View>
+
+        <Animated.View style={[styles.lineWrapper, { top: 12, left: '50%', marginLeft: -4 }, crossStyle]}>
+          <View style={[styles.line, { 
+            width: 8, height: lineThickness, 
+            backgroundColor: color 
+          }]} />
+        </Animated.View>
       </View>
-      <Text style={[styles.thinkingText, { color: colors.textSecondary }, textStyle]}>{text}</Text>
+      {text && <Text style={[styles.thinkingText, { color: colors.textSecondary }, textStyle]}>{text}</Text>}
     </View>
   );
 };
@@ -66,16 +114,19 @@ const styles = StyleSheet.create({
   thinkingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginVertical: 4,
   },
-  thinkingDots: {
-    flexDirection: 'row',
+  logoContainer: {
     marginRight: 8,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  thinkingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginHorizontal: 2,
+  lineWrapper: {
+    position: 'absolute',
+  },
+  line: {
+    borderRadius: 2,
   },
   thinkingText: {
     fontSize: 12,
