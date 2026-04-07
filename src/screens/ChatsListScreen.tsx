@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, CompositeNavigationProp } from '@react-navigation/native';
+import { useNavigation, CompositeNavigationProp, DrawerActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
@@ -62,20 +62,27 @@ export const ChatsListScreen: React.FC = () => {
 
   const handleNewChat = () => {
     if (!hasModels) {
-      setAlertState(showAlert('No Model', 'Please download a model or add a remote server first.'));
+      setAlertState(showAlert('Sin modelo', 'Por favor, descarga un modelo o añade un servidor remoto primero.'));
       return;
     }
-    navigation.navigate('Chat', {});
+    const existingEmpty = conversations.find(c => c.messages.length === 0 && !c.isIncognito);
+    if (existingEmpty) {
+      setActiveConversation(existingEmpty.id);
+      navigation.navigate('Chat', { conversationId: existingEmpty.id });
+    } else {
+      navigation.navigate('Chat', {});
+    }
   };
+
 
   const handleDeleteChat = (conversation: Conversation) => {
     setAlertState(showAlert(
-      'Delete Chat',
-      `Delete "${conversation.title}"? This will also delete all images generated in this chat.`,
+      'Eliminar chat',
+      `¿Eliminar "${conversation.title}"? Esto también eliminará todas las imágenes generadas en este chat.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Eliminar',
           style: 'destructive',
           onPress: () => {
             setAlertState(hideAlert());
@@ -98,7 +105,7 @@ export const ChatsListScreen: React.FC = () => {
     if (diffDays === 0) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else if (diffDays === 1) {
-      return 'Yesterday';
+      return 'Ayer';
     } else if (diffDays < 7) {
       return date.toLocaleDateString([], { weekday: 'short' });
     } 
@@ -141,7 +148,7 @@ export const ChatsListScreen: React.FC = () => {
             </View>
             {lastMessage && (
               <Text style={styles.chatPreview} numberOfLines={1}>
-                {lastMessage.role === 'user' ? 'You: ' : ''}{lastMessage.content}
+                {lastMessage.role === 'user' ? 'Tú: ' : ''}{lastMessage.content}
               </Text>
             )}
             {project && (
@@ -164,10 +171,18 @@ export const ChatsListScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Chats</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity 
+            style={{ marginRight: 16 }} 
+            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+          >
+            <Icon name="menu" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Chats</Text>
+        </View>
         <AttachStep index={[2, 14]}>
           <Button
-            title="New"
+            title="Nuevo"
             variant="primary"
             size="small"
             onPress={handleNewChat}
@@ -185,19 +200,19 @@ export const ChatsListScreen: React.FC = () => {
             </View>
           </AnimatedEntry>
           <AnimatedEntry index={1} staggerMs={60} trigger={focusTrigger}>
-            <Text style={styles.emptyTitle}>No Chats Yet</Text>
+            <Text style={styles.emptyTitle}>Sin chats aún</Text>
           </AnimatedEntry>
           <AnimatedEntry index={2} staggerMs={60} trigger={focusTrigger}>
             <Text style={styles.emptyText}>
               {hasModels
-                ? 'Start a new conversation to begin chatting with your local AI.'
-                : 'Download a model from the Models tab to start chatting.'}
+                ? 'Inicia una nueva conversación para empezar a chatear con tu IA local.'
+                : 'Descarga un modelo desde la pestaña de Modelos para empezar a chatear.'}
             </Text>
           </AnimatedEntry>
           {hasModels && (
             <AnimatedListItem index={3} staggerMs={60} trigger={focusTrigger} hapticType="impactLight" style={styles.emptyButton} onPress={handleNewChat}>
               <Icon name="plus" size={18} color={colors.primary} />
-              <Text style={styles.emptyButtonText}>New Chat</Text>
+              <Text style={styles.emptyButtonText}>Nuevo chat</Text>
             </AnimatedListItem>
           )}
         </View>

@@ -24,10 +24,16 @@ export const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props
   );
 
   const handleNewChat = () => {
-    setActiveConversation(null);
+    const existingEmpty = conversations.find(c => c.messages.length === 0 && !c.isIncognito);
+    if (existingEmpty) {
+      setActiveConversation(existingEmpty.id);
+    } else {
+      setActiveConversation(null);
+    }
     navigation.navigate('HomeTab');
     navigation.closeDrawer();
   };
+
 
   const handleChatPress = (conversation: Conversation) => {
     setActiveConversation(conversation.id);
@@ -58,14 +64,14 @@ export const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props
         {/* New Chat Button */}
         <TouchableOpacity style={styles.newChatBtn} onPress={handleNewChat}>
           <Icon name="plus" size={18} color={colors.background} />
-          <Text style={styles.newChatText}>New chat</Text>
+          <Text style={styles.newChatText}>Nuevo chat</Text>
         </TouchableOpacity>
 
         {/* History Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recents</Text>
+          <Text style={styles.sectionTitle}>Recientes</Text>
           {sortedConversations.length === 0 ? (
-            <Text style={styles.emptyText}>No chats yet</Text>
+            <Text style={styles.emptyText}>Sin chats aún</Text>
           ) : (
             sortedConversations.slice(0, 15).map((chat) => (
               <Swipeable
@@ -90,23 +96,23 @@ export const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props
         <View style={styles.section}>
           <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Projects')}>
             <Icon name="folder" size={16} color={colors.textSecondary} />
-            <Text style={styles.navItemText}>Projects</Text>
+            <Text style={styles.navItemText}>Proyectos</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('ModelsTab')}>
             <Icon name="cpu" size={16} color={colors.textSecondary} />
-            <Text style={styles.navItemText}>Models</Text>
+            <Text style={styles.navItemText}>Modelos</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('RemoteServers')}>
             <Icon name="cloud" size={16} color={colors.textSecondary} />
-            <Text style={styles.navItemText}>Remote Models</Text>
+            <Text style={styles.navItemText}>Modelos Remotos</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('ArtifactsTab')}>
             <Icon name="layers" size={16} color={colors.textSecondary} />
-            <Text style={styles.navItemText}>Artifacts</Text>
+            <Text style={styles.navItemText}>Artefactos</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Characters')}>
             <Icon name="users" size={16} color={colors.textSecondary} />
-            <Text style={styles.navItemText}>Characters</Text>
+            <Text style={styles.navItemText}>Personajes</Text>
           </TouchableOpacity>
         </View>
       </DrawerContentScrollView>
@@ -117,7 +123,7 @@ export const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>U</Text>
           </View>
-          <Text style={styles.footerItemText}>Settings & Profile</Text>
+          <Text style={styles.footerItemText}>Ajustes y Perfil</Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -46,12 +46,13 @@ interface ChatState {
   // Current message being streamed
   streamingMessage: string;
   streamingReasoningContent: string;
+  isThinkingBlock: boolean; // True when currently parsing a <think> block
   streamingForConversationId: string | null; // Which conversation is being generated for
   isStreaming: boolean;
   isThinking: boolean; // True when processing prompt, before first token
 
   // Actions
-  createConversation: (modelId: string, title?: string, projectId?: string) => string;
+  createConversation: (modelId: string, title?: string, projectId?: string, isIncognito?: boolean) => string;
   deleteConversation: (conversationId: string) => void;
   setActiveConversation: (conversationId: string | null) => void;
   getActiveConversation: () => Conversation | null;
@@ -71,9 +72,10 @@ interface ChatState {
   appendToStreamingReasoningContent: (token: string) => void;
   setIsStreaming: (streaming: boolean) => void;
   setIsThinking: (thinking: boolean) => void;
+  setIsThinkingBlock: (thinkingBlock: boolean) => void;
   finalizeStreamingMessage: (conversationId: string, generationTimeMs?: number, generationMeta?: GenerationMeta) => void;
   clearStreamingMessage: () => void;
-  getStreamingState: () => { conversationId: string | null; content: string; reasoningContent: string; isStreaming: boolean; isThinking: boolean };
+  getStreamingState: () => { conversationId: string | null; content: string; reasoningContent: string; isStreaming: boolean; isThinking: boolean; isThinkingBlock: boolean };
 
   // Compaction
   updateCompactionState: (conversationId: string, summary?: string, cutoffMessageId?: string) => void;
@@ -90,11 +92,25 @@ export const useChatStore = create<ChatState>()(
       activeConversationId: null,
       streamingMessage: '',
       streamingReasoningContent: '',
+      isThinkingBlock: false,
       streamingForConversationId: null,
       isStreaming: false,
       isThinking: false,
 
-      createConversation: (modelId, title, projectId) => {
+      createConversation: (modelId, title, projectId, isIncognito) => {
+        const state = get();
+        const existingEmpty = state.conversations.find(
+          (c) =>
+            c.messages.length === 0 &&
+            !!c.isIncognito === !!isIncognito &&
+            c.projectId === projectId
+        );
+
+        if (existingEmpty) {
+          set({ activeConversationId: existingEmpty.id });
+          return existingEmpty.id;
+        }
+
         const id = generateId();
         const conversation: Conversation = {
           id,
@@ -104,6 +120,7 @@ export const useChatStore = create<ChatState>()(
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           projectId: projectId,
+          isIncognito: !!isIncognito,
         };
 
         set((state) => ({
@@ -115,6 +132,7 @@ export const useChatStore = create<ChatState>()(
 
         return id;
       },
+
 
       deleteConversation: (conversationId) => {
         set((state) => ({
@@ -257,10 +275,8 @@ export const useChatStore = create<ChatState>()(
         set({ isStreaming: streaming, isThinking: false });
       },
 
-      setIsThinking: (thinking) => {
-        set({ isThinking: thinking });
-      },
-
+      setIsThinking: (thinking) => set({ isThinking: thinking }),
+      setIsThinkingBlock: (thinkingBlock) => set({ isThinkingBlock: thinkingBlock }),
       finalizeStreamingMessage: (conversationId, generationTimeMs, generationMeta) => {
         const { streamingMessage, streamingReasoningContent, streamingForConversationId, addMessage } = get();
         // Only finalize if this is the conversation we were generating for
@@ -302,6 +318,7 @@ export const useChatStore = create<ChatState>()(
           reasoningContent: state.streamingReasoningContent,
           isStreaming: state.isStreaming,
           isThinking: state.isThinking,
+          isThinkingBlock: state.isThinkingBlock,
         };
       },
 
@@ -333,8 +350,12 @@ export const useChatStore = create<ChatState>()(
       name: 'local-llm-chat-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        conversations: state.conversations,
-        activeConversationId: state.activeConversationId,
+        // Filter out incognito conversations from persistence
+        conversations: state.conversations.filter((c: Conversation) => !c.isIncognito),
+        activeConversationId: (() => {
+          const active = state.conversations.find(c => c.id === state.activeConversationId);
+          return active?.isIncognito ? null : state.activeConversationId;
+        })(),
       }),
     }
   )

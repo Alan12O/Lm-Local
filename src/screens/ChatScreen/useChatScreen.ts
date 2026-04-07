@@ -51,6 +51,8 @@ export const useChatScreen = () => {
   const [supportsToolCalling, setSupportsToolCalling] = useState(false);
   const [supportsThinking, setSupportsThinking] = useState(false);
   const [isCompacting, setIsCompacting] = useState(false);
+  const [isIncognito, setIsIncognito] = useState(false);
+  const [showIncognitoToast, setShowIncognitoToast] = useState(false);
   const lastMessageCountRef = useRef(0);
   const generatingForConversationRef = useRef<string | null>(null);
   const modelLoadStartTimeRef = useRef<number | null>(null);
@@ -73,7 +75,7 @@ export const useChatScreen = () => {
   const {
     activeConversationId, conversations, createConversation, addMessage,
     updateMessageContent, deleteMessagesAfter, streamingMessage, streamingReasoningContent,
-    streamingForConversationId, isStreaming, isThinking, clearStreamingMessage,
+    isThinkingBlock, streamingForConversationId, isStreaming, isThinking, clearStreamingMessage,
     deleteConversation, setActiveConversation, setConversationProject,
   } = useChatStore();
 
@@ -132,7 +134,7 @@ export const useChatScreen = () => {
     activeImageModel, imageModelLoaded, isStreaming, isGeneratingImage, imageGenState, settings,
     downloadedModels, setAlertState, setIsClassifying, setAppImageGenerationStatus,
     setAppIsGeneratingImage, addMessage, clearStreamingMessage, deleteConversation,
-    setActiveConversation, removeImagesByConversationId, generatingForConversationRef, navigation, setShowSettingsPanel,
+    setActiveConversation, removeImagesByConversationId, generatingForConversationRef, navigation, setShowSettingsPanel, setShowModelSelector,
     ensureModelLoaded: async () => ensureModelLoadedFn(modelDeps),
     isCharacterMode,
   };
@@ -169,11 +171,16 @@ export const useChatScreen = () => {
 
   useEffect(() => {
     const { conversationId, projectId } = route.params || {};
-    if (conversationId) { setActiveConversation(conversationId); }
-    // Use modelId from activeModelInfo for both local and remote models
-    else if (activeModelInfo.modelId) { createConversation(activeModelInfo.modelId, undefined, projectId); }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route.params?.conversationId, route.params?.projectId]);
+    if (conversationId) {
+      setActiveConversation(conversationId);
+    } else if (!activeConversationId && activeModelInfo.modelId) {
+      // Create or reuse an existing empty conversation
+      const newId = createConversation(activeModelInfo.modelId, undefined, projectId, isIncognito);
+      // Sync navigation params to ensure consistency
+      navigation.setParams({ conversationId: newId } as any);
+    }
+  }, [route.params?.conversationId, route.params?.projectId, activeModelInfo.modelId, activeConversationId, setActiveConversation, createConversation, isIncognito, navigation]);
+
 
   useEffect(() => {
     if (generatingForConversationRef.current && generatingForConversationRef.current !== activeConversationId) {
@@ -186,10 +193,23 @@ export const useChatScreen = () => {
     return () => { cancelled = true; clearTimeout(timer); };
   }, [activeConversationId]);
 
+  // Clean up incognito conversations on unmount
+  useEffect(() => {
+    return () => {
+      const activeId = useChatStore.getState().activeConversationId;
+      if (activeId) {
+        const conv = useChatStore.getState().conversations.find(c => c.id === activeId);
+        if (conv?.isIncognito) {
+          useChatStore.getState().deleteConversation(activeId);
+        }
+      }
+    };
+  }, []);
+
   useChatImageModelEffects({ setDownloadedImageModels, settings, activeImageModelId, downloadedModels });
   useChatModelStateSync({ activeModelInfo, activeModelId, activeModel, modelDeps, activeRemoteModel, activeRemoteTextModelId, isModelLoading, setSupportsVision, setSupportsToolCalling, setSupportsThinking });
 
-  const displayMessages = getDisplayMessages(activeConversation?.messages || [], { isThinking, streamingMessage, streamingReasoningContent, isStreamingForThisConversation });
+  const displayMessages = getDisplayMessages(activeConversation?.messages || [], { isThinking, streamingMessage, streamingReasoningContent, isStreamingForThisConversation, isThinkingBlock });
 
   useEffect(() => {
     const prev = lastMessageCountRef.current, curr = displayMessages.length;
@@ -257,6 +277,29 @@ export const useChatScreen = () => {
     imagePreviewPath: imageGenState.previewPath,
     isStreaming, isThinking, isCompacting, hasPendingSettings, handleReloadTextModel, displayMessages, downloadedModels, projects, settings,
     navigation, hardwareService,
+    isIncognito: activeConversation?.isIncognito ?? isIncognito,
+    showIncognitoToast,
+    handleToggleIncognito: (val: boolean) => {
+      setIsIncognito(val);
+      if (activeModelInfo.modelId) {
+        // Auto-routing: reuse existing or start new conversation of the target type
+        const newId = createConversation(
+          activeModelInfo.modelId as string, 
+          undefined, 
+          activeProject?.id || undefined, 
+          val
+        );
+        
+        // Sync navigation params so the UI reacts to the specific conversation ID
+        navigation.setParams({ conversationId: newId } as any);
+
+        if (val) {
+          setShowIncognitoToast(true);
+          setTimeout(() => setShowIncognitoToast(false), 1200);
+        }
+      }
+    },
+
     handleSend: (text: string, attachments?: MediaAttachment[], imageMode?: 'auto' | 'force' | 'disabled') =>
       handleSendFn(genDeps, { text, attachments, imageMode, startGeneration, setDebugInfo }),
     handleStop: () => handleStopFn(genDeps),
