@@ -131,6 +131,7 @@ android {
         }
         doNotStrip "**/*ggml-htp*.so"
         doNotStrip "**/*ggml-QNN*.so"
+        doNotStrip "**/*stable_diffusion_core*.so"
     }
     aaptOptions {
         // Prevent AAPT from compressing .gguf model files — they must be copied byte-for-byte
