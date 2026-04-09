@@ -34,7 +34,8 @@ class LLMService {
   private multimodalSupport: MultimodalSupport | null = null;
   private multimodalInitialized: boolean = false;
   private performanceStats: LLMPerformanceStats = { lastTokensPerSecond: 0, lastDecodeTokensPerSecond: 0, lastTimeToFirstToken: 0, lastGenerationTime: 0, lastTokenCount: 0 };
-  private currentSettings: LLMPerformanceSettings = { nThreads: Platform.OS === 'android' ? 6 : 4, nBatch: 512, contextLength: 2048 };
+  // 4 threads pineados a big cores (cpu_mask='4-7') supera a 6 threads mezclados en Snapdragon 8 Gen 3.
+  private currentSettings: LLMPerformanceSettings = { nThreads: 4, nBatch: 512, contextLength: 2048 };
   private gpuEnabled: boolean = false;
   private gpuReason: string = '';
   private gpuDevices: string[] = [];
@@ -150,8 +151,13 @@ class LLMService {
   supportsToolCalling(): boolean { return this.toolCallingSupported; }
   supportsThinking(): boolean { return this.thinkingSupported; }
   isThinkingEnabled(): boolean { return this.thinkingSupported && useAppStore.getState().settings.thinkingEnabled; }
-  /** Disable ctx_shift on Android when GPU layers are active — the OpenCL backend SIGSEGVs on the ggml set op used by KV cache shifting. */
-  private shouldDisableCtxShift(): boolean { return Platform.OS === 'android' && this.activeGpuLayers > 0; }
+  /**
+   * Deshabilitar ctx_shift SOLO cuando hay más de 1 capa GPU activa en modo OpenCL puro.
+   * Con 1 capa (trigger de Hexagon HTP), el KV cache shift funciona correctamente porque
+   * el backend hexagon_opencl usa el DSP para GEMM y no hereda el SIGSEGV del set-op de Adreno.
+   * Deshabilitar con >= 2 capas mantiene compatibilidad con cualquier config de OpenCL puro.
+   */
+  private shouldDisableCtxShift(): boolean { return Platform.OS === 'android' && this.activeGpuLayers > 1; }
   private detectToolCallingSupport(): void {
     if (!this.context) { this.toolCallingSupported = false; return; }
     try {
@@ -195,16 +201,21 @@ class LLMService {
       
       // Session caching: try to load previous state
       await this.ensureSessionCacheDir();
-      let loadedSession = false;
       if (oaiMessages.length > 1) {
-        const prevMsgsStr = JSON.stringify(oaiMessages.slice(0, oaiMessages.length - 1));
+        // Optimización: Solo serializar contenido relevante para el hash
+        // El hash debe representar el estado EXACTO antes de este mensaje
+        // Para ahorrar CPU, si la conversación es larga, podríamos usar un sistema de prefijos
+        // por ahora, simplemente evitamos stringify si podemos o lo hacemos más ligero.
+        const prevMsgsStr = oaiMessages.slice(0, oaiMessages.length - 1)
+          .map(m => `${m.role}:${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}`)
+          .join('|');
+          
         const prevHash = this.hashString(prevMsgsStr);
         const loadPath = this.getSessionPath(prevHash);
         if (await RNFS.exists(loadPath)) {
           try {
             await (ctx as any).loadSession(loadPath);
             logger.log(`[LLM] Loaded session cache for hash ${prevHash}`);
-            loadedSession = true;
           } catch (e) {
             logger.warn(`[LLM] Failed to load session:`, e);
           }
@@ -215,7 +226,11 @@ class LLMService {
       const startTime = Date.now();
       let firstTokenMs = 0, tokenCount = 0, firstReceived = false;
       let fullContent = '', fullReasoningContent = '', streamedContentSoFar = '', streamedReasoningSoFar = '';
-      const completionParams = { messages: oaiMessages, ...buildCompletionParams(settings, { disableCtxShift: this.shouldDisableCtxShift() }), ...buildThinkingCompletionParams(this.isThinkingEnabled()) };
+      const completionParams = { 
+        messages: oaiMessages, 
+        ...buildCompletionParams(settings, { disableCtxShift: this.shouldDisableCtxShift() }), 
+        ...buildThinkingCompletionParams(this.isThinkingEnabled(), settings.thinkingLevel) 
+      };
       const completionResult = await safeCompletion(ctx, () => ctx.completion(completionParams, (data: any) => {
         if (!this.isGenerating || !data.token) return;
         if (!firstReceived) { firstReceived = true; firstTokenMs = Date.now() - startTime; }
@@ -236,15 +251,18 @@ class LLMService {
       
       // Save session cache for the new state
       const newAssistantMsg = { role: 'assistant', content: result.content };
-      const newMsgsStr = JSON.stringify([...oaiMessages, newAssistantMsg]);
+      const newMsgsStr = [...oaiMessages, newAssistantMsg]
+          .map(m => `${m.role}:${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}`)
+          .join('|');
       const newHash = this.hashString(newMsgsStr);
       const savePath = this.getSessionPath(newHash);
-      try {
-        await (ctx as any).saveSession(savePath);
+      
+      // No bloqueamos el flujo principal para guardar la sesión
+      (ctx as any).saveSession(savePath).then(() => {
         logger.log(`[LLM] Saved session cache to hash ${newHash}`);
-      } catch (e) {
+      }).catch((e: any) => {
         logger.warn(`[LLM] Failed to save session:`, e);
-      }
+      });
 
       onComplete?.(result);
       return result.content;

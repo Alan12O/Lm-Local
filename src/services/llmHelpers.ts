@@ -10,20 +10,28 @@ import logger from '../utils/logger';
 export const SYSTEM_PROMPT_RESERVE = 256;
 export const RESPONSE_RESERVE = 512;
 export const CONTEXT_SAFETY_MARGIN = 0.85;
-const DEFAULT_THREADS = 4; // targets performance cores only; over-threading onto efficiency cores (A520) hurts
+const DEFAULT_THREADS = 4;
 const DEFAULT_BATCH = 512;
-export const DEFAULT_GPU_LAYERS = Platform.OS === 'ios' ? 99 : 0;
+// Android: forzar al menos 1 capa GPU para que el JNI cargue la variante hexagon_opencl
+// (rnllama_jni_v8_2_dotprod_i8mm_hexagon_opencl), que en Snapdragon 8 Gen 3 usa el HTP.
+export const DEFAULT_GPU_LAYERS = Platform.OS === 'ios' ? 99 : 1;
+/**
+ * CPU mask para Snapdragon 8 Gen 3:
+ *  cores 0-3 = Cortex-A520 (eficiencia) → excluidos
+ *  cores 4-6 = Cortex-A720 (rendimiento medio) → incluidos
+ *  core  7   = Cortex-X4  (rendimiento pico)   → incluido
+ * Evitar cores 0-3 reduce térmicos y mejora tokens/s.
+ */
+const SNAPDRAGON_BIG_CORE_MASK = '4-7';
 export function getOptimalThreadCount(): number { return DEFAULT_THREADS; }
 export function getOptimalBatchSize(): number {
   const ramGB = hardwareService.getTotalMemoryGB();
   if (ramGB > 0 && ramGB < 6) return 256;
   return DEFAULT_BATCH;
 }
-const REPACKABLE_QUANTS = ['q4_0', 'iq4_nl'];
-/** Detect repackable quant formats where disabling mmap improves inference speed. */
-export function shouldDisableMmap(modelPath: string): boolean {
-  if (Platform.OS !== 'android') return false;
-  return REPACKABLE_QUANTS.some(q => modelPath.toLowerCase().includes(q));
+/** @deprecated Siempre false: mmap está forzado en todos los modelos para aprovechar UFS 4.0. */
+export function shouldDisableMmap(_modelPath: string): boolean {
+  return false;
 }
 export function hashString(str: string): string {
   let hash = 0;
@@ -64,15 +72,35 @@ export function buildModelParams(
   const useFlashAttn = settings.flashAttn ?? true;
   const gpuEnabled = settings.enableGpu !== false;
   const nGpuLayers = gpuEnabled ? (settings.gpuLayers ?? DEFAULT_GPU_LAYERS) : 0;
-  // Quantized KV cache requires flash_attn; Android GPU only supports f16.
+  // KV cache cuantizado requiere flash_attn. En Android con GPU usamos f16 para compatibilidad segura.
   const requestedCache = settings.cacheType || (useFlashAttn ? 'q8_0' : 'f16');
   const needsF16 = !useFlashAttn || (Platform.OS === 'android' && nGpuLayers > 0);
   const cacheType = needsF16 && requestedCache !== 'f16' ? 'f16' : requestedCache;
+
+  // flash_attn_type (API nueva) vs flash_attn (legacy bool). Usar el nuevo cuando esté disponible.
+  const flashAttnType = useFlashAttn ? 'fa-f16' : 'none';
+
+  // En Android, pinear hilos a cores de rendimiento para mejorar throughput y reducir térmicos.
+  const cpuMask = Platform.OS === 'android' ? SNAPDRAGON_BIG_CORE_MASK : undefined;
+
   return {
     baseParams: {
-      model: modelPath, use_mlock: false, n_batch: nBatch, n_ubatch: nBatch, n_threads: nThreads,
-      use_mmap: !shouldDisableMmap(modelPath), vocab_only: false, flash_attn: useFlashAttn,
-      cache_type_k: cacheType, cache_type_v: cacheType,
+      model: modelPath,
+      use_mlock: false,
+      n_batch: nBatch,
+      n_ubatch: nBatch,
+      n_threads: nThreads,
+      use_mmap: !shouldDisableMmap(modelPath),
+      vocab_only: false,
+      // Usar flash_attn_type (nuevo) y flash_attn (legacy) para compatibilidad total
+      flash_attn_type: flashAttnType,
+      flash_attn: useFlashAttn,
+      cache_type_k: cacheType,
+      cache_type_v: cacheType,
+      // Pinear hilos a cores de rendimiento en Snapdragon
+      ...(cpuMask ? { cpu_mask: cpuMask } : {}),
+      // kv_unified=false mejora el rendimiento cuando n_seq_max=1 (chat normal)
+      kv_unified: false,
     },
     nThreads, nBatch, ctxLen, nGpuLayers,
   };
@@ -82,8 +110,11 @@ export interface ContextInitResult {
   gpuAttemptFailed: boolean;
   actualLength: number;
 }
-/** Timeout for GPU context init on Android -- bail before OS triggers ANR. */
-const GPU_INIT_TIMEOUT_MS = 8000;
+/** Timeout para init del contexto GPU en Android.
+ * Se usa 12s (en vez de 8s) porque el DSP Hexagon tiene handshake adicional
+ * en el primer arranque (carga del skel desde /vendor/lib/rfsa/adsp/).
+ */
+const GPU_INIT_TIMEOUT_MS = 12000;
 /** Race a promise against a timeout; rejects with descriptive error on expiry. */
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
@@ -189,8 +220,25 @@ export function supportsNativeThinking(context: LlamaContext | null): boolean {
     return false;
   }
 }
-export function buildThinkingCompletionParams(enableThinking: boolean): { enable_thinking: boolean; reasoning_format: 'none' | 'deepseek' } {
-  return { enable_thinking: enableThinking, reasoning_format: enableThinking ? 'deepseek' : 'none' };
+export function getThinkingBudget(level: 'super_lite' | 'reduced' | 'medium' | 'normal' | 'super_extended'): number {
+  switch (level) {
+    case 'super_lite': return 64;
+    case 'reduced': return 256;
+    case 'medium': return 1024;
+    case 'super_extended': return 8192;
+    case 'normal':
+    default: return 4000;
+  }
+}
+
+export function buildThinkingCompletionParams(enableThinking: boolean, level: 'super_lite' | 'reduced' | 'medium' | 'normal' | 'super_extended' = 'normal'): { enable_thinking: boolean; reasoning_format: 'none' | 'deepseek'; thinking_budget_tokens?: number } {
+  if (!enableThinking) return { enable_thinking: false, reasoning_format: 'none' };
+  
+  return { 
+    enable_thinking: true, 
+    reasoning_format: 'deepseek',
+    thinking_budget_tokens: getThinkingBudget(level)
+  };
 }
 export function getStreamingDelta(nextValue: string | undefined, previousValue: string): string | undefined {
   if (!nextValue) return undefined;
@@ -297,20 +345,33 @@ export async function fitMessagesInBudget(
 export const BYTES_PER_GB = 1024 * 1024 * 1024;
 export function getMaxContextForDevice(totalMemoryBytes: number): number {
   const gb = totalMemoryBytes / BYTES_PER_GB;
-  if (gb <= 6) return 2048;
-  if (gb <= 8) return 4096;
-  return 8192;
+  if (gb <= 8) return 2048;
+  return 4096; // Límite estricto superior para evitar OOM en cuantizaciones pesadas.
 }
-// Android Adreno GPU caps (≤4GB/≤6GB→0, ≤8GB→12, >8GB→24). iOS unaffected.
-const ANDROID_GPU_LAYER_CAPS: { maxGB: number; layers: number }[] = [{ maxGB: 4, layers: 0 }, { maxGB: 6, layers: 0 }, { maxGB: 8, layers: 12 }];
-const ANDROID_GPU_LAYERS_FALLBACK = 24;
+/**
+ * Capas de GPU para Android por rango de RAM:
+ * - ≤4GB: 0 (sin GPU — riesgo alto de OOM y abort nativo)
+ * - ≤6GB: 1 (Hexagon backend trigger: mínimo para activar rnllama_jni_hexagon_opencl)
+ * - ≤8GB: 8 (Hexagon parcial — delega cálculos de atención a HTP)
+ * - >8GB: 16 (Snapdragon 8 Gen 3 típico — usa OpenCL + HTP sin saturar)
+ *
+ * NOTA: en GGUF cuantizado (Q4/Q8) no se puede cargar todo el modelo en GPU.
+ * El objetivo es que el JNI cargue rnllama_jni_v8_2_dotprod_i8mm_hexagon_opencl
+ * y delegue las operaciones GEMM/atención a la NPU, dejando pesos en RAM via mmap.
+ */
+const ANDROID_GPU_LAYER_CAPS: { maxGB: number; layers: number }[] = [
+  { maxGB: 4, layers: 0 },
+  { maxGB: 6, layers: 1 },
+  { maxGB: 8, layers: 8 },
+];
+const ANDROID_GPU_LAYERS_FALLBACK = 16;
 
-/** Safe GPU layer count based on device RAM. Skips GPU on ≤4 GB to prevent abort(). */
+/** Capas GPU seguras según RAM del dispositivo. Skips GPU en ≤4 GB para evitar abort(). */
 export function getGpuLayersForDevice(totalMemoryBytes: number, requestedLayers: number): number {
   const totalGB = totalMemoryBytes / BYTES_PER_GB;
   if (totalGB <= 4) return 0;
 
-  // Android / Adreno-specific caps to prevent GPU ANRs
+  // Caps específicos de Android/Adreno para prevenir ANRs
   if (Platform.OS === 'android') {
     const tier = ANDROID_GPU_LAYER_CAPS.find(t => totalGB <= t.maxGB);
     const maxLayers = tier ? tier.layers : ANDROID_GPU_LAYERS_FALLBACK;
@@ -319,7 +380,12 @@ export function getGpuLayersForDevice(totalMemoryBytes: number, requestedLayers:
   return requestedLayers;
 }
 export { validateModelFile, checkMemoryForModel, safeCompletion } from './llmSafetyChecks';
-export const STOP_TOKENS = ['</s>', '<|end|>', '<|eot_id|>'];
+// Stop tokens: modelos comunes + tokens de control específicos de Gemma 2/4
+export const STOP_TOKENS = [
+  '</s>', '<|end|>', '<|eot_id|>',
+  '<end_of_turn>',   // Gemma 2 / 4  — marcador de fin de turno
+  '<eos>',           // Gemma 4 alternativo
+];
 export function buildCompletionParams(settings: {
   maxTokens?: number; temperature?: number; topP?: number; repeatPenalty?: number;
 }, options?: { disableCtxShift?: boolean; loadStatePath?: string; saveStatePath?: string; }): Record<string, any> {

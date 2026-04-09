@@ -3,11 +3,19 @@ import { Message } from '../types';
 
 export function formatLlamaMessages(messages: Message[], supportsVision: boolean): string {
   let prompt = '';
-  for (const message of messages.filter(m => !m.isSystemInfo)) {
-    if (message.role === 'system') {
-      prompt += `<|im_start|>system\n${message.content}<|im_end|>\n`;
-    } else if (message.role === 'user') {
+  const filtered = messages.filter(m => !m.isSystemInfo);
+  const sysContent = filtered.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
+  let firstUserInjected = false;
+
+  for (const message of filtered) {
+    if (message.role === 'system') continue;
+    
+    if (message.role === 'user') {
       let content = message.content;
+      if (!firstUserInjected && sysContent) {
+        content = `${sysContent}\n\n${content}`;
+        firstUserInjected = true;
+      }
       if (message.attachments && message.attachments.length > 0 && supportsVision) {
         const imageMarkers = message.attachments
           .filter(a => a.type === 'image')
@@ -15,12 +23,14 @@ export function formatLlamaMessages(messages: Message[], supportsVision: boolean
           .join('');
         content = imageMarkers + content;
       }
-      prompt += `<|im_start|>user\n${content}<|im_end|>\n`;
+      prompt += `<start_of_turn>user\n${content}<end_of_turn>\n`;
     } else if (message.role === 'assistant') {
-      prompt += `<|im_start|>assistant\n${message.content}<|im_end|>\n`;
+      prompt += `<start_of_turn>model\n${message.content}<end_of_turn>\n`;
+    } else if (message.role === 'tool') {
+      prompt += `<start_of_turn>user\n[Tool Result: ${message.toolName || 'tool'}]\n${message.content}\n[End Tool Result]<end_of_turn>\n`;
     }
   }
-  prompt += '<|im_start|>assistant\n';
+  prompt += '<start_of_turn>model\n';
   return prompt;
 }
 
@@ -50,30 +60,44 @@ function formatToolCallAsText(tc: { name: string; arguments: string }): string {
 
 export function buildOAIMessages(messages: Message[]): RNLlamaOAICompatibleMessage[] {
   const filtered = messages.filter(m => !m.isSystemInfo);
-  return filtered.map((message) => {
-    // Flatten tool result messages into user messages —
-    // avoids role:"tool" which some Jinja templates don't handle
+  const sysContent = filtered.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
+  
+  const oaiMessages: RNLlamaOAICompatibleMessage[] = [];
+  let firstUserInjected = false;
+
+  for (const message of filtered) {
+    if (message.role === 'system') continue;
+
     if (message.role === 'tool') {
       const label = message.toolName || 'tool';
-      return {
-        role: 'user' as const,
+      oaiMessages.push({
+        role: 'user',
         content: `[Tool Result: ${label}]\n${message.content}\n[End Tool Result]`,
-      };
+      });
+      continue;
     }
 
-    // Flatten assistant tool calls into plain text —
-    // structured tool_calls in history cause Jinja/C++ conflicts
     if (message.role === 'assistant' && message.toolCalls?.length) {
       const toolCallText = message.toolCalls.map(formatToolCallAsText).join('\n');
       const content = message.content
         ? `${message.content}\n${toolCallText}`
         : toolCallText;
-      return { role: 'assistant' as const, content };
+      oaiMessages.push({ role: 'assistant', content });
+      continue;
     }
 
     const imageAttachments = message.attachments?.filter(a => a.type === 'image') || [];
+    let textContent = message.content || '';
+    
+    // Inyectar contexto system solo en el turno inicial
+    if (message.role === 'user' && !firstUserInjected && sysContent) {
+      textContent = `${sysContent}\n\n${textContent}`;
+      firstUserInjected = true;
+    }
+
     if (imageAttachments.length === 0 || message.role !== 'user') {
-      return { role: message.role, content: message.content };
+      oaiMessages.push({ role: message.role as any, content: textContent });
+      continue;
     }
 
     const contentParts: RNLlamaMessagePart[] = [];
@@ -84,9 +108,11 @@ export function buildOAIMessages(messages: Message[]): RNLlamaOAICompatibleMessa
       }
       contentParts.push({ type: 'image_url', image_url: { url: imagePath } });
     }
-    if (message.content) {
-      contentParts.push({ type: 'text', text: message.content });
+    if (textContent) {
+      contentParts.push({ type: 'text', text: textContent });
     }
-    return { role: message.role, content: contentParts };
-  });
+    oaiMessages.push({ role: message.role as any, content: contentParts });
+  }
+
+  return oaiMessages;
 }

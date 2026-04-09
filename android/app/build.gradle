@@ -83,8 +83,8 @@ android {
         applicationId "ai.offgridmobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1775123351
-        versionName "0.0.82"
+        versionCode 1775583240
+        versionName "0.1.0"
     }
     signingConfigs {
         debug {
@@ -129,6 +129,8 @@ android {
             // exec() fails with EACCES (error=13) because you can't fork-exec from a zip entry.
             useLegacyPackaging = true
         }
+        doNotStrip "**/*ggml-htp*.so"
+        doNotStrip "**/*ggml-QNN*.so"
     }
     aaptOptions {
         // Prevent AAPT from compressing .gguf model files — they must be copied byte-for-byte

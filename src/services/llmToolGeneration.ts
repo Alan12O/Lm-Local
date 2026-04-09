@@ -49,6 +49,27 @@ export async function generateWithToolsImpl(
     // Reserve context space for tool schemas (~100 tokens per tool)
     const toolTokenReserve = options.tools.length * 100;
     const managed = await deps.manageContextWindow(messages, toolTokenReserve);
+    
+    // Inyección cognitiva para Gemma 4
+    let toolStr = '';
+    if (options.tools && options.tools.length > 0) {
+      toolStr = '[SYSTEM: You are a helpful assistant with tool calling capabilities. Available tools:\n' + 
+                 JSON.stringify(options.tools.map(t => t.function), null, 2) + 
+                 '\n\nIf you need to use a tool, return ONLY a JSON block like: <tool_call>{"name": "...", "arguments": {...}}</tool_call>]\n';
+    }
+    if (deps.isThinkingEnabled) {
+      toolStr += '[SYSTEM: Before answering, you must think inside <think>...</think> tags and then provide the final answer.]\n';
+    }
+
+    if (toolStr) {
+      const firstUserMsg = managed.find(m => m.role === 'user');
+      if (firstUserMsg && typeof firstUserMsg.content === 'string') {
+         firstUserMsg.content = `${toolStr}\n${firstUserMsg.content}`;
+      } else {
+         managed.unshift({ role: 'user', content: toolStr, id: 'tools-sys', timestamp: Date.now() } as Message);
+      }
+    }
+
     const oaiMessages = deps.convertToOAIMessages(managed);
     const { settings } = useAppStore.getState();
     const startTime = Date.now();
