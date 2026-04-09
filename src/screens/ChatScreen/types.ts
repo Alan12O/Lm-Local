@@ -23,16 +23,17 @@ export function getDisplayMessages(
   allMessages: Message[],
   streaming: StreamingState,
 ): (Message | ChatMessageItem)[] {
+  const validMessages = allMessages.filter(Boolean);
   const { isThinking, isThinkingBlock, streamingMessage, streamingReasoningContent, isStreamingForThisConversation } = streaming;
   if (isThinking && isStreamingForThisConversation) {
     return [
-      ...allMessages,
+      ...validMessages,
       { id: 'thinking', role: 'assistant' as const, content: '', timestamp: Date.now(), isThinking: true },
     ];
   }
   if ((streamingMessage || streamingReasoningContent) && isStreamingForThisConversation) {
     return [
-      ...allMessages,
+      ...validMessages,
       {
         id: 'streaming',
         role: 'assistant' as const,
@@ -44,7 +45,7 @@ export function getDisplayMessages(
       },
     ];
   }
-  return allMessages;
+  return validMessages;
 }
 
 export function getPlaceholderText(isModelLoaded: boolean, supportsVision: boolean): string {

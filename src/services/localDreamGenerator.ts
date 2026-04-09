@@ -183,7 +183,7 @@ class LocalDreamGeneratorService {
       return this.buildResult(params, result);
     } catch (error: any) {
       const msg = error?.message || '';
-      if (msg.includes('ERR_NO_MODEL') || msg.includes('unloaded') || msg.includes('Pipeline failed')) {
+      if (msg.includes('ERR_NO_MODEL') || msg.includes('unloaded') || msg.includes('Pipeline failed') || msg.includes('complete event')) {
         this.loadedThreads = null;
       }
       throw error;

@@ -272,7 +272,8 @@ class ImageGenerationService {
         const isPipelineCrash = errorMsg.includes('Pipeline failed') ||
           errorMsg.includes('unloaded') ||
           errorMsg.includes('ERR_NO_MODEL') ||
-          errorMsg.includes('TextEncoder');
+          errorMsg.includes('TextEncoder') ||
+          errorMsg.includes('complete event');
         const userMessage = isPipelineCrash
           ? 'Fallo en la generación de imagen — el modelo encontró un error y fue descargado. Por favor, intenta de nuevo.'
           : errorMsg;
@@ -315,6 +316,15 @@ class ImageGenerationService {
       });
     } else {
       this.updateState({ status: 'Preparando generación de imagen...' });
+    }
+
+    if (settings.modelLoadingStrategy === 'memory' && llmService.isModelLoaded()) {
+      logger.log('[ImageGen] Memory strategy: explicitly evicting text model to prevent OOM for image generation.');
+      try {
+        await activeModelService.evictTextModel();
+      } catch (e) {
+        logger.warn('[ImageGen] Failed to unload text model:', e);
+      }
     }
 
     const loaded = await this._ensureImageModelLoaded(activeImageModelId, activeImageModel, settings.imageThreads ?? 4);

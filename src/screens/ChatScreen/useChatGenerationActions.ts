@@ -88,7 +88,7 @@ function appendAttachmentText(text: string, attachments?: MediaAttachment[]): st
 
 function buildMessagesForContext(conversationId: string, messageText: string, systemPrompt: string): Message[] {
   const conversation = useChatStore.getState().conversations.find(c => c.id === conversationId);
-  const allMessages = (conversation?.messages || []).filter(m => !m.isSystemInfo);
+  const allMessages = (conversation?.messages || []).filter(m => m && !m.isSystemInfo);
   const { prefix, filtered } = applyCompactionPrefix(conversation, systemPrompt, allMessages);
   const lastMsg = filtered.at(-1);
   const userMessageForContext = (lastMsg?.role === 'user' ? { ...lastMsg, content: messageText } : lastMsg) as Message;
@@ -368,7 +368,7 @@ export async function regenerateResponseFn(deps: GenerationDeps, call: Regenerat
   if (!deps.activeModelInfo?.isRemote && !llmService.isModelLoaded()) return;
   deps.generatingForConversationRef.current = targetConversationId;
   const conversation = useChatStore.getState().conversations.find(c => c.id === targetConversationId);
-  const messages = (conversation?.messages || []).filter((m: Message) => !m.isSystemInfo);
+  const messages = (conversation?.messages || []).filter((m: Message) => m && !m.isSystemInfo);
   const messagesUpToUser = messages.slice(0, messages.findIndex((m: Message) => m.id === userMessage.id) + 1)
     .map(m => m.id === userMessage.id ? { ...m, content: messageText } : m);
   const { enabledTools, rawPrompt } = resolveToolsAndPrompt(deps, conversation);

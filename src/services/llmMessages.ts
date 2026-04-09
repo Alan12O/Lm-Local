@@ -3,7 +3,7 @@ import { Message } from '../types';
 
 export function formatLlamaMessages(messages: Message[], supportsVision: boolean): string {
   let prompt = '';
-  const filtered = messages.filter(m => !m.isSystemInfo);
+  const filtered = messages.filter(m => m && !m.isSystemInfo);
   const sysContent = filtered.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
   let firstUserInjected = false;
 
@@ -59,7 +59,7 @@ function formatToolCallAsText(tc: { name: string; arguments: string }): string {
 }
 
 export function buildOAIMessages(messages: Message[]): RNLlamaOAICompatibleMessage[] {
-  const filtered = messages.filter(m => !m.isSystemInfo);
+  const filtered = messages.filter(m => m && !m.isSystemInfo);
   const sysContent = filtered.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
   
   const oaiMessages: RNLlamaOAICompatibleMessage[] = [];

@@ -244,6 +244,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     setShowActionMenu(false);
   };
 
+  if (!message) return null;
   if (message.isSystemInfo) {
     return <SystemInfoMessage content={displayContent} styles={styles}
       alertState={alertState} onCloseAlert={() => setAlertState(hideAlert())} />;

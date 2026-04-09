@@ -157,6 +157,29 @@ class ActiveModelService {
       this.notifyListeners();
     }
   }
+
+  async evictTextModel(): Promise<void> {
+    if (this.textLoadPromise !== null) {
+      await this.textLoadPromise;
+    }
+    const isNativeLoaded = llmService.isModelLoaded();
+    if (!this.loadedTextModelId && !isNativeLoaded) {
+      return;
+    }
+    this.loadingState.text = true;
+    this.notifyListeners();
+    try {
+      if (isNativeLoaded) {
+        await llmService.unloadModel();
+      }
+      this.loadedTextModelId = null;
+      // Do NOT unset activeModelId, so that ensureModelLoadedFn can seamlessly reload it later.
+    } finally {
+      this.loadingState.text = false;
+      this.notifyListeners();
+    }
+  }
+
   private async checkImageModelCanLoad(
     modelId: string,
     model: ONNXImageModel,
