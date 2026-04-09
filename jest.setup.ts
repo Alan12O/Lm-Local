@@ -382,6 +382,22 @@ jest.mock('react-native-zip-archive', () => ({
   zip: jest.fn(() => Promise.resolve('/mock/zipped/path')),
 }));
 
+// react-native-webview mock
+jest.mock('react-native-webview', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const MockWebView = React.forwardRef((props: any, _ref: any) => {
+    // Simulate onLoad being called on mount
+    React.useEffect(() => {
+      props?.onLoad?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    return React.createElement(View, { testID: props.testID ?? 'mock-webview' });
+  });
+  MockWebView.displayName = 'WebView';
+  return { WebView: MockWebView, default: MockWebView };
+});
+
 
 // Mock react-native-vector-icons
 jest.mock('react-native-vector-icons/Feather', () => 'Icon');
