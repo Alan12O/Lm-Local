@@ -198,15 +198,11 @@ export const useChatScreen = () => {
   }, [route.params, activeModelInfo.modelId, activeConversationId, setActiveConversation, createConversation, isIncognito, navigation, genDeps]);
 
 
+  // Clear KV Cache en el mount removido para evitar el crasheo de SIGSEGV en OpenCL
   useEffect(() => {
     if (generatingForConversationRef.current && generatingForConversationRef.current !== activeConversationId) {
       generatingForConversationRef.current = null;
     }
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      if (!cancelled && llmService.isModelLoaded()) { llmService.clearKVCache(false).catch(() => { }); }
-    }, 0);
-    return () => { cancelled = true; clearTimeout(timer); };
   }, [activeConversationId]);
 
   // Clean up incognito conversations on unmount
