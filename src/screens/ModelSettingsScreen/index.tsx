@@ -37,12 +37,12 @@ export const ModelSettingsScreen: React.FC = () => {
 
   const handleReset = () => {
     setAlertState(showAlert(
-      'Reset All Settings',
-      'This will restore all model settings to their defaults. You may need to reload the model for changes to take effect.',
+      'Restablecer todos los ajustes',
+      'Esto restaurará todos los ajustes de modelo a sus valores predeterminados. Es posible que debas recargar el modelo para que los cambios surtan efecto.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Reset',
+          text: 'Restablecer',
           style: 'destructive',
           onPress: () => { resetSettings(); setAlertState(hideAlert()); },
         },
@@ -54,65 +54,86 @@ export const ModelSettingsScreen: React.FC = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={20} color={colors.text} />
+          <Icon name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Model Settings</Text>
+        <Text style={styles.title}>Ajustes de modelo</Text>
       </View>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <AttachStep index={6} fill>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>SISTEMA</Text>
+          <AttachStep index={6} fill>
+            <TouchableOpacity
+              style={styles.accordionHeader}
+              onPress={() => setPromptOpen(!promptOpen)}
+              activeOpacity={0.7}
+              testID="system-prompt-accordion"
+            >
+              <Text style={styles.accordionTitle}>System Prompt</Text>
+              <Icon
+                name={promptOpen ? 'chevron-up' : 'chevron-down'}
+                size={18}
+                color={colors.textMuted}
+              />
+            </TouchableOpacity>
+          </AttachStep>
+          {promptOpen && (
+            <View style={{ marginTop: -8, marginBottom: 16 }}>
+              <SystemPromptSection />
+            </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>GENERACIÓN</Text>
+          
           <TouchableOpacity
             style={styles.accordionHeader}
-            onPress={() => setPromptOpen(!promptOpen)}
+            onPress={() => setTextOpen(!textOpen)}
             activeOpacity={0.7}
-            testID="system-prompt-accordion"
+            testID="text-generation-accordion"
           >
-            <Text style={styles.accordionTitle}>Default System Prompt</Text>
+            <Text style={styles.accordionTitle}>Texto</Text>
             <Icon
-              name={promptOpen ? 'chevron-up' : 'chevron-down'}
-              size={16}
+              name={textOpen ? 'chevron-up' : 'chevron-down'}
+              size={18}
               color={colors.textMuted}
             />
           </TouchableOpacity>
-        </AttachStep>
-        {promptOpen && <SystemPromptSection />}
+          {textOpen && (
+            <View style={{ marginTop: -8, marginBottom: 16 }}>
+              <TextGenerationSection />
+            </View>
+          )}
 
-        <TouchableOpacity
-          style={styles.accordionHeader}
-          onPress={() => setImageOpen(!imageOpen)}
-          activeOpacity={0.7}
-          testID="image-generation-accordion"
-        >
-          <Text style={styles.accordionTitle}>Image Generation</Text>
-          <Icon
-            name={imageOpen ? 'chevron-up' : 'chevron-down'}
-            size={16}
-            color={colors.textMuted}
-          />
-        </TouchableOpacity>
-        {imageOpen && <ImageGenerationSection />}
-
-        <TouchableOpacity
-          style={styles.accordionHeader}
-          onPress={() => setTextOpen(!textOpen)}
-          activeOpacity={0.7}
-          testID="text-generation-accordion"
-        >
-          <Text style={styles.accordionTitle}>Text Generation</Text>
-          <Icon
-            name={textOpen ? 'chevron-up' : 'chevron-down'}
-            size={16}
-            color={colors.textMuted}
-          />
-        </TouchableOpacity>
-        {textOpen && <TextGenerationSection />}
+          <TouchableOpacity
+            style={styles.accordionHeader}
+            onPress={() => setImageOpen(!imageOpen)}
+            activeOpacity={0.7}
+            testID="image-generation-accordion"
+          >
+            <Text style={styles.accordionTitle}>Imagen</Text>
+            <Icon
+              name={imageOpen ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color={colors.textMuted}
+            />
+          </TouchableOpacity>
+          {imageOpen && (
+            <View style={{ marginTop: -8, marginBottom: 16 }}>
+              <ImageGenerationSection />
+            </View>
+          )}
+        </View>
 
         <Button
-          title="Reset All to Defaults"
+          title="Restablecer valores predeterminados"
           variant="ghost"
           size="small"
           onPress={handleReset}
           testID="reset-settings-button"
           style={styles.resetButton}
+          titleStyle={{ color: colors.textMuted, fontSize: 13 }}
         />
       </ScrollView>
       <CustomAlert
@@ -123,5 +144,6 @@ export const ModelSettingsScreen: React.FC = () => {
         onClose={() => setAlertState(hideAlert())}
       />
     </SafeAreaView>
+
   );
 };

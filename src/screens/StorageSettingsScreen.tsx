@@ -8,7 +8,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
-import { Card } from '../components';
 import { CustomAlert, showAlert, hideAlert, AlertState, initialAlertState } from '../components/CustomAlert';
 import { useTheme, useThemedStyles } from '../theme';
 import { SPACING } from '../constants';
@@ -60,12 +59,12 @@ export const StorageSettingsScreen: React.FC = () => {
   const handleClearAllStaleDownloads = useCallback(() => {
     setAlertState(
       showAlert(
-        'Clear Stale Downloads',
-        `Clear ${staleDownloads.length} stale download entry(s)?`,
+        'Limpiar descargas obsoletas',
+        `¿Limpiar ${staleDownloads.length} entrada(s) de descarga obsoleta(s)?`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: 'Cancelar', style: 'cancel' },
           {
-            text: 'Clear All',
+            text: 'Limpiar todo',
             style: 'destructive',
             onPress: () => {
               setAlertState(hideAlert());
@@ -89,141 +88,150 @@ export const StorageSettingsScreen: React.FC = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-left" size={20} color={colors.text} />
+          <Icon name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Storage</Text>
+        <Text style={styles.title}>Almacenamiento</Text>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Storage Usage</Text>
-          <View style={styles.storageBar}>
-            <View style={[styles.storageUsed, { width: `${Math.min(usedPercentage, 100)}%` }]} />
-          </View>
-          <View style={styles.storageLegend}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
-              <Text style={styles.legendText}>Used: {hardwareService.formatBytes(storageUsed)}</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>USO DE ALMACENAMIENTO</Text>
+          <View style={styles.card}>
+            <View style={styles.storageBar}>
+              <View style={[styles.storageUsed, { width: `${Math.min(usedPercentage, 100)}%` }]} />
             </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.surfaceLight }]} />
-              <Text style={styles.legendText}>Free: {hardwareService.formatBytes(availableStorage)}</Text>
+            <View style={styles.storageLegend}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
+                <Text style={styles.legendText}>Usado: {hardwareService.formatBytes(storageUsed)}</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: colors.surfaceLight }]} />
+                <Text style={styles.legendText}>Libre: {hardwareService.formatBytes(availableStorage)}</Text>
+              </View>
             </View>
           </View>
-        </Card>
+        </View>
 
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Breakdown</Text>
-          <View style={styles.infoRow}>
-            <View style={styles.infoRowLeft}>
-              <Icon name="cpu" size={18} color={colors.primary} />
-              <Text style={styles.infoLabel}>LLM Models</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>DESGLOSE</Text>
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
+              <View style={styles.infoRowLeft}>
+                <Icon name="cpu" size={16} color={colors.primary} />
+                <Text style={styles.infoLabel}>Modelos LLM</Text>
+              </View>
+              <Text style={styles.infoValue}>{downloadedModels.length}</Text>
             </View>
-            <Text style={styles.infoValue}>{downloadedModels.length}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <View style={styles.infoRowLeft}>
-              <Icon name="image" size={18} color={colors.primary} />
-              <Text style={styles.infoLabel}>Image Models</Text>
+            <View style={styles.infoRow}>
+              <View style={styles.infoRowLeft}>
+                <Icon name="image" size={16} color={colors.primary} />
+                <Text style={styles.infoLabel}>Modelos de imagen</Text>
+              </View>
+              <Text style={styles.infoValue}>{downloadedImageModels.length}</Text>
             </View>
-            <Text style={styles.infoValue}>{downloadedImageModels.length}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <View style={styles.infoRowLeft}>
-              <Icon name="hard-drive" size={18} color={colors.primary} />
-              <Text style={styles.infoLabel}>Model Storage</Text>
+            <View style={styles.infoRow}>
+              <View style={styles.infoRowLeft}>
+                <Icon name="hard-drive" size={16} color={colors.primary} />
+                <Text style={styles.infoLabel}>Peso en disco</Text>
+              </View>
+              <Text style={styles.infoValue}>{hardwareService.formatBytes(storageUsed)}</Text>
             </View>
-            <Text style={styles.infoValue}>{hardwareService.formatBytes(storageUsed)}</Text>
-          </View>
-          <View style={[styles.infoRow, styles.lastRow]}>
-            <View style={styles.infoRowLeft}>
-              <Icon name="message-circle" size={18} color={colors.primary} />
-              <Text style={styles.infoLabel}>Conversations</Text>
+            <View style={[styles.infoRow, styles.lastRow]}>
+              <View style={styles.infoRowLeft}>
+                <Icon name="message-circle" size={16} color={colors.primary} />
+                <Text style={styles.infoLabel}>Conversaciones</Text>
+              </View>
+              <Text style={styles.infoValue}>{conversations.length}</Text>
             </View>
-            <Text style={styles.infoValue}>{conversations.length}</Text>
           </View>
-        </Card>
+        </View>
 
         {downloadedModels.length > 0 && (
-          <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>LLM Models</Text>
-            {downloadedModels.map((model, index) => (
-              <View
-                key={model.id}
-                style={[styles.modelRow, index === downloadedModels.length - 1 && styles.lastRow]}
-              >
-                <View style={styles.modelInfo}>
-                  <Text style={styles.modelName} numberOfLines={1}>{model.name}</Text>
-                  <Text style={styles.modelMeta}>{model.quantization}</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>MODELOS LLM</Text>
+            <View style={styles.card}>
+              {downloadedModels.map((model, index) => (
+                <View
+                  key={model.id}
+                  style={[styles.modelRow, index === downloadedModels.length - 1 && styles.lastRow]}
+                >
+                  <View style={styles.modelInfo}>
+                    <Text style={styles.modelName} numberOfLines={1}>{model.name}</Text>
+                    <Text style={styles.modelMeta}>{model.quantization}</Text>
+                  </View>
+                  <Text style={styles.modelSize}>{hardwareService.formatModelSize(model)}</Text>
                 </View>
-                <Text style={styles.modelSize}>{hardwareService.formatModelSize(model)}</Text>
-              </View>
-            ))}
-          </Card>
+              ))}
+            </View>
+          </View>
         )}
 
         {downloadedImageModels.length > 0 && (
-          <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>Image Models</Text>
-            {downloadedImageModels.map((model, index) => (
-              <View
-                key={model.id}
-                style={[styles.modelRow, index === downloadedImageModels.length - 1 && styles.lastRow]}
-              >
-                <View style={styles.modelInfo}>
-                  <Text style={styles.modelName} numberOfLines={1}>{model.name}</Text>
-                  <Text style={styles.modelMeta}>
-                    {(() => {
-                      if (model.backend === 'coreml') return 'Core ML';
-                      if (model.backend === 'qnn') return 'Qualcomm NPU';
-                      return 'GPU';
-                    })()}
-                    {model.style ? ` • ${model.style}` : ''}
-                  </Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>MODELOS DE IMAGEN</Text>
+            <View style={styles.card}>
+              {downloadedImageModels.map((model, index) => (
+                <View
+                  key={model.id}
+                  style={[styles.modelRow, index === downloadedImageModels.length - 1 && styles.lastRow]}
+                >
+                  <View style={styles.modelInfo}>
+                    <Text style={styles.modelName} numberOfLines={1}>{model.name}</Text>
+                    <Text style={styles.modelMeta}>
+                      {(() => {
+                        if (model.backend === 'coreml') return 'Core ML';
+                        if (model.backend === 'qnn') return 'Qualcomm NPU';
+                        return 'GPU';
+                      })()}
+                    </Text>
+                  </View>
+                  <Text style={styles.modelSize}>{hardwareService.formatBytes(model.size)}</Text>
                 </View>
-                <Text style={styles.modelSize}>{hardwareService.formatBytes(model.size)}</Text>
-              </View>
-            ))}
-          </Card>
+              ))}
+            </View>
+          </View>
         )}
 
         {staleDownloads.length > 0 && (
-          <Card style={styles.section}>
+          <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Stale Downloads</Text>
+              <Text style={styles.sectionLabel}>DESCARGAS OBSOLETAS</Text>
               <TouchableOpacity
                 style={styles.clearAllButton}
                 onPress={handleClearAllStaleDownloads}
               >
-                <Text style={styles.clearAllText}>Clear All</Text>
+                <Text style={styles.clearAllText}>Limpiar todo</Text>
               </TouchableOpacity>
             </View>
-            <Text style={[styles.hint, { textAlign: 'left' as const, marginBottom: SPACING.md }]}>
-              These download entries have invalid or missing data and can be safely cleared.
-            </Text>
-            {staleDownloads.map(([downloadId, info]) => (
-              <View key={downloadId} style={styles.orphanedRow}>
-                <View style={styles.orphanedInfo}>
-                  <Text style={styles.orphanedName}>Download #{downloadId}</Text>
-                  <Text style={styles.orphanedMeta}>
-                    {info?.fileName ?? 'Unknown file'} • {info?.modelId ?? 'Unknown model'}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => handleClearStaleDownload(Number(downloadId))}
+            <View style={styles.card}>
+              {staleDownloads.map(([downloadId, info], index) => (
+                <View 
+                  key={downloadId} 
+                  style={[styles.orphanedRow, index === staleDownloads.length - 1 && styles.lastRow]}
                 >
-                  <Icon name="x" size={18} color={colors.error} />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </Card>
+                  <View style={styles.orphanedInfo}>
+                    <Text style={styles.orphanedName}>Descarga #{downloadId}</Text>
+                    <Text style={styles.orphanedMeta}>
+                      {info?.fileName ?? 'Archivo desconocido'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleClearStaleDownload(Number(downloadId))}
+                  >
+                    <Icon name="x" size={18} color={colors.error} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          </View>
         )}
 
         <OrphanedFilesSection onStorageChange={loadStorageInfo} />
 
         <Text style={styles.hint}>
-          To free up space, you can delete models from the Models tab.
+          Puedes gestionar tus modelos desde la pestaña principal.
         </Text>
       </ScrollView>
 
@@ -235,5 +243,6 @@ export const StorageSettingsScreen: React.FC = () => {
         onClose={() => setAlertState(hideAlert())}
       />
     </SafeAreaView>
+
   );
 };

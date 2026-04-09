@@ -5,7 +5,9 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Pressable,
 } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
 import { AppSheet } from '../AppSheet';
 import { useTheme, useThemedStyles } from '../../theme';
@@ -17,6 +19,8 @@ import { createAllStyles } from './styles';
 import { TextTab } from './TextTab';
 import { ImageTab } from './ImageTab';
 import logger from '../../utils/logger';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type TabType = 'text' | 'image';
 
@@ -31,6 +35,7 @@ interface ModelSelectorModalProps {
   currentModelPath: string | null;
   initialTab?: TabType;
   onAddServer?: () => void;
+  onImportImageModel?: () => void;
 }
 
 export const ModelSelectorModal: React.FC<ModelSelectorModalProps> = ({
@@ -44,6 +49,7 @@ export const ModelSelectorModal: React.FC<ModelSelectorModalProps> = ({
   currentModelPath,
   initialTab = 'text',
   onAddServer,
+  onImportImageModel,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createAllStyles);
@@ -61,9 +67,41 @@ export const ModelSelectorModal: React.FC<ModelSelectorModalProps> = ({
   const [isLoadingImage, setIsLoadingImage] = useState(false);
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
 
+  // Reanimated state for tab bubble
+  const tabProgress = useSharedValue(initialTab === 'image' ? 1 : 0);
+
   useEffect(() => {
-    if (visible) setActiveTab(initialTab);
+    if (visible) {
+      setActiveTab(initialTab);
+      tabProgress.value = initialTab === 'image' ? 1 : 0;
+    }
   }, [visible, initialTab]);
+
+  const handleTabChange = (tab: TabType) => {
+    if (isAnyLoading) return;
+    setActiveTab(tab);
+    tabProgress.value = withTiming(tab === 'image' ? 1 : 0, {
+      duration: 250,
+      easing: Easing.out(Easing.quad),
+    });
+  };
+
+  const bubbleStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    height: '100%',
+    width: '50%',
+    left: interpolate(tabProgress.value, [0, 1], [0, 50]) + '%',
+    backgroundColor: styles.tabActiveBg,
+    borderRadius: 12,
+  }));
+
+  const textTextStyle = useAnimatedStyle(() => ({
+    color: interpolate(tabProgress.value, [0, 1], [1, 0]) > 0.5 ? styles.tabActiveText : styles.tabInactiveText,
+  }));
+
+  const imageTextStyle = useAnimatedStyle(() => ({
+    color: tabProgress.value > 0.5 ? styles.tabActiveText : styles.tabInactiveText,
+  }));
 
   // Group remote models by server for TextTab — exclude servers known to be offline
   const remoteTextModels = useMemo(() => {
@@ -77,7 +115,6 @@ export const ModelSelectorModal: React.FC<ModelSelectorModalProps> = ({
   }, [servers, discoveredModels, serverHealth]);
 
   // Remote image generation models — Ollama/LM Studio don't serve image gen models.
-  // Vision-language models (supportsVision) are text models and belong in the text tab.
   const remoteVisionModels = useMemo(() => [], []);
 
   const handleSelectImageModel = async (model: ONNXImageModel) => {
@@ -85,7 +122,6 @@ export const ModelSelectorModal: React.FC<ModelSelectorModalProps> = ({
     setIsLoadingImage(true);
     try {
       await activeModelService.loadImageModel(model.id);
-      // Clear remote selection when selecting local
       setActiveRemoteImageModelId(null);
       onSelectImageModel?.(model);
     } catch (error) {
@@ -109,10 +145,8 @@ export const ModelSelectorModal: React.FC<ModelSelectorModalProps> = ({
     }
   };
 
-  // Handle selecting a remote text model
   const handleSelectRemoteTextModel = async (model: RemoteModel, serverId: string) => {
     try {
-      // Unload any active local model first — only one active model at a time
       if (llmService.isModelLoaded()) {
         await activeModelService.unloadTextModel();
       }
@@ -123,7 +157,6 @@ export const ModelSelectorModal: React.FC<ModelSelectorModalProps> = ({
     }
   };
 
-  // Handle selecting a remote vision model
   const handleSelectRemoteVisionModel = async (model: RemoteModel, serverId: string) => {
     try {
       await remoteServerManager.setActiveRemoteImageModel(serverId, model.id);
@@ -133,90 +166,75 @@ export const ModelSelectorModal: React.FC<ModelSelectorModalProps> = ({
     }
   };
 
-  // Handle selecting a local model - clear remote selection
   const handleSelectLocalModel = (model: DownloadedModel) => {
     remoteServerManager.clearActiveRemoteModel();
     onSelectModel(model);
   };
 
-  // Handle unload - also clear remote selection
   const handleUnloadModel = () => {
     remoteServerManager.clearActiveRemoteModel();
     onUnloadModel();
   };
 
   const isAnyLoading = isLoading || isLoadingImage;
-  const hasLoadedTextModel = currentModelPath !== null || activeRemoteTextModelId !== null;
-  const hasLoadedImageModel = !!activeImageModelId || activeRemoteImageModelId !== null;
 
   return (
-    <AppSheet visible={visible} onClose={onClose} snapPoints={['40%', '75%']} title="Select Model">
-        <View style={styles.tabBar}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'text' && styles.tabActive]}
-            onPress={() => setActiveTab('text')}
-            disabled={isAnyLoading}
-          >
-            <Icon name="message-square" size={16} color={activeTab === 'text' ? colors.primary : colors.textMuted} />
-            <Text style={[styles.tabText, activeTab === 'text' && styles.tabTextActive]}>Text</Text>
-            {hasLoadedTextModel && (
-              <View style={styles.tabBadge}>
-                <View style={styles.tabBadgeDot} />
-              </View>
-            )}
-          </TouchableOpacity>
+    <AppSheet visible={visible} onClose={onClose} snapPoints={['40%', '80%']} title="Selector de Modelos">
+      <View style={styles.tabBarOutline}>
+        <Animated.View style={bubbleStyle} />
+        
+        <TouchableOpacity
+          style={styles.tabItem}
+          onPress={() => handleTabChange('text')}
+          disabled={isAnyLoading}
+        >
+          <Animated.Text style={[styles.tabText, textTextStyle]}>Texto</Animated.Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'image' && styles.tabActive]}
-            onPress={() => setActiveTab('image')}
-            disabled={isAnyLoading}
-          >
-            <Icon name="image" size={16} color={activeTab === 'image' ? colors.info : colors.textMuted} />
-            <Text style={[styles.tabText, activeTab === 'image' && styles.tabTextActive, activeTab === 'image' && { color: colors.info }]}>
-              Image
-            </Text>
-            {hasLoadedImageModel && (
-              <View style={[styles.tabBadge, { backgroundColor: `${colors.info}30` }]}>
-                <View style={[styles.tabBadgeDot, { backgroundColor: colors.info }]} />
-              </View>
-            )}
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.tabItem}
+          onPress={() => handleTabChange('image')}
+          disabled={isAnyLoading}
+        >
+          <Animated.Text style={[styles.tabText, imageTextStyle]}>Imagen</Animated.Text>
+        </TouchableOpacity>
+      </View>
+
+      {isAnyLoading && (
+        <View style={styles.loadingBanner}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={styles.loadingText}>Cargando modelo...</Text>
         </View>
+      )}
 
-        {isAnyLoading && (
-          <View style={styles.loadingBanner}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.loadingText}>Loading model...</Text>
-          </View>
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        {activeTab === 'text' ? (
+          <TextTab
+            downloadedModels={downloadedModels}
+            remoteModels={remoteTextModels}
+            currentModelPath={currentModelPath}
+            currentRemoteModelId={activeRemoteTextModelId}
+            isAnyLoading={isAnyLoading}
+            onSelectModel={handleSelectLocalModel}
+            onSelectRemoteModel={handleSelectRemoteTextModel}
+            onUnloadModel={handleUnloadModel}
+            onAddServer={() => { onClose(); onAddServer?.(); }}
+          />
+        ) : (
+          <ImageTab
+            downloadedImageModels={downloadedImageModels}
+            remoteVisionModels={remoteVisionModels}
+            activeImageModelId={activeImageModelId}
+            activeRemoteImageModelId={activeRemoteImageModelId}
+            isAnyLoading={isAnyLoading}
+            isLoadingImage={isLoadingImage}
+            onSelectImageModel={handleSelectImageModel}
+            onSelectRemoteVisionModel={handleSelectRemoteVisionModel}
+            onUnloadImageModel={handleUnloadImageModel}
+            onImportLocalModel={onImportImageModel}
+          />
         )}
-
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-          {activeTab === 'text' ? (
-            <TextTab
-              downloadedModels={downloadedModels}
-              remoteModels={remoteTextModels}
-              currentModelPath={currentModelPath}
-              currentRemoteModelId={activeRemoteTextModelId}
-              isAnyLoading={isAnyLoading}
-              onSelectModel={handleSelectLocalModel}
-              onSelectRemoteModel={handleSelectRemoteTextModel}
-              onUnloadModel={handleUnloadModel}
-              onAddServer={() => { onClose(); onAddServer?.(); }}
-            />
-          ) : (
-            <ImageTab
-              downloadedImageModels={downloadedImageModels}
-              remoteVisionModels={remoteVisionModels}
-              activeImageModelId={activeImageModelId}
-              activeRemoteImageModelId={activeRemoteImageModelId}
-              isAnyLoading={isAnyLoading}
-              isLoadingImage={isLoadingImage}
-              onSelectImageModel={handleSelectImageModel}
-              onSelectRemoteVisionModel={handleSelectRemoteVisionModel}
-              onUnloadImageModel={handleUnloadImageModel}
-            />
-          )}
-        </ScrollView>
+      </ScrollView>
 
       <CustomAlert {...alertState} onClose={() => setAlertState(initialAlertState)} />
     </AppSheet>

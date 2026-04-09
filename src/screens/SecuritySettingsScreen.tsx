@@ -11,10 +11,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import { Button } from '../components/Button';
 import { useNavigation } from '@react-navigation/native';
-import { Card } from '../components';
 import { CustomAlert, showAlert, hideAlert, AlertState, initialAlertState } from '../components/CustomAlert';
 import { useTheme, useThemedStyles } from '../theme';
-import type { ThemeColors, ThemeShadows } from '../theme';
+import type { ThemeColors } from '../theme';
 import { TYPOGRAPHY, SPACING } from '../constants';
 import { useAuthStore } from '../stores';
 import { authService } from '../services';
@@ -36,12 +35,12 @@ export const SecuritySettingsScreen: React.FC = () => {
   const handleTogglePassphrase = async () => {
     if (authEnabled) {
       setAlertState(showAlert(
-        'Disable Passphrase Lock',
-        'Are you sure you want to disable passphrase protection?',
+        'Desactivar bloqueo por contraseña',
+        '¿Estás seguro de que quieres desactivar la protección por contraseña?',
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: 'Cancelar', style: 'cancel' },
           {
-            text: 'Disable',
+            text: 'Desactivar',
             style: 'destructive',
             onPress: () => {
               setAlertState(hideAlert());
@@ -70,45 +69,49 @@ export const SecuritySettingsScreen: React.FC = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-left" size={20} color={colors.text} />
+          <Icon name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Security</Text>
+        <Text style={styles.headerTitle}>Seguridad</Text>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>App Lock</Text>
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Passphrase Lock</Text>
-              <Text style={styles.settingHint}>Require passphrase to open app</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>BLOQUEO</Text>
+          <View style={styles.card}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Text style={styles.itemTitle}>Bloqueo por contraseña</Text>
+                <Text style={styles.itemDesc}>Requerir contraseña para abrir la aplicación</Text>
+              </View>
+              <Switch
+                value={authEnabled}
+                onValueChange={handleTogglePassphrase}
+                trackColor={{ false: colors.surfaceLight, true: `${colors.primary}80` }}
+                thumbColor={authEnabled ? colors.primary : colors.textMuted}
+              />
             </View>
-            <Switch
-              value={authEnabled}
-              onValueChange={handleTogglePassphrase}
-              trackColor={{ false: colors.surfaceLight, true: `${colors.primary  }80` }}
-              thumbColor={authEnabled ? colors.primary : colors.textMuted}
-            />
+
+            {authEnabled && (
+              <View style={styles.buttonContainer}>
+                <Button
+                  title="Cambiar contraseña"
+                  variant="outline"
+                  size="small"
+                  onPress={handleChangePassphrase}
+                  icon={<Icon name="edit-2" size={14} color={colors.primary} />}
+                  style={{ borderColor: colors.primary, borderRadius: 12 }}
+                />
+              </View>
+            )}
           </View>
+        </View>
 
-          {authEnabled && (
-            <Button
-              title="Change Passphrase"
-              variant="primary"
-              size="medium"
-              onPress={handleChangePassphrase}
-              icon={<Icon name="edit-2" size={16} color={colors.primary} />}
-              style={{ alignSelf: 'flex-start' as const, marginTop: SPACING.lg }}
-            />
-          )}
-        </Card>
-
-        <Card style={styles.infoCard}>
-          <Icon name="info" size={18} color={colors.textMuted} />
+        <View style={styles.infoCard}>
+          <Icon name="info" size={16} color={colors.textMuted} style={{ marginTop: 2, marginRight: 12 }} />
           <Text style={styles.infoText}>
-            When enabled, the app will lock automatically when you switch away or close it. Your passphrase is stored securely on device and never transmitted.
+            Cuando está activado, la aplicación se bloqueará automáticamente al salir o cerrarla. Tu contraseña se guarda de forma segura en el dispositivo.
           </Text>
-        </Card>
+        </View>
       </ScrollView>
 
       <Modal
@@ -122,6 +125,7 @@ export const SecuritySettingsScreen: React.FC = () => {
           onCancel={() => setShowPassphraseSetup(false)}
         />
       </Modal>
+
       <CustomAlert
         visible={alertState.visible}
         title={alertState.title}
@@ -133,48 +137,51 @@ export const SecuritySettingsScreen: React.FC = () => {
   );
 };
 
-const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
+const createStyles = (colors: ThemeColors) => ({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
   header: {
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.lg,
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
-    ...shadows.small,
-    zIndex: 1,
-    gap: SPACING.md,
   },
   backButton: {
-    padding: SPACING.xs,
+    marginRight: SPACING.md,
+    padding: 4,
   },
-  title: {
-    ...TYPOGRAPHY.h2,
-    flex: 1,
+  headerTitle: {
+    ...TYPOGRAPHY.h1,
+    fontSize: 24,
+    fontWeight: '700' as const,
     color: colors.text,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xxl,
   },
   section: {
-    marginBottom: SPACING.lg,
+    marginBottom: 24,
   },
-  sectionTitle: {
+  sectionLabel: {
     ...TYPOGRAPHY.label,
-    textTransform: 'uppercase' as const,
+    fontSize: 12,
+    letterSpacing: 1.2,
     color: colors.textMuted,
-    marginBottom: SPACING.md,
-    letterSpacing: 0.3,
+    marginBottom: 12,
+    paddingLeft: 4,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   settingRow: {
     flexDirection: 'row' as const,
@@ -183,29 +190,35 @@ const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   },
   settingInfo: {
     flex: 1,
+    marginRight: SPACING.md,
   },
-  settingLabel: {
+  itemTitle: {
     ...TYPOGRAPHY.body,
+    fontWeight: '600' as const,
     color: colors.text,
+    fontSize: 16,
   },
-  settingHint: {
+  itemDesc: {
     ...TYPOGRAPHY.bodySmall,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     marginTop: 2,
     lineHeight: 18,
   },
+  buttonContainer: {
+    marginTop: SPACING.lg,
+    alignItems: 'flex-start' as const,
+  },
   infoCard: {
     flexDirection: 'row' as const,
+    padding: SPACING.lg,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 16,
     alignItems: 'flex-start' as const,
-    gap: SPACING.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   infoText: {
     ...TYPOGRAPHY.bodySmall,
-    flex: 1,
     color: colors.textMuted,
+    flex: 1,
     lineHeight: 18,
   },
 });

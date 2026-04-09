@@ -7,6 +7,7 @@ import {
   Switch,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -190,6 +191,7 @@ export const KnowledgeBaseScreen: React.FC = () => {
           style={styles.list}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews={Platform.OS !== 'android'}
         />
       )}
     </SafeAreaView>

@@ -4,6 +4,7 @@ import {
   Text,
   ScrollView,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,7 +16,7 @@ import type { ThemeColors, ThemeShadows } from '../theme';
 import { RECOMMENDED_MODELS, TYPOGRAPHY, SPACING } from '../constants';
 import { useAppStore } from '../stores';
 import { useRemoteServerStore } from '../stores/remoteServerStore';
-import { hardwareService, modelManager, remoteServerManager } from '../services';
+import { hardwareService, modelManager, remoteServerManager, backgroundDownloadService } from '../services';
 import { discoverLANServers } from '../services/networkDiscovery';
 import { ModelFile, DownloadedModel, RemoteServer } from '../types';
 import { RootStackParamList } from '../navigation/types';
@@ -63,7 +64,7 @@ export const ModelDownloadScreen: React.FC<Props> = ({ navigation }) => {
         if (!cancelled) setModelFiles(files);
       } catch (error) {
         logger.error('Error initializing:', error);
-        if (!cancelled) setAlertState(showAlert('Error', 'Failed to initialize. Please try again.'));
+        if (!cancelled) setAlertState(showAlert('Error', 'Error al inicializar. Por favor, intenta de nuevo.'));
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -108,11 +109,11 @@ export const ModelDownloadScreen: React.FC<Props> = ({ navigation }) => {
       const reachable = await refreshServerHealth();
       // Only alert if there are truly no reachable servers after the scan
       if (reachable.size === 0) {
-        setAlertState(showAlert('No Servers Found', 'Make sure you\'re on the same WiFi network as your server and that it\'s running.'));
+        setAlertState(showAlert('No se encontraron servidores', 'Asegúrate de estar en la misma red WiFi que tu servidor y que esté funcionando.'));
       }
     } catch (e) {
       logger.warn('[ModelDownload] Scan failed:', (e as Error).message);
-      setAlertState(showAlert('Scan Failed', 'Could not scan your network. Make sure you are connected to WiFi.'));
+      setAlertState(showAlert('Escaneo fallido', 'No se pudo escanear tu red. Asegúrate de estar conectado a WiFi.'));
     } finally {
       setIsScanning(false);
     }
@@ -120,16 +121,39 @@ export const ModelDownloadScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleDownload = async (modelId: string, file: ModelFile) => {
     const key = `${modelId}/${file.name}`;
+
+    // Fix: Ensure we have permissions and battery optimization sorted before starting
+    try {
+      await backgroundDownloadService.requestNotificationPermission();
+      await backgroundDownloadService.checkAndPromptBatteryOptimization();
+    } catch (e) {
+      logger.warn('[ModelDownload] Pre-download checks failed:', e);
+    }
+
     setDownloadProgress(key, { progress: 0, bytesDownloaded: 0, totalBytes: file.size || 0 });
-    const onError = (error: Error) => { setDownloadProgress(key, null); setAlertState(showAlert('Download Failed', error.message)); };
+    const onError = (error: Error) => { setDownloadProgress(key, null); setAlertState(showAlert('Error de descarga', error.message)); };
     try {
       const info = await modelManager.downloadModelBackground(modelId, file, (p) => setDownloadProgress(key, p));
       modelManager.watchDownload(info.downloadId, (model: DownloadedModel) => {
         setDownloadProgress(key, null);
         addDownloadedModel(model);
-        setAlertState(showAlert('Download Complete!', `${model.name} has been downloaded successfully.`, [{ text: 'OK' }]));
+        setAlertState(showAlert('¡Descarga completa!', `${model.name} se ha descargado correctamente.`, [{ text: 'OK' }]));
       }, onError);
     } catch (error) { onError(error as Error); }
+  };
+
+  const handleOpenRepo = (modelId: string) => {
+    if (!modelId) return;
+
+    // Si es un modelo descargado (autor/repo/archivo), extraemos solo autor/repo
+    const parts = modelId.split('/');
+    const repoSlug = parts.length > 2 ? `${parts[0]}/${parts[1]}` : modelId;
+
+    const url = `https://huggingface.co/${repoSlug}`;
+    Linking.openURL(url).catch((err) => {
+      logger.error('[ModelDownload] Failed to open repo URL:', err);
+      setAlertState(showAlert('Error', 'No se pudo abrir el enlace del repositorio.'));
+    });
   };
 
   const handleConnectServer = async (server: RemoteServer) => {
@@ -141,23 +165,23 @@ export const ModelDownloadScreen: React.FC<Props> = ({ navigation }) => {
         const models = discoveredModels[server.id] || result.models || [];
         if (models.length === 0) {
           setAlertState(showAlert(
-            'Connected — No Models Found',
-            `${server.name} is reachable but has no models loaded. Start a model in Ollama/LM Studio, then reconnect.`,
+            'Conectado — No se encontraron modelos',
+            `${server.name} es accesible pero no tiene modelos cargados. Inicia un modelo en Ollama/LM Studio y vuelve a conectarte.`,
           ));
           return;
         }
         const textModel = models.find(m => !m.capabilities.supportsVision) || models[0];
         if (textModel) await remoteServerManager.setActiveRemoteTextModel(server.id, textModel.id);
         setAlertState(showAlert(
-          'Connected!',
-          `${server.name} is ready with ${models.length} model${models.length !== 1 ? 's' : ''}. You can start chatting now.`,
-          [{ text: 'Continue', onPress: () => { setAlertState(hideAlert()); navigation.replace('Main'); } }],
+          '¡Conectado!',
+          `${server.name} está listo con ${models.length} modelo${models.length !== 1 ? 's' : ''}. Puedes empezar a chatear ahora.`,
+          [{ text: 'Continuar', onPress: () => { setAlertState(hideAlert()); navigation.replace('Main'); } }],
         ));
       } else {
-        setAlertState(showAlert('Connection Failed', result.error || 'Could not connect to server.'));
+        setAlertState(showAlert('Conexión fallida', result.error || 'No se pudo conectar al servidor.'));
       }
     } catch (e) {
-      setAlertState(showAlert('Connection Failed', (e as Error).message));
+      setAlertState(showAlert('Conexión fallida', (e as Error).message));
     } finally {
       setConnectingServerId(null);
     }
@@ -176,7 +200,7 @@ export const ModelDownloadScreen: React.FC<Props> = ({ navigation }) => {
       <SafeAreaView style={styles.container}>
         <View testID="model-download-loading" style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Analyzing your device...</Text>
+          <Text style={styles.loadingText}>Analizando tu dispositivo...</Text>
         </View>
       </SafeAreaView>
     );
@@ -187,9 +211,9 @@ export const ModelDownloadScreen: React.FC<Props> = ({ navigation }) => {
       <View testID="model-download-screen" style={styles.container}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>Set Up Your AI</Text>
+            <Text style={styles.title}>Configura tu IA</Text>
             <Text style={styles.subtitle}>
-              Connect to a model server on your network, or download one to run directly on your device.
+              Conéctate a un servidor de modelos en tu red, o descarga uno para ejecutarlo directamente en tu dispositivo.
             </Text>
           </View>
 
@@ -206,15 +230,15 @@ export const ModelDownloadScreen: React.FC<Props> = ({ navigation }) => {
             colors={colors}
           />
 
-          <Text style={styles.sectionTitle}>Download to Your Device</Text>
+          <Text style={styles.sectionTitle}>Descargar a tu dispositivo</Text>
 
           <Card style={styles.deviceCard}>
             <View style={styles.deviceInfo}>
-              <Text style={styles.deviceLabel}>Your Device</Text>
+              <Text style={styles.deviceLabel}>Tu dispositivo</Text>
               <Text style={styles.deviceValue}>{deviceInfo?.deviceModel}</Text>
             </View>
             <View style={styles.deviceInfo}>
-              <Text style={styles.deviceLabel}>Available Memory</Text>
+              <Text style={styles.deviceLabel}>Memoria disponible</Text>
               <Text style={styles.deviceValue}>{hardwareService.formatBytes(deviceInfo?.availableMemory || 0)}</Text>
             </View>
           </Card>
@@ -236,22 +260,23 @@ export const ModelDownloadScreen: React.FC<Props> = ({ navigation }) => {
                 isCompatible={model.minRam <= totalRamGB}
                 onPress={() => {}}
                 onDownload={recFile ? () => handleDownload(model.id, recFile) : undefined}
+                onOpenRepo={() => handleOpenRepo(model.id)}
               />
             );
           })}
 
           {recommendedModels.length === 0 && (
             <Card style={styles.warningCard}>
-              <Text style={styles.warningTitle}>Limited Compatibility</Text>
+              <Text style={styles.warningTitle}>Compatibilidad limitada</Text>
               <Text style={styles.warningText}>
-                Your device has limited memory. You can still browse and download smaller models from the model browser.
+                Tu dispositivo tiene memoria limitada. Aún puedes buscar y descargar modelos más pequeños desde el explorador de modelos.
               </Text>
             </Card>
           )}
         </ScrollView>
 
         <View style={styles.footer}>
-          <Button title="Skip for Now" variant="ghost" onPress={() => navigation.replace('Main')} testID="model-download-skip" />
+          <Button title="Omitir por ahora" variant="ghost" onPress={() => navigation.replace('Main')} testID="model-download-skip" />
         </View>
 
         <CustomAlert visible={alertState.visible} title={alertState.title} message={alertState.message} buttons={alertState.buttons} onClose={() => setAlertState(hideAlert())} />

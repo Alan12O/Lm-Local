@@ -45,12 +45,16 @@ export const MathScreen: React.FC = () => {
   const solveWithAI = () => {
     if (!latex.trim()) return;
     triggerHaptic('notificationSuccess');
-    // Start a new chat with the latex as the initial message
-    navigation.navigate('Chat', { conversationId: undefined });
-    // In a real app, we'd pass the initial text too. 
-    // For now we'll assume the user will paste it or we'll handle it via store.
-    // Let's copy it to clipboard as a fallback.
-    // Clipboard.setString(latex);
+    
+    // Construct a structured prompt for the AI
+    const prompt = `Por favor, resuelve y explica paso a paso la siguiente fórmula matemática:\n\n$$\n${latex}\n$$\n\nProporciona una explicación detallada del razonamiento.`;
+    
+    // Navigate to Chat screen with the initial message and autoSend flag
+    navigation.navigate('Chat', { 
+      conversationId: undefined, 
+      initialMessage: prompt,
+      autoSend: true 
+    });
   };
 
   return (

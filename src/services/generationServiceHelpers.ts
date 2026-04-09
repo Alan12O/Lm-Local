@@ -7,7 +7,7 @@ import { useAppStore, useChatStore, useRemoteServerStore } from '../stores';
 import type { Message, GenerationMeta } from '../types';
 import { runToolLoop } from './generationToolLoop';
 import type { ToolResult } from './tools/types';
-import type { GenerationOptions, CompletionResult } from './providers/types';
+import type { GenerationOptions } from './providers/types';
 import logger from '../utils/logger';
 
 export const FLUSH_INTERVAL_MS = 50; // ~20 updates/sec
@@ -65,35 +65,143 @@ export function buildGenerationMetaImpl(svc: any): GenerationMeta {
     cacheType: settings.cacheType,
   };
 }
+function processStreamDelta(svc: any, chunk: { content?: string; reasoningContent?: string }) {
+  if (svc.abortRequested) return;
+
+  // Cortocircuito: Si es razonamiento nativo (proviene de modelos que soportan thinking explícito)
+  // lo añadimos directamente al buffer de razonamiento y omitimos el parseo de etiquetas manual.
+  if (chunk.reasoningContent) {
+    svc.reasoningBuffer += chunk.reasoningContent;
+    svc.totalReasoningLength += chunk.reasoningContent.length;
+    // Si todavía no estamos en modo "parsingThinking", lo activamos ya que estamos recibiendo razonamiento
+    if (!svc.isParsingThinking) {
+      svc.isParsingThinking = true;
+    }
+  }
+
+  if (chunk.content) {
+    if (!svc.state.streamingContent && svc.remoteTimeToFirstToken === undefined) {
+      svc.remoteTimeToFirstToken = svc.state.startTime
+        ? (Date.now() - svc.state.startTime) / 1000
+        : undefined;
+    }
+
+    // Si ya estamos recibiendo razonamiento nativo y llega contenido (normalmente vacío o whitespace),
+    // pero para modelos que NO soportan razonamiento nativo, necesitamos parsear las etiquetas <think>.
+    
+    let textToProcess = svc.tagBuffer + chunk.content;
+    svc.tagBuffer = '';
+
+    const THINK_START = '<think>';
+    const THINK_END = '</think>';
+
+    while (textToProcess.length > 0) {
+      if (!svc.isParsingThinking) {
+        // Búsqueda optimizada: primero exacto (minúsculas), luego case-insensitive solo si es necesario
+        let startIndex = textToProcess.indexOf(THINK_START);
+        if (startIndex === -1) {
+          startIndex = textToProcess.toLowerCase().indexOf(THINK_START);
+        }
+
+        if (startIndex !== -1) {
+          const prefix = textToProcess.slice(0, startIndex);
+          if (prefix) {
+            svc.state.streamingContent += prefix;
+            svc.tokenBuffer += prefix;
+          }
+          svc.isParsingThinking = true;
+          textToProcess = textToProcess.slice(startIndex + THINK_START.length);
+        } else {
+          // No se encontró <think>. Verificar si hay una etiqueta parcial al final
+          const lastChar = textToProcess[textToProcess.length - 1];
+          // Solo comprobamos si termina en algo que parece el inicio de una etiqueta
+          if (lastChar === '<' || textToProcess.includes('<')) {
+             let partialIdx = -1;
+             for (let i = 1; i < THINK_START.length; i++) {
+               if (textToProcess.endsWith(THINK_START.slice(0, i))) {
+                 partialIdx = textToProcess.length - i;
+                 break;
+               }
+             }
+             if (partialIdx !== -1) {
+               svc.tagBuffer = textToProcess.slice(partialIdx);
+               const safeText = textToProcess.slice(0, partialIdx);
+               if (safeText) {
+                 svc.state.streamingContent += safeText;
+                 svc.tokenBuffer += safeText;
+               }
+               textToProcess = '';
+               continue;
+             }
+          }
+          
+          svc.state.streamingContent += textToProcess;
+          svc.tokenBuffer += textToProcess;
+          textToProcess = '';
+        }
+      } else {
+        // Buscando el final del bloque de pensamiento
+        let endIndex = textToProcess.indexOf(THINK_END);
+        if (endIndex === -1) {
+          endIndex = textToProcess.toLowerCase().indexOf(THINK_END);
+        }
+
+        if (endIndex !== -1) {
+          const thought = textToProcess.slice(0, endIndex);
+          svc.reasoningBuffer += thought;
+          svc.totalReasoningLength += thought.length;
+          svc.isParsingThinking = false;
+          textToProcess = textToProcess.slice(endIndex + THINK_END.length);
+        } else {
+          // No se encontró </think>. Verificar si hay etiqueta parcial al final
+          const lastChar = textToProcess[textToProcess.length - 1];
+          if (lastChar === '<' || textToProcess.includes('<')) {
+            let partialIdx = -1;
+            for (let i = 1; i < THINK_END.length; i++) {
+              if (textToProcess.endsWith(THINK_END.slice(0, i))) {
+                partialIdx = textToProcess.length - i;
+                break;
+              }
+            }
+            if (partialIdx !== -1) {
+              svc.tagBuffer = textToProcess.slice(partialIdx);
+              const thought = textToProcess.slice(0, partialIdx);
+              svc.reasoningBuffer += thought;
+              svc.totalReasoningLength += thought.length;
+              textToProcess = '';
+              continue;
+            }
+          }
+          
+          svc.reasoningBuffer += textToProcess;
+          svc.totalReasoningLength += textToProcess.length;
+          textToProcess = '';
+        }
+      }
+    }
+  }
+
+  if (!svc.flushTimer) {
+     // Aumentar ligeramente el intervalo para agrupar mejor los tokens si el sistema está bajo carga
+    svc.flushTimer = setTimeout(() => svc.flushTokenBuffer(), FLUSH_INTERVAL_MS);
+  }
+}
+
 
 export function buildToolLoopHandlersImpl(svc: any) {
   return {
     isAborted: () => svc.abortRequested,
     onThinkingDone: () => svc.updateState({ isThinking: false }),
     onStream: (data: StreamChunk) => {
-      if (svc.abortRequested) return;
-      const chunk = typeof data === 'string' ? { content: data } : data;
-      if (chunk.content) {
-        if (!svc.state.streamingContent && svc.remoteTimeToFirstToken === undefined) {
-          svc.remoteTimeToFirstToken = svc.state.startTime
-            ? (Date.now() - svc.state.startTime) / 1000
-            : undefined;
-        }
-        svc.state.streamingContent += chunk.content;
-        svc.tokenBuffer += chunk.content;
-      }
-      if (chunk.reasoningContent) {
-        svc.reasoningBuffer += chunk.reasoningContent;
-        svc.totalReasoningLength += chunk.reasoningContent.length;
-      }
-      if (!svc.flushTimer) {
-        svc.flushTimer = setTimeout(() => svc.flushTokenBuffer(), FLUSH_INTERVAL_MS);
-      }
+      processStreamDelta(svc, typeof data === 'string' ? { content: data } : data);
     },
     onStreamReset: () => {
       svc.forceFlushTokens();
       svc.state.streamingContent = '';
       svc.tokenBuffer = '';
+      svc.reasoningBuffer = '';
+      svc.tagBuffer = '';
+      svc.isParsingThinking = false;
     },
     onFinalResponse: (content: string) => {
       svc.state.streamingContent = content;
@@ -141,32 +249,33 @@ export async function generateResponseImpl(
   svc: any,
   req: GenerationRequest,
 ): Promise<void> {
-  const { conversationId, messages, onFirstToken } = req;
+  const { conversationId, messages } = req;
   if (!(await prepareGenerationImpl(svc, conversationId))) return;
   const chatStore = useChatStore.getState();
-  let firstTokenReceived = false;
+  const { settings } = useAppStore.getState();
+
+  // Inject Super Extended instruction if needed
+  let finalMessages = messages;
+  const { thinkingEnabled, thinkingLevel } = settings;
+  if (thinkingEnabled && thinkingLevel === 'super_extended') {
+    const superExtendedInstruction: Message = {
+      id: 'system-super-extended-mode',
+      role: 'system',
+      content: "MODO SUPER EXTENDIDO: Antes de procesar la respuesta final, realiza obligatoriamente una fase de 'Refinamiento y Optimización' en tu pensamiento. Analiza la petición del usuario, identifica posibles ambigüedades o mejoras, y redefine mentalmente el prompt para obtener el mejor resultado posible. Luego, procede con el razonamiento detallado y la respuesta final.",
+      timestamp: 0,
+    };
+    finalMessages = [superExtendedInstruction, ...messages];
+  }
 
   try {
     await llmService.generateResponse(
-      messages,
+      finalMessages,
       (data) => {
         if (svc.abortRequested) return;
         const chunk = typeof data === 'string' ? { content: data, reasoningContent: undefined } : data;
-        if (!firstTokenReceived) {
-          firstTokenReceived = true;
-          svc.updateState({ isThinking: false });
-          onFirstToken?.();
-        }
-        if (chunk.content) {
-          svc.state.streamingContent += chunk.content;
-          svc.tokenBuffer += chunk.content;
-        }
-        if (chunk.reasoningContent) {
-          svc.reasoningBuffer += chunk.reasoningContent;
-        }
-        if (!svc.flushTimer) {
-          svc.flushTimer = setTimeout(() => svc.flushTokenBuffer(), FLUSH_INTERVAL_MS);
-        }
+        
+        svc.updateState({ isThinking: false });
+        processStreamDelta(svc, chunk);
       },
       () => {
         // If aborted, stopGeneration() already handled cleanup — don't clobber new generation state.
@@ -192,13 +301,12 @@ export async function generateRemoteResponseImpl(
   svc: any,
   req: GenerationRequest,
 ): Promise<void> {
-  const { conversationId, messages, onFirstToken } = req;
+  const { conversationId, messages } = req;
   if (!(await prepareGenerationImpl(svc, conversationId))) return;
   const chatStore = useChatStore.getState();
   const provider = svc.getCurrentProvider();
 
   if (!provider) { svc.resetState(); throw new Error('No remote provider available'); }
-  let firstTokenReceived = false;
   svc.remoteTimeToFirstToken = undefined;
 
   svc.currentRemoteAbortController = new AbortController();
@@ -206,40 +314,36 @@ export async function generateRemoteResponseImpl(
   // abortRequested is reset by the next generation's prepareGeneration().
   const { signal: generationSignal } = svc.currentRemoteAbortController;
 
-  const { temperature, maxTokens, topP, thinkingEnabled } = useAppStore.getState().settings;
+  const { temperature, maxTokens, topP, thinkingEnabled, thinkingLevel } = useAppStore.getState().settings;
+
+  // Inject Super Extended instruction if needed
+  let finalMessages = messages;
+  if (thinkingEnabled && thinkingLevel === 'super_extended') {
+    const superExtendedInstruction: Message = {
+      id: `super-ext-${Date.now()}`,
+      role: 'system',
+      content: "MODO SUPER EXTENDIDO: Antes de procesar la respuesta final, realiza obligatoriamente una fase de 'Refinamiento y Optimización' en tu pensamiento. Analiza la petición del usuario, identifica posibles ambigüedades o mejoras, y redefine mentalmente el prompt para obtener el mejor resultado posible. Luego, procede con el razonamiento detallado y la respuesta final.",
+      timestamp: Date.now(),
+    };
+    finalMessages = [superExtendedInstruction, ...messages];
+  }
+
   const options: GenerationOptions = {
     temperature, maxTokens, topP,
     stopSequences: [],
     enableThinking: thinkingEnabled && provider.capabilities.supportsThinking,
+    thinkingLevel: thinkingLevel,
   };
 
   try {
-    await provider.generate(messages, options, {
+    await provider.generate(finalMessages, options, {
       onToken: (token: string) => {
-        if (generationSignal.aborted) return;
-        if (!firstTokenReceived) {
-          firstTokenReceived = true;
-          svc.remoteTimeToFirstToken = svc.state.startTime
-            ? (Date.now() - svc.state.startTime) / 1000
-            : undefined;
-          svc.updateState({ isThinking: false });
-          onFirstToken?.();
-        }
-        svc.state.streamingContent += token;
-        svc.tokenBuffer += token;
-        if (!svc.flushTimer) {
-          svc.flushTimer = setTimeout(() => svc.flushTokenBuffer(), FLUSH_INTERVAL_MS);
-        }
+        processStreamDelta(svc, { content: token });
       },
       onReasoning: (content: string) => {
-        if (generationSignal.aborted) return;
-        svc.reasoningBuffer += content;
-        svc.totalReasoningLength += content.length;
-        if (!svc.flushTimer) {
-          svc.flushTimer = setTimeout(() => svc.flushTokenBuffer(), FLUSH_INTERVAL_MS);
-        }
+        processStreamDelta(svc, { reasoningContent: content });
       },
-      onComplete: (_result: CompletionResult) => {
+      onComplete: () => {
         if (generationSignal.aborted) return;
         svc.forceFlushTokens();
         const generationTime = svc.state.startTime ? Date.now() - svc.state.startTime : undefined;

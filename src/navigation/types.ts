@@ -3,7 +3,7 @@ export type RootStackParamList = {
   ModelDownload: undefined;
   Main: undefined;
   // Former ChatsStack
-  Chat: { conversationId?: string; projectId?: string };
+  Chat: { conversationId?: string; projectId?: string; initialMessage?: string; autoSend?: boolean };
   // Former ProjectsStack
   ProjectDetail: { projectId: string };
   ProjectEdit: { projectId?: string };

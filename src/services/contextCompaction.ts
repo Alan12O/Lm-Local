@@ -64,6 +64,8 @@ class ContextCompactionService {
 
   /** Count tokens for a string; falls back to char estimate if tokenizer unavailable */
   private async countTokens(text: string): Promise<number> {
+    // Optimización: Si el texto es muy corto, estimar directamente para ahorrar llamadas al bridge
+    if (text.length < 20) return Math.ceil(text.length / 3); 
     try {
       return await llmService.getTokenCount(text);
     } catch {
@@ -100,9 +102,16 @@ class ContextCompactionService {
       // Walk backwards — keep recent messages that fit in the recent budget
       const recentMessages: Message[] = [];
       let recentTokensUsed = 0;
+      
+      // Opt: Pre-estimar tokens para evitar llamadas masivas al bridge si hay muchos mensajes
+      const useHeuristic = nonSystem.length > 20;
+
       for (let i = nonSystem.length - 1; i >= 0; i--) {
         const msg = nonSystem[i];
-        const tokens = await this.countTokens(msg.content);
+        const tokens = useHeuristic 
+          ? Math.ceil(msg.content.length / CHARS_PER_TOKEN_ESTIMATE)
+          : await this.countTokens(msg.content);
+
         if (recentTokensUsed + tokens <= recentTokenBudget) {
           recentMessages.unshift(msg);
           recentTokensUsed += tokens;

@@ -66,10 +66,10 @@ async function doLoadTextModel(deps: ModelActionDeps): Promise<void> {
     deps.setSupportsVision(multimodalSupport?.vision || false);
     if (deps.modelLoadStartTimeRef.current && deps.settings.showGenerationDetails) {
       const loadTime = ((Date.now() - deps.modelLoadStartTimeRef.current) / 1000).toFixed(1);
-      addSystemMsg(deps, `Model loaded: ${activeModel.name} (${loadTime}s)`);
+      addSystemMsg(deps, `Modelo cargado: ${activeModel.name} (${loadTime}s)`);
     }
   } catch (error: any) {
-    deps.setAlertState(showAlert('Error', `Failed to load model: ${error?.message || 'Unknown error'}`));
+    deps.setAlertState(showAlert('Error', `Error al cargar el modelo: ${error?.message || 'Error desconocido'}`));
   } finally {
     deps.setIsModelLoading(false);
     deps.setLoadingModel(null);
@@ -88,12 +88,12 @@ export async function initiateModelLoad(
     const memoryCheck = await activeModelService.checkMemoryForModel(activeModelId, 'text');
     if (!memoryCheck.canLoad) {
       deps.setAlertState(showAlert(
-        'Insufficient Memory',
-        `Cannot load ${activeModel.name}. ${memoryCheck.message}\n\nTry unloading other models from the Home screen.`,
+        'Memoria insuficiente',
+        `No se puede cargar ${activeModel.name}. ${memoryCheck.message}\n\nIntenta descargar otros modelos para liberar memoria.`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: 'Cancelar', style: 'cancel' },
           {
-            text: 'Load Anyway', style: 'destructive', onPress: () => {
+            text: 'Cargar de todos modos', style: 'destructive', onPress: () => {
               deps.setAlertState(hideAlert());
               deps.setIsModelLoading(true);
               deps.setLoadingModel(activeModel);
@@ -117,11 +117,11 @@ export async function initiateModelLoad(
     deps.setSupportsVision(multimodalSupport?.vision || false);
     if (!alreadyLoading && deps.modelLoadStartTimeRef.current && deps.settings.showGenerationDetails) {
       const loadTime = ((Date.now() - deps.modelLoadStartTimeRef.current) / 1000).toFixed(1);
-      addSystemMsg(deps, `Model loaded: ${activeModel.name} (${loadTime}s)`);
+      addSystemMsg(deps, `Modelo cargado: ${activeModel.name} (${loadTime}s)`);
     }
   } catch (error: any) {
     if (!alreadyLoading) {
-      deps.setAlertState(showAlert('Error', `Failed to load model: ${error?.message || 'Unknown error'}`));
+      deps.setAlertState(showAlert('Error', `Error al cargar el modelo: ${error?.message || 'Error desconocido'}`));
     }
   } finally {
     if (!alreadyLoading) {
@@ -167,7 +167,7 @@ export async function proceedWithModelLoadFn(
       if (convId) {
         deps.addMessage(convId, {
           role: 'assistant',
-          content: `_Model loaded: ${model.name} (${loadTime}s)_`,
+          content: `_Modelo cargado: ${model.name} (${loadTime}s)_`,
           isSystemInfo: true,
         });
       }
@@ -175,7 +175,7 @@ export async function proceedWithModelLoadFn(
       deps.createConversation(model.id);
     }
   } catch (error) {
-    deps.setAlertState(showAlert('Error', `Failed to load model: ${(error as Error).message}`));
+    deps.setAlertState(showAlert('Error', `Error al cargar el modelo: ${(error as Error).message}`));
   } finally {
     deps.setIsModelLoading(false);
     deps.setLoadingModel(null);
@@ -194,10 +194,10 @@ export async function handleModelSelectFn(
   }
   const memoryCheck = await activeModelService.checkMemoryForModel(model.id, 'text');
   if (!memoryCheck.canLoad) {
-    deps.setAlertState(showAlert('Insufficient Memory', memoryCheck.message, [
-      { text: 'Cancel', style: 'cancel' },
+    deps.setAlertState(showAlert('Memoria insuficiente', memoryCheck.message, [
+      { text: 'Cancelar', style: 'cancel' },
       {
-        text: 'Load Anyway', style: 'destructive', onPress: () => {
+        text: 'Cargar de todos modos', style: 'destructive', onPress: () => {
           deps.setAlertState(hideAlert());
           proceedWithModelLoadFn(deps, model);
         }
@@ -207,12 +207,12 @@ export async function handleModelSelectFn(
   }
   if (memoryCheck.severity === 'warning') {
     deps.setAlertState(showAlert(
-      'Low Memory Warning',
+      'Aviso de memoria baja',
       memoryCheck.message,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Load Anyway',
+          text: 'Cargar de todos modos',
           style: 'default',
           onPress: () => {
             deps.setAlertState(hideAlert());
@@ -239,10 +239,10 @@ export async function handleUnloadModelFn(deps: ModelActionDeps): Promise<void> 
     await activeModelService.unloadTextModel();
     deps.setSupportsVision(false);
     if (deps.settings.showGenerationDetails && modelName) {
-      addSystemMsg(deps, `Model unloaded: ${modelName}`);
+      addSystemMsg(deps, `Modelo descargado: ${modelName}`);
     }
   } catch (error) {
-    deps.setAlertState(showAlert('Error', `Failed to unload model: ${(error as Error).message}`));
+    deps.setAlertState(showAlert('Error', `Error al descargar el modelo: ${(error as Error).message}`));
   } finally {
     deps.setIsModelLoading(false);
     deps.setLoadingModel(null);
@@ -307,7 +307,12 @@ export function useChatModelStateSync(deps: ModelStateSyncDeps): void {
   const { activeModelInfo, activeModelId, activeModel, modelDeps, activeRemoteModel, activeRemoteTextModelId, isModelLoading, setSupportsVision, setSupportsToolCalling, setSupportsThinking } = deps;
   useEffect(() => {
     if (activeModelInfo.isRemote) return;
-    if (activeModelId && activeModel) { ensureModelLoadedFn(modelDeps); }
+    if (activeModelId && activeModel) {
+      // Use InteractionManager to avoid blocking the drawer animation if this was triggered from the sidebar
+      InteractionManager.runAfterInteractions(() => {
+        ensureModelLoadedFn(modelDeps);
+      });
+    }
 
   }, [activeModelId]);
   useEffect(() => {

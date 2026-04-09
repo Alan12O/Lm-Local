@@ -176,8 +176,8 @@ export const CharacterDetailScreen: React.FC = () => {
           <Icon name="arrow-left" size={20} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <View style={[styles.projectIcon, { backgroundColor: (character.themeColor || character.icon) ? (character.themeColor || character.icon) + '30' : colors.surfaceLight }]}>
-            <Text style={[styles.projectIconText, { color: character.themeColor || character.icon || colors.textMuted }]}>
+          <View style={[styles.projectIcon, { backgroundColor: (character.themeColor?.startsWith('#') ? character.themeColor : (character.icon?.startsWith('#') ? character.icon : colors.primary)) + '30' }]}>
+            <Text style={[styles.projectIconText, { color: (character.themeColor?.startsWith('#') ? character.themeColor : (character.icon?.startsWith('#') ? character.icon : colors.primary)) }]}>
               {character.name.charAt(0).toUpperCase()}
             </Text>
           </View>

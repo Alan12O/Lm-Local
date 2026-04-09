@@ -4,13 +4,13 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
-import { Card } from '../components';
 import { useTheme, useThemedStyles } from '../theme';
-import type { ThemeColors, ThemeShadows } from '../theme';
+import type { ThemeColors } from '../theme';
 import { TYPOGRAPHY, SPACING } from '../constants';
 import { useAppStore } from '../stores';
 import { hardwareService } from '../services';
@@ -31,110 +31,123 @@ export const DeviceInfoScreen: React.FC = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-left" size={20} color={colors.text} />
+          <Icon name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Device Information</Text>
+        <Text style={styles.headerTitle}>Dispositivo</Text>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Hardware</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Model</Text>
-            <Text style={styles.infoValue}>{deviceInfo?.deviceModel}</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>ESPECIFICACIONES</Text>
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Modelo</Text>
+              <Text style={styles.infoValue}>{deviceInfo?.deviceModel}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Sistema</Text>
+              <Text style={styles.infoValue}>
+                {deviceInfo?.systemName} {deviceInfo?.systemVersion}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>RAM Total</Text>
+              <Text style={styles.infoValue}>{totalRamGB.toFixed(1)} GB</Text>
+            </View>
+            <View style={[styles.infoRow, styles.lastRow]}>
+              <Text style={styles.infoLabel}>Nivel</Text>
+              <Text style={styles.tierBadge}>
+                {deviceTier === 'low' ? 'Bajo' : deviceTier === 'medium' ? 'Medio' : deviceTier === 'high' ? 'Alto' : 'Flagship'}
+              </Text>
+            </View>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>System</Text>
-            <Text style={styles.infoValue}>
-              {deviceInfo?.systemName} {deviceInfo?.systemVersion}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Total RAM</Text>
-            <Text style={styles.infoValue}>{totalRamGB.toFixed(1)} GB</Text>
-          </View>
-          <View style={[styles.infoRow, styles.lastRow]}>
-            <Text style={styles.infoLabel}>Device Tier</Text>
-            <Text style={[styles.infoValue, styles.tierBadge]}>
-              {deviceTier.charAt(0).toUpperCase() + deviceTier.slice(1)}
-            </Text>
-          </View>
-        </Card>
+        </View>
 
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Compatibility</Text>
-          <Text style={styles.description}>
-            Your device tier determines which models will run smoothly. Higher RAM allows larger, more capable models.
-          </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>COMPATIBILIDAD</Text>
+          <View style={styles.card}>
+            <Text style={styles.description}>
+              Tu nivel de dispositivo determina qué modelos funcionarán mejor. Una RAM mayor permite modelos más complejos.
+            </Text>
 
-          <View style={styles.tierInfo}>
-            <View style={[styles.tierItem, deviceTier === 'low' && styles.tierItemActive]}>
-              <Text style={[styles.tierName, deviceTier === 'low' && styles.tierNameActive]}>Low</Text>
-              <Text style={styles.tierDesc}>{'< 4GB RAM'}</Text>
-              <Text style={styles.tierModels}>Small models only</Text>
-            </View>
-            <View style={[styles.tierItem, deviceTier === 'medium' && styles.tierItemActive]}>
-              <Text style={[styles.tierName, deviceTier === 'medium' && styles.tierNameActive]}>Medium</Text>
-              <Text style={styles.tierDesc}>4-6GB RAM</Text>
-              <Text style={styles.tierModels}>Most models</Text>
-            </View>
-            <View style={[styles.tierItem, deviceTier === 'high' && styles.tierItemActive]}>
-              <Text style={[styles.tierName, deviceTier === 'high' && styles.tierNameActive]}>High</Text>
-              <Text style={styles.tierDesc}>{'>6GB RAM'}</Text>
-              <Text style={styles.tierModels}>All models</Text>
-            </View>
-            <View style={[styles.tierItem, deviceTier === 'flagship' && styles.tierItemActive]}>
-              <Text style={[styles.tierName, deviceTier === 'flagship' && styles.tierNameActive]}>Flagship</Text>
-              <Text style={styles.tierDesc}>{'8GB+ RAM'}</Text>
-              <Text style={styles.tierModels}>All models + largest</Text>
+            <View style={styles.tierList}>
+              {[
+                { key: 'low', name: 'Bajo', desc: '< 4GB RAM', sub: 'Modelos básicos' },
+                { key: 'medium', name: 'Medio', desc: '4-6GB RAM', sub: 'La mayoría' },
+                { key: 'high', name: 'Alto', desc: '> 6GB RAM', sub: 'Todos los modelos' },
+                { key: 'flagship', name: 'Flagship', desc: '8GB+ RAM', sub: 'Modelos grandes' },
+              ].map((item, index, arr) => (
+                <View 
+                  key={item.key} 
+                  style={[
+                    styles.tierItem, 
+                    deviceTier === item.key && styles.tierItemActive,
+                    index === arr.length - 1 && { borderBottomWidth: 0 }
+                  ]}
+                >
+                  <View style={styles.tierTextContainer}>
+                    <Text style={[styles.tierName, deviceTier === item.key && styles.tierNameActive]}>
+                      {item.name}
+                    </Text>
+                    <Text style={styles.tierDesc}>{item.desc}</Text>
+                  </View>
+                  <Text style={styles.tierSub}>{item.sub}</Text>
+                  {deviceTier === item.key && <Icon name="check" size={16} color={colors.primary} />}
+                </View>
+              ))}
             </View>
           </View>
-        </Card>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
+const createStyles = (colors: ThemeColors) => ({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
   header: {
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.lg,
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
-    ...shadows.small,
-    zIndex: 1,
-    gap: SPACING.md,
   },
   backButton: {
-    padding: SPACING.xs,
+    marginRight: SPACING.md,
+    padding: 4,
   },
-  title: {
-    ...TYPOGRAPHY.h2,
-    flex: 1,
+  headerTitle: {
+    ...TYPOGRAPHY.h1,
+    fontSize: 24,
+    fontWeight: '700' as const,
     color: colors.text,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xxl,
   },
   section: {
-    marginBottom: SPACING.lg,
+    marginBottom: 24,
   },
-  sectionTitle: {
-    ...TYPOGRAPHY.h3,
-    color: colors.text,
-    marginBottom: SPACING.md,
+  sectionLabel: {
+    ...TYPOGRAPHY.label,
+    fontSize: 12,
+    letterSpacing: 1.2,
+    color: colors.textMuted,
+    marginBottom: 12,
+    paddingLeft: 4,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    padding: SPACING.lg,
   },
   description: {
     ...TYPOGRAPHY.bodySmall,
@@ -147,7 +160,7 @@ const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
     paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
   lastRow: {
@@ -155,55 +168,57 @@ const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   },
   infoLabel: {
     ...TYPOGRAPHY.body,
+    fontWeight: '500' as const,
     color: colors.textSecondary,
   },
   infoValue: {
     ...TYPOGRAPHY.body,
+    fontWeight: '600' as const,
     color: colors.text,
   },
   tierBadge: {
-    ...TYPOGRAPHY.label,
-    textTransform: 'uppercase' as const,
-    backgroundColor: `${colors.primary  }20`,
+    ...TYPOGRAPHY.meta,
+    fontSize: 11,
+    fontWeight: '700' as const,
     color: colors.primary,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: 6,
-    overflow: 'hidden' as const,
+    backgroundColor: `${colors.primary}15`,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-  tierInfo: {
-    flexDirection: 'row' as const,
-    gap: SPACING.sm,
+  tierList: {
+    marginTop: -SPACING.md,
   },
   tierItem: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    borderRadius: 8,
-    padding: SPACING.md,
+    flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: SPACING.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   tierItemActive: {
-    borderColor: colors.primary,
     backgroundColor: 'transparent',
+  },
+  tierTextContainer: {
+    flex: 1,
   },
   tierName: {
     ...TYPOGRAPHY.body,
+    fontWeight: '600' as const,
     color: colors.text,
-    marginBottom: SPACING.xs,
   },
   tierNameActive: {
     color: colors.primary,
   },
   tierDesc: {
     ...TYPOGRAPHY.meta,
+    fontSize: 11,
     color: colors.textMuted,
-    marginBottom: SPACING.xs,
+    marginTop: 2,
   },
-  tierModels: {
-    ...TYPOGRAPHY.meta,
+  tierSub: {
+    ...TYPOGRAPHY.bodySmall,
     color: colors.textSecondary,
-    textAlign: 'center' as const,
+    marginRight: 12,
   },
 });

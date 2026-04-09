@@ -270,6 +270,7 @@ interface ModelCardActionsProps {
   onDelete: (() => void) | undefined;
   onRepairVision: (() => void) | undefined;
   onCancel: (() => void) | undefined;
+  onOpenRepo?: () => void;
 }
 
 const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 };
@@ -291,14 +292,14 @@ function ActionButton({ icon, color, haptic, onPress, disabled, testID, styles }
   );
 }
 
-function DownloadedActions({ isActive, testID, colors, styles, onSelect, onDelete, onRepairVision }: Readonly<{
+function DownloadedActions({ isActive, testID, colors, styles, onSelect, onDelete, onRepairVision, onOpenRepo }: Readonly<{
   isActive?: boolean; testID?: string; colors: ThemeColors; styles: any;
-  onSelect?: () => void; onDelete?: () => void; onRepairVision?: () => void;
+  onSelect?: () => void; onDelete?: () => void; onRepairVision?: () => void; onOpenRepo?: () => void;
 }>) {
   const tid = (s: string) => testID ? `${testID}-${s}` : undefined;
-  if (!onSelect && !onDelete && !onRepairVision) return <Icon name="check-circle" size={16} color={colors.primary} />;
   return (
     <>
+      {onOpenRepo && <ActionButton icon="external-link" color={colors.textSecondary} haptic="selection" onPress={onOpenRepo} testID={tid('repo')} styles={styles} />}
       {onRepairVision && <ActionButton icon="eye" color={colors.warning} haptic="impactLight" onPress={onRepairVision} testID={tid('repair-vision')} styles={styles} />}
       {!isActive && onSelect && <ActionButton icon="check-circle" color={colors.primary} haptic="selection" onPress={onSelect} styles={styles} />}
       {onDelete && <ActionButton icon="trash-2" color={colors.error} haptic="notificationWarning" onPress={onDelete} styles={styles} />}
@@ -308,20 +309,30 @@ function DownloadedActions({ isActive, testID, colors, styles, onSelect, onDelet
 
 export const ModelCardActions: React.FC<ModelCardActionsProps> = ({
   isDownloaded, isDownloading, isActive, isCompatible, incompatibleReason,
-  testID, onDownload, onSelect, onDelete, onRepairVision, onCancel,
+  testID, onDownload, onSelect, onDelete, onRepairVision, onCancel, onOpenRepo,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const tid = (suffix: string) => testID ? `${testID}-${suffix}` : undefined;
 
   if (isDownloading && onCancel) {
-    return <ActionButton icon="x" color={colors.error} haptic="notificationWarning" onPress={onCancel} testID={tid('cancel')} styles={styles} />;
+    return (
+      <>
+        {onOpenRepo && <ActionButton icon="external-link" color={colors.textSecondary} haptic="selection" onPress={onOpenRepo} testID={tid('repo')} styles={styles} />}
+        <ActionButton icon="x" color={colors.error} haptic="notificationWarning" onPress={onCancel} testID={tid('cancel')} styles={styles} />
+      </>
+    );
   }
   if (!isDownloaded && onDownload) {
-    return <ActionButton icon="download" color={colors.primary} haptic="impactLight" onPress={onDownload} disabled={!isCompatible && !incompatibleReason} testID={tid('download')} styles={styles} />;
+    return (
+      <>
+        {onOpenRepo && <ActionButton icon="external-link" color={colors.textSecondary} haptic="selection" onPress={onOpenRepo} testID={tid('repo')} styles={styles} />}
+        <ActionButton icon="download" color={colors.primary} haptic="impactLight" onPress={onDownload} disabled={!isCompatible && !incompatibleReason} testID={tid('download')} styles={styles} />
+      </>
+    );
   }
   if (isDownloaded) {
-    return <DownloadedActions isActive={isActive} testID={testID} colors={colors} styles={styles} onSelect={onSelect} onDelete={onDelete} onRepairVision={onRepairVision} />;
+    return <DownloadedActions isActive={isActive} testID={testID} colors={colors} styles={styles} onSelect={onSelect} onDelete={onDelete} onRepairVision={onRepairVision} onOpenRepo={onOpenRepo} />;
   }
-  return null;
+  return onOpenRepo ? <ActionButton icon="external-link" color={colors.textSecondary} haptic="selection" onPress={onOpenRepo} testID={tid('repo')} styles={styles} /> : null;
 };

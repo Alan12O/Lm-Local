@@ -135,7 +135,7 @@ const createThinkingStyles = (colors: ThemeColors) => ({
     paddingHorizontal: 0,
   },
   userText: {
-    color: colors.background,
+    color: colors.background === '#FFFFFF' ? colors.text : '#FFFFFF',
     fontWeight: '400' as const,
   },
   assistantText: {
@@ -215,19 +215,17 @@ const createThinkingStyles = (colors: ThemeColors) => ({
     ...TYPOGRAPHY.meta,
     color: colors.textMuted,
   },
-  thinkingBlockText: {
-    ...TYPOGRAPHY.h3,
-    color: colors.textSecondary,
-    lineHeight: 18,
-    padding: SPACING.sm,
-    paddingTop: 0,
-    fontStyle: 'italic' as const,
-  },
   thinkingBlockContent: {
     padding: SPACING.md,
     paddingTop: 0,
     borderTopWidth: 0.5,
     borderTopColor: colors.borderLight,
+  },
+  thinkingBlockText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontStyle: 'italic' as const,
+    lineHeight: 18,
   },
   streamingThinkingHint: {
     marginTop: 8,

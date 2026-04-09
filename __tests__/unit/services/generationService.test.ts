@@ -1012,7 +1012,7 @@ describe('generationService', () => {
       const convId = setupWithConversation();
       setupWithActiveModel();
 
-      useAppStore.setState({ hasEngagedSharePrompt: true });
+      // share prompt logic removed
 
       mockedLlmService.generateResponse.mockImplementation(async (_msgs: any, onStream: any, onComplete: any) => {
         onStream?.('Response');

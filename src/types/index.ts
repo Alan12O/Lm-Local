@@ -174,6 +174,8 @@ export interface Message {
   timestamp: number;
   isStreaming?: boolean;
   isThinking?: boolean;
+  /** Indicates this message is currently in the middle of a <think> block (streaming) */
+  isThinkingBlock?: boolean;
   /** Indicates this is a system info message (model loaded/unloaded, etc.) */
   isSystemInfo?: boolean;
   attachments?: MediaAttachment[];
@@ -200,6 +202,7 @@ export interface Conversation {
   characterId?: string;
   compactionSummary?: string;
   compactionCutoffMessageId?: string;
+  isIncognito?: boolean;
 }
 
 // Onboarding-related types

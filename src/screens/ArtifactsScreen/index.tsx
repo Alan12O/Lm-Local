@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../../theme';
@@ -29,10 +29,10 @@ export const ArtifactsScreen: React.FC = () => {
     },
     {
       id: 'image-studio',
-      title: 'Image Studio',
+      title: 'Estudio de imagenes',
       description: 'Generación de imágenes locales.',
       icon: 'image',
-      color: '#A855F7', // Purple
+      color: '#8355f7ff', // Purple
       onPress: () => {
         triggerHaptic('impactLight');
         navigation.navigate('ImageStudio');
@@ -65,8 +65,18 @@ export const ArtifactsScreen: React.FC = () => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>Artefactos</Text>
-        <Text style={styles.subtitle}>Herramientas creativas y organización.</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={{ marginRight: 16 }}
+            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+          >
+            <Icon name="menu" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.title}>Artefactos</Text>
+            <Text style={styles.subtitle}>Herramientas De IA.</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.grid}>

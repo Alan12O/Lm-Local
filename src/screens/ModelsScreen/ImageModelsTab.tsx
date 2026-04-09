@@ -28,7 +28,7 @@ type Props = Pick<ModelsScreenViewModel,
   | 'showRecHint' | 'setShowRecHint'
   | 'imageRec' | 'ramGB' | 'imageRecommendation'
   | 'imageModelDownloading' | 'imageModelProgress'
-  | 'handleDownloadImageModel' | 'loadHFModels'
+  | 'handleDownloadImageModel' | 'loadHFModels' | 'handleOpenRepo'
   | 'clearImageFilters' | 'setUserChangedBackendFilter'
   | 'isRecommendedModel'
 >;
@@ -41,11 +41,12 @@ interface ImageModelCardProps {
   imageModelProgress: Record<string, number>;
   isRecommendedModel: (model: HFImageModel) => boolean;
   handleDownloadImageModel: Props['handleDownloadImageModel'];
+  handleOpenRepo: (modelId: string) => void;
 }
 
 const ImageModelCardItem: React.FC<ImageModelCardProps> = ({
   model, index, imageRec, imageModelDownloading, imageModelProgress,
-  isRecommendedModel, handleDownloadImageModel,
+  isRecommendedModel, handleDownloadImageModel, handleOpenRepo,
 }) => {
   const styles = useThemedStyles(createStyles);
   const recommended = isRecommendedModel(model);
@@ -59,7 +60,7 @@ const ImageModelCardItem: React.FC<ImageModelCardProps> = ({
     <View>
       {recommended && (
         <View style={styles.recommendedBadge}>
-          <Text style={styles.recommendedBadgeText}>RECOMMENDED</Text>
+          <Text style={styles.recommendedBadgeText}>RECOMENDADO</Text>
         </View>
       )}
       <ModelCard
@@ -81,6 +82,7 @@ const ImageModelCardItem: React.FC<ImageModelCardProps> = ({
             ? undefined
             : () => handleDownloadImageModel(hfModelToDescriptor(model))
         }
+        onOpenRepo={() => handleOpenRepo(model.repo)}
       />
     </View>
   );
@@ -118,6 +120,7 @@ interface ScrollContentProps {
   imageModelProgress: Record<string, number>;
   isRecommendedModel: (model: HFImageModel) => boolean;
   handleDownloadImageModel: Props['handleDownloadImageModel'];
+  handleOpenRepo: (modelId: string) => void;
   imageSearchQuery: string;
 }
 
@@ -131,7 +134,7 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
   hfModelsLoading, hfModelsError, loadHFModels,
   filteredHFModels, availableHFModels,
   imageModelDownloading, imageModelProgress,
-  isRecommendedModel, handleDownloadImageModel,
+  isRecommendedModel, handleDownloadImageModel, handleOpenRepo,
   imageSearchQuery,
 }) => {
   const { colors } = useTheme();
@@ -150,11 +153,11 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
   }, [hfModelsLoading, filteredHFModels.length, goTo]);
   let emptyMessage: string;
   if (imageSearchQuery.trim()) {
-    emptyMessage = 'No models match your search';
+    emptyMessage = 'Ningún modelo coincide con tu búsqueda';
   } else if (hasActiveImageFilters) {
-    emptyMessage = 'No models match your filters';
+    emptyMessage = 'Ningún modelo coincide con tus filtros';
   } else {
-    emptyMessage = 'All available models are downloaded';
+    emptyMessage = 'Todos los modelos disponibles están descargados';
   }
 
   return (
@@ -164,7 +167,7 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
           <TouchableOpacity style={styles.recHint} onPress={() => setShowRecHint(false)} activeOpacity={0.7}>
             <Icon name="info" size={11} color={colors.primary} />
             <Text style={styles.recHintText}>
-              Showing recommended models only. Tap{' '}<Text style={{ color: colors.primary }}>★</Text>{' '}to see all.
+              Mostrando solo modelos recomendados. Toca{' '}<Text style={{ color: colors.primary }}>★</Text>{' '}para ver todos.
             </Text>
           </TouchableOpacity>
         )}
@@ -195,7 +198,7 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
         {hfModelsLoading && (
           <View style={styles.hfLoadingContainer}>
             <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.loadingText}>Loading models...</Text>
+            <Text style={styles.loadingText}>Cargando modelos...</Text>
           </View>
         )}
 
@@ -203,7 +206,7 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
           <View style={styles.hfErrorContainer}>
             <Text style={styles.hfErrorText}>{hfModelsError}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={() => loadHFModels(true)}>
-              <Text style={styles.retryButtonText}>Retry</Text>
+              <Text style={styles.retryButtonText}>Reintentar</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -220,6 +223,7 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
                 imageModelProgress={imageModelProgress}
                 isRecommendedModel={isRecommendedModel}
                 handleDownloadImageModel={handleDownloadImageModel}
+                handleOpenRepo={handleOpenRepo}
               />
             );
             // Spotlight the first image model card for the onboarding flow
@@ -253,6 +257,7 @@ export const ImageModelsTab: React.FC<Props> = ({
   imageRec, ramGB, imageRecommendation,
   imageModelDownloading, imageModelProgress,
   handleDownloadImageModel, loadHFModels,
+  handleOpenRepo,
   clearImageFilters, setUserChangedBackendFilter,
   isRecommendedModel,
 }) => {
@@ -261,68 +266,75 @@ export const ImageModelsTab: React.FC<Props> = ({
 
   return (
     <View style={styles.imageTabContent}>
-      <View style={styles.imageModelsSection}>
-        <View style={[styles.searchContainer, styles.searchContainerNoPadding]}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search models..."
-            placeholderTextColor={colors.textMuted}
-            value={imageSearchQuery}
-            onChangeText={setImageSearchQuery}
-            returnKeyType="search"
+    <View style={styles.searchContainer}>
+      <View style={styles.searchInputWrapper}>
+        <Icon name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar modelos..."
+          placeholderTextColor={colors.textMuted}
+          value={imageSearchQuery}
+          onChangeText={setImageSearchQuery}
+          testID="image-search-input"
+        />
+        <TouchableOpacity
+          style={[styles.filterToggle, showRecommendedOnly && styles.filterToggleActive, { marginRight: 8 }]}
+          onPress={() => {
+            setShowRecHint(false);
+            setShowRecommendedOnly(v => { if (v) { setBackendFilter('all'); } return !v; });
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          testID="rec-toggle"
+        >
+          <MaterialIcon
+            name={showRecommendedOnly ? 'star' : 'star-border'}
+            size={18}
+            color={showRecommendedOnly ? colors.primary : colors.textMuted}
           />
-          <TouchableOpacity
-            style={[styles.recToggle, showRecommendedOnly && styles.recToggleActive]}
-            onPress={() => {
-              setShowRecHint(false);
-              setShowRecommendedOnly(v => { if (v) { setBackendFilter('all'); } return !v; });
-            }}
-            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-            testID="rec-toggle"
-          >
-            <MaterialIcon name={showRecommendedOnly ? 'star' : 'star-border'} size={16} color={showRecommendedOnly ? colors.primary : colors.textMuted} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterToggle, (imageFiltersVisible || hasActiveImageFilters) && styles.filterToggleActive]}
-            onPress={() => setImageFiltersVisible(v => !v)}
-            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-          >
-            <Icon name="sliders" size={14} color={(imageFiltersVisible || hasActiveImageFilters) ? colors.primary : colors.textMuted} />
-            {hasActiveImageFilters && <View style={styles.filterDot} />}
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterToggle, (imageFiltersVisible || hasActiveImageFilters) && styles.filterToggleActive]}
+          onPress={() => setImageFiltersVisible(v => !v)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          testID="image-filter-toggle"
+        >
+          <Icon name="sliders" size={16} color={(imageFiltersVisible || hasActiveImageFilters) ? colors.primary : colors.textMuted} />
+          {hasActiveImageFilters && <View style={styles.filterDot} />}
+        </TouchableOpacity>
       </View>
-
-      <ImageModelsScrollContent
-        showRecHint={showRecHint}
-        showRecommendedOnly={showRecommendedOnly}
-        setShowRecHint={setShowRecHint}
-        imageRec={imageRec}
-        ramGB={ramGB}
-        imageRecommendation={imageRecommendation}
-        imageFiltersVisible={imageFiltersVisible}
-        backendFilter={backendFilter}
-        setBackendFilter={setBackendFilter}
-        styleFilter={styleFilter}
-        setStyleFilter={setStyleFilter}
-        sdVersionFilter={sdVersionFilter}
-        setSdVersionFilter={setSdVersionFilter}
-        imageFilterExpanded={imageFilterExpanded}
-        setImageFilterExpanded={setImageFilterExpanded}
-        hasActiveImageFilters={hasActiveImageFilters}
-        clearImageFilters={clearImageFilters}
-        setUserChangedBackendFilter={setUserChangedBackendFilter}
-        hfModelsLoading={hfModelsLoading}
-        hfModelsError={hfModelsError}
-        loadHFModels={loadHFModels}
-        filteredHFModels={filteredHFModels as (HFImageModel & { _coreml?: boolean; _coremlFiles?: any[] })[]}
-        availableHFModels={availableHFModels}
-        imageModelDownloading={imageModelDownloading}
-        imageModelProgress={imageModelProgress}
-        isRecommendedModel={isRecommendedModel}
-        handleDownloadImageModel={handleDownloadImageModel}
-        imageSearchQuery={imageSearchQuery}
-      />
     </View>
+
+    <ImageModelsScrollContent
+      showRecHint={showRecHint}
+      showRecommendedOnly={showRecommendedOnly}
+      setShowRecHint={setShowRecHint}
+      imageRec={imageRec}
+      ramGB={ramGB}
+      imageRecommendation={imageRecommendation}
+      imageFiltersVisible={imageFiltersVisible}
+      backendFilter={backendFilter}
+      setBackendFilter={setBackendFilter}
+      styleFilter={styleFilter}
+      setStyleFilter={setStyleFilter}
+      sdVersionFilter={sdVersionFilter}
+      setSdVersionFilter={setSdVersionFilter}
+      imageFilterExpanded={imageFilterExpanded}
+      setImageFilterExpanded={setImageFilterExpanded}
+      hasActiveImageFilters={hasActiveImageFilters}
+      clearImageFilters={clearImageFilters}
+      setUserChangedBackendFilter={setUserChangedBackendFilter}
+      hfModelsLoading={hfModelsLoading}
+      hfModelsError={hfModelsError}
+      loadHFModels={loadHFModels}
+      filteredHFModels={filteredHFModels as (HFImageModel & { _coreml?: boolean; _coremlFiles?: any[] })[]}
+      availableHFModels={availableHFModels}
+      imageModelDownloading={imageModelDownloading}
+      imageModelProgress={imageModelProgress}
+      isRecommendedModel={isRecommendedModel}
+      handleDownloadImageModel={handleDownloadImageModel}
+      handleOpenRepo={handleOpenRepo}
+      imageSearchQuery={imageSearchQuery}
+    />
+  </View>
   );
 };

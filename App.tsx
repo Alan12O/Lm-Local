@@ -166,11 +166,13 @@ function App() {
       // mid-download these would be persisted as "downloading" forever.
       clearImageModelDownloading();
 
-      // Scan for any models that may have been downloaded externally or
-      // when app was killed before JS callback fired
-      const { textModels, imageModels } = await modelManager.refreshModelLists();
-      setDownloadedModels(textModels);
-      setDownloadedImageModels(imageModels);
+      // Carga inicial de modelos desde AsyncStorage (sin scan del filesystem)
+      // — solo para tener algo en pantalla lo antes posible.
+      // El scan completo del filesystem ocurre más tarde de forma no-bloqueante.
+      const fastTextModels = await modelManager.getDownloadedModels();
+      const fastImageModels = await modelManager.getDownloadedImageModels();
+      setDownloadedModels(fastTextModels);
+      setDownloadedImageModels(fastImageModels);
 
       // Ensure remote server store is hydrated before initializing providers,
       // so getServers() / activeServerId reads see persisted data.
@@ -191,8 +193,19 @@ function App() {
       // Initialize RAG database tables
       ragService.ensureReady().catch((err) => logger.error('Failed to initialize RAG service on startup', err));
 
-      // Show the UI immediately
+      // Bug #2 fix: Mostrar la UI inmediatamente despues de la inicializacion basica
+      // El scan de modelos locales se ejecuta en background para no bloquear la pantalla
       setIsInitializing(false);
+
+      // Scan en background — no bloquea el arranque
+      modelManager.refreshModelLists()
+        .then(({ textModels, imageModels }) => {
+          setDownloadedModels(textModels);
+          setDownloadedImageModels(imageModels);
+        })
+        .catch((err) => {
+          logger.error('[App] Failed to refresh model lists (non-blocking):', err);
+        });
 
       // Models are loaded on-demand when the user opens a chat,
       // not eagerly on startup, to avoid freezing the UI.

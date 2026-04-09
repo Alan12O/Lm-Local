@@ -74,7 +74,7 @@ export function parseThinkingContent(content: string): ParsedContent {
   const thinkStart = thinkStartMatch.index! + thinkStartMatch[0].length;
 
   if (!thinkEndMatch) {
-    const thinkingContent = content.slice(thinkStart);
+    const thinkingContent = content.slice(thinkStart).trim();
     return {
       thinking: thinkingContent,
       response: '',
@@ -120,14 +120,15 @@ export function formatDuration(ms: number): string {
 }
 
 export function buildMessageData(message: Message): { displayContent: string; parsedContent: ParsedContent } {
-  // Use reasoningContent from llama.rn if available
+  // Use reasoningContent (from llama.rn or our new parser) if available
   if (message.reasoningContent) {
     const displayContent = message.role === 'assistant'
       ? stripControlTokens(message.content).replaceAll(/<\/?think>/gi, '').trim()
       : message.content;
+    const isThinkingComplete = message.isStreaming ? !message.isThinkingBlock : true;
     return {
       displayContent,
-      parsedContent: { thinking: message.reasoningContent, response: displayContent, isThinkingComplete: true },
+      parsedContent: { thinking: message.reasoningContent, response: displayContent, isThinkingComplete },
     };
   }
 
@@ -141,7 +142,7 @@ export function buildMessageData(message: Message): { displayContent: string; pa
   }
 
   // Strip control tokens for display
-  const displayContent = parsedContent.response
+  const displayContent = parsedContent.thinking !== null
     ? stripControlTokens(parsedContent.response)
     : stripControlTokens(message.content);
 

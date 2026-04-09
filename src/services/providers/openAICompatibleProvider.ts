@@ -92,8 +92,17 @@ export class OpenAICompatibleProvider implements LLMProvider {
   private buildRequestBody(
     openaiMessages: OpenAIChatMessage[],
     options: GenerationOptions,
-    thinkingEnabled: boolean
+    thinkingEnabled: boolean,
+    thinkingLevel?: 'super_lite' | 'reduced' | 'medium' | 'normal' | 'super_extended'
   ): Record<string, unknown> {
+    const budgets = {
+      super_lite: 64,
+      reduced: 256,
+      medium: 1024,
+      normal: 4000,
+      super_extended: 8192,
+    };
+    const budget = thinkingLevel ? budgets[thinkingLevel] : 4000;
     return {
       model: this.config.modelId,
       messages: openaiMessages,
@@ -105,6 +114,8 @@ export class OpenAICompatibleProvider implements LLMProvider {
       // LM Studio only: control Qwen3 thinking per-request via chat_template_kwargs.
       // Sent only to LM Studio endpoints (port 1234) — other servers may reject unknown fields.
       ...(isLMStudioEndpoint(this.config.endpoint) && { chat_template_kwargs: { enable_thinking: thinkingEnabled } }),
+      // Google Gemini specific or customized OpenAI proxies support
+      ...(thinkingEnabled && { thinking_budget_tokens: budget }),
     };
   }
 
@@ -139,7 +150,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
         });
       }
 
-      const requestBody = this.buildRequestBody(openaiMessages, options, thinkingEnabled);
+      const requestBody = this.buildRequestBody(openaiMessages, options, thinkingEnabled, options.thinkingLevel);
       logger.log(`[Provider][DEBUG] OpenAI request — hasTools=${!!requestBody.tools}, toolChoice=${typeof requestBody.tool_choice === 'string' ? requestBody.tool_choice : JSON.stringify(requestBody.tool_choice) || 'none'}`);
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',

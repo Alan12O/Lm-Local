@@ -32,23 +32,23 @@ export function ThinkingBlock({
           </Text>
         </View>
         <View style={styles.thinkingHeaderTextContainer}>
-          <Text testID="thinking-block-title" style={styles.thinkingHeaderText}>
+          <Text testID="thinking-block-title" style={styles.thinkingHeaderText} selectable={true}>
             {parsedContent.thinkingLabel || (parsedContent.isThinkingComplete ? 'Thought process' : 'Thinking...')}
           </Text>
           {!showThinking && !!parsedContent.thinking && (
-            <Text style={styles.thinkingPreview} numberOfLines={2} ellipsizeMode="tail">
+            <Text style={styles.thinkingPreview} numberOfLines={2} ellipsizeMode="tail" selectable={true}>
               {parsedContent.thinking.slice(0, 80)}
               {parsedContent.thinking.length > 80 ? '...' : ''}
             </Text>
           )}
         </View>
-        <Text style={styles.thinkingToggle}>
+        <Text style={styles.thinkingToggle} selectable={true}>
           {showThinking ? '▼' : '▶'}
         </Text>
       </TouchableOpacity>
       {showThinking && parsedContent.thinking != null && (
         <View testID="thinking-block-content" style={styles.thinkingBlockContent}>
-          <MarkdownText dimmed>{parsedContent.thinking}</MarkdownText>
+          <MarkdownText dimmed selectable={true}>{parsedContent.thinking}</MarkdownText>
         </View>
       )}
     </View>

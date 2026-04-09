@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, FlatList, TextInput, ActivityIndicator, RefreshControl, TouchableOpacity, InteractionManager } from 'react-native';
+import { View, Text, FlatList, TextInput, ActivityIndicator, RefreshControl, TouchableOpacity, InteractionManager, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { AttachStep, useSpotlightTour } from 'react-native-spotlight-tour';
 import { Card, ModelCard, Button } from '../../components';
@@ -32,7 +32,7 @@ type Props = Pick<ModelsScreenViewModel,
   | 'alertState' | 'setAlertState'
   | 'focusTrigger'
   | 'handleSearch' | 'handleRefresh'
-  | 'handleSelectModel' | 'handleDownload' | 'handleRepairMmProj' | 'handleCancelDownload' | 'handleDeleteModel'
+  | 'handleSelectModel' | 'handleDownload' | 'handleRepairMmProj' | 'handleCancelDownload' | 'handleDeleteModel' | 'handleOpenRepo'
   | 'downloadIds'
   | 'clearFilters'
   | 'toggleFilterDimension' | 'toggleOrg'
@@ -56,6 +56,7 @@ interface DetailProps {
   handleRepairMmProj: (model: ModelInfo, file: ModelFile) => void;
   handleCancelDownload: (downloadKey: string) => void;
   handleDeleteModel: (modelId: string) => void;
+  handleOpenRepo: (modelId: string) => void;
   downloadIds: Record<string, number>;
   styles: ReturnType<typeof createStyles>;
   colors: ReturnType<typeof useTheme>['colors'];
@@ -64,7 +65,7 @@ interface DetailProps {
 const ModelDetailView: React.FC<DetailProps> = ({
   selectedModel, modelFiles, isLoadingFiles, filterState, ramGB,
   downloadProgress, alertState, setAlertState, onBack,
-  getDownloadedModel, isModelDownloaded, handleDownload, handleRepairMmProj, handleCancelDownload, handleDeleteModel, downloadIds,
+  getDownloadedModel, isModelDownloaded, handleDownload, handleRepairMmProj, handleCancelDownload, handleDeleteModel, handleOpenRepo, downloadIds,
   styles, colors,
 }) => {
   const { goTo } = useSpotlightTour();
@@ -109,6 +110,7 @@ const ModelDetailView: React.FC<DetailProps> = ({
         onDelete={s.downloaded ? () => handleDeleteModel(`${selectedModel.id}/${item.name}`) : undefined}
         onRepairVision={s.needsVisionRepair && !s.progress ? () => handleRepairMmProj(selectedModel, item) : undefined}
         onCancel={s.canCancel ? () => handleCancelDownload(s.downloadKey) : undefined}
+        onOpenRepo={() => handleOpenRepo(selectedModel.id)}
       />
     );
     return index === 0 ? <AttachStep index={9} fill>{card}</AttachStep> : card;
@@ -138,14 +140,14 @@ const ModelDetailView: React.FC<DetailProps> = ({
         </View>
         <Text style={styles.modelDescription}>{selectedModel.description}</Text>
         <View style={styles.modelStats}>
-          <Text style={styles.statText}>{formatNumber(selectedModel.downloads)} downloads</Text>
-          <Text style={styles.statText}>{formatNumber(selectedModel.likes)} likes</Text>
+          <Text style={styles.statText}>{formatNumber(selectedModel.downloads)} descargas</Text>
+          <Text style={styles.statText}>{formatNumber(selectedModel.likes)} me gusta</Text>
         </View>
       </Card>
-      <Text style={styles.sectionTitle}>Available Files</Text>
+      <Text style={styles.sectionTitle}>Archivos Disponibles</Text>
       <Text style={styles.sectionSubtitle}>
-        Choose a quantization level. Q4_K_M is recommended for mobile.
-        {modelFiles.some(f => f.mmProjFile) && ' Vision files include mmproj.'}
+        Elige un nivel de cuantización. Q4_K_M es recomendado para móviles.
+        {modelFiles.some(f => f.mmProjFile) && ' Los archivos de visión incluyen mmproj.'}
       </Text>
       {isLoadingFiles ? (
         <View style={styles.loadingContainer}><ActivityIndicator size="large" color={colors.primary} /></View>
@@ -155,7 +157,7 @@ const ModelDetailView: React.FC<DetailProps> = ({
           renderItem={renderFileItem}
           keyExtractor={item => item.name}
           contentContainerStyle={styles.listContent}
-          ListEmptyComponent={<Card style={styles.emptyCard}><Text style={styles.emptyText}>No compatible files found for this model.</Text></Card>}
+          ListEmptyComponent={<Card style={styles.emptyCard}><Text style={styles.emptyText}>No se encontraron archivos compatibles para este modelo.</Text></Card>}
         />
       )}
       <CustomAlert {...alertState} onClose={() => setAlertState(hideAlert())} />
@@ -172,6 +174,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
     hasActiveFilters, downloadedModels, downloadProgress,
     alertState, setAlertState, focusTrigger,
     handleSearch, handleRefresh, handleSelectModel, handleDownload, handleRepairMmProj, handleCancelDownload, handleDeleteModel,
+    handleOpenRepo,
     downloadIds,
     clearFilters, toggleFilterDimension, toggleOrg,
     setTypeFilter, setSourceFilter, setSizeFilter, setQuantFilter,
@@ -189,6 +192,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
           model={item}
           isDownloaded={downloadedModels.some(m => m.id.startsWith(item.id))}
           onPress={() => handleSelectModel(item)}
+          onOpenRepo={() => handleOpenRepo(item.id)}
           testID={`model-card-${index}`}
           compact
         />
@@ -229,6 +233,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
         handleRepairMmProj={handleRepairMmProj}
         handleCancelDownload={handleCancelDownload}
         handleDeleteModel={handleDeleteModel}
+        handleOpenRepo={handleOpenRepo}
         downloadIds={downloadIds}
         styles={styles}
         colors={colors}
@@ -240,26 +245,28 @@ export const TextModelsTab: React.FC<Props> = (props) => {
     <>
       {/* Main list / search UI */}
       <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search models..."
-          placeholderTextColor={colors.textMuted}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-          testID="search-input"
-        />
-        <TouchableOpacity
-          style={[styles.filterToggle, (textFiltersVisible || hasActiveFilters) && styles.filterToggleActive]}
-          onPress={() => setTextFiltersVisible(v => !v)}
-          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-          testID="text-filter-toggle"
-        >
-          <Icon name="sliders" size={14} color={(textFiltersVisible || hasActiveFilters) ? colors.primary : colors.textMuted} />
-          {hasActiveFilters && <View style={styles.filterDot} />}
-        </TouchableOpacity>
-        <Button title="Search" size="small" onPress={handleSearch} testID="search-button" />
+        <View style={styles.searchInputWrapper}>
+          <Icon name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar modelos..."
+            placeholderTextColor={colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+            testID="search-input"
+          />
+          <TouchableOpacity
+            style={[styles.filterToggle, (textFiltersVisible || hasActiveFilters) && styles.filterToggleActive]}
+            onPress={() => setTextFiltersVisible(v => !v)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            testID="text-filter-toggle"
+          >
+            <Icon name="sliders" size={16} color={(textFiltersVisible || hasActiveFilters) ? colors.primary : colors.textMuted} />
+            {hasActiveFilters && <View style={styles.filterDot} />}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {textFiltersVisible && (
@@ -279,7 +286,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading models...</Text>
+          <Text style={styles.loadingText}>Cargando modelos...</Text>
         </View>
       ) : (
         <FlatList
@@ -289,23 +296,24 @@ export const TextModelsTab: React.FC<Props> = (props) => {
           contentContainerStyle={styles.listContent}
           testID="models-list"
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
+          removeClippedSubviews={Platform.OS !== 'android'}
           ListHeaderComponent={hasSearched ? null : (
             <View>
               <View style={styles.deviceBanner}>
                 <Text style={styles.deviceBannerText}>
-                  {Math.round(ramGB)}GB RAM — models up to {deviceRecommendation.maxParameters}B recommended ({deviceRecommendation.recommendedQuantization})
+                  {Math.round(ramGB)}GB RAM — modelos de hasta {deviceRecommendation.maxParameters}B recomendados ({deviceRecommendation.recommendedQuantization})
                 </Text>
               </View>
-              {recommendedAsModelInfo.length > 0 && <Text style={styles.recommendedTitle}>Recommended for your device</Text>}
+              {recommendedAsModelInfo.length > 0 && <Text style={styles.recommendedTitle}>Recomendado para tu dispositivo</Text>}
             </View>
           )}
           ListEmptyComponent={
             <Card style={styles.emptyCard}>
               <Text style={styles.emptyText}>
                 {(() => {
-                  if (!hasSearched) return 'No recommended models available.';
-                  if (hasActiveFilters) return 'No models match your filters. Try adjusting or clearing them.';
-                  return 'No models found. Try a different search term.';
+                  if (!hasSearched) return 'No hay modelos recomendados disponibles.';
+                  if (hasActiveFilters) return 'Ningún modelo coincide con tus filtros. Intenta ajustarlos o limpiarlos.';
+                  return 'No se encontraron modelos. Intenta con un término de búsqueda diferente.';
                 })()}
               </Text>
             </Card>

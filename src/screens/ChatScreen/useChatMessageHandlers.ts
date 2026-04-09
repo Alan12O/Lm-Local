@@ -58,11 +58,11 @@ export function handleDeleteConversationFn(
 ): void {
   if (!p.activeConversationId || !p.activeConversation) return;
   p.setAlertState(showAlert(
-    'Delete Conversation',
-    'Are you sure you want to delete this conversation? This will also delete all images generated in this chat.',
+    'Eliminar conversación',
+    '¿Estás seguro de que quieres eliminar esta conversación? Esto también eliminará todas las imágenes generadas en este chat.',
     [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => { executeDeleteConversationFn(genDeps).catch(() => {}); } },
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Eliminar', style: 'destructive', onPress: () => { executeDeleteConversationFn(genDeps).catch(() => {}); } },
     ],
   ));
 }
@@ -72,7 +72,7 @@ export async function handleGenerateImageFromMsgFn(
   p: { activeConversationId: string | null | undefined; activeImageModel: any; setAlertState: SetState<AlertState> },
 ): Promise<void> {
   if (!p.activeConversationId || !p.activeImageModel) {
-    p.setAlertState(showAlert('No Image Model', 'Please load an image model first from the Models screen.'));
+    p.setAlertState(showAlert('Sin modelo de imagen', 'Por favor, carga primero un modelo de imagen desde la pantalla de Modelos.'));
     return;
   }
   await handleImageGenerationFn(genDeps, { prompt, conversationId: p.activeConversationId, skipUserMessage: true });

@@ -21,6 +21,7 @@ class MainApplication : Application(), ReactApplication {
           add(DownloadManagerPackage())
           add(LocalDreamPackage())
           add(PDFExtractorPackage())
+          add(IncognitoKeyboardPackage())
         },
     )
   }

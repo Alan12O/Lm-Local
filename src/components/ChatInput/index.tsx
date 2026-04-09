@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, Animated, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, Animated, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../../theme';
 import { ImageModeState, MediaAttachment } from '../../types';
@@ -7,7 +7,8 @@ import { VoiceRecordButton } from '../VoiceRecordButton';
 import { AttachStep } from 'react-native-spotlight-tour';
 import { triggerHaptic } from '../../utils/haptics';
 import { CustomAlert, showAlert, hideAlert, AlertState, initialAlertState } from '../CustomAlert';
-import { createStyles, PILL_ICONS_WIDTH, ANIM_DURATION_IN, ANIM_DURATION_OUT } from './styles';
+import { createStyles, ANIM_DURATION_IN, ANIM_DURATION_OUT } from './styles';
+import IncognitoTextInput from '../IncognitoTextInput';
 import { QueueRow } from './Toolbar';
 import { AttachmentPreview, useAttachments } from './Attachments';
 import { useVoiceInput } from './Voice';
@@ -15,7 +16,6 @@ import {
   QuickSettingsPopover,
   AttachPickerPopover,
   CharacterActionsPopover,
-  popoverStyles,
 } from './Popovers';
 import { useKeyboardAwarePopover } from './useKeyboardAwarePopover';
 
@@ -41,6 +41,8 @@ interface ChatInputProps {
   activeSpotlight?: number | null;
   /** Whether we are chatting with a character (enables RP tools) */
   isCharacterMode?: boolean;
+  /** Whether incognito mode is active (disables persistence and keyboard learning) */
+  isIncognito?: boolean;
 }
 
 const IMAGE_MODE_CYCLE: ImageModeState[] = ['auto', 'force', 'disabled'];
@@ -67,10 +69,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   supportsThinking = false,
   activeSpotlight = null,
   isCharacterMode = false,
+  isIncognito = false,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const [message, setMessage] = useState('');
+  const [inputKey, setInputKey] = useState(0);
   const [imageMode, setImageMode] = useState<ImageModeState>('auto');
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
   const quickSettings = useKeyboardAwarePopover();
@@ -79,7 +83,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const inputRef = useRef<TextInput>(null);
   const hasText = message.length > 0;
   const iconsAnim = useRef(new Animated.Value(0)).current;
-
   useEffect(() => {
     Animated.timing(iconsAnim, {
       toValue: hasText ? 1 : 0,
@@ -87,6 +90,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       useNativeDriver: false,
     }).start();
   }, [hasText, iconsAnim]);
+  
 
   const { attachments, removeAttachment, clearAttachments, handlePickImage, handlePickDocument } = useAttachments(setAlertState);
 
@@ -100,18 +104,40 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     },
   });
 
-  const canSend = (message.trim().length > 0 || attachments.length > 0) && !disabled;
+  const canSend = (message.trim().length > 0 || attachments.length > 0) && !disabled && !isGenerating;
 
-  const handleSend = () => {
-    if (!canSend) return;
+  const handleSend = async () => {
+    // 1. Strict Guard Clauses
+    if (isGenerating || !canSend) return;
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage && attachments.length === 0) return;
+
     triggerHaptic('impactMedium');
-    onSend(message.trim(), attachments.length > 0 ? attachments : undefined, imageMode);
+
+    // 1. Capture content
+    const currentMessage = trimmedMessage;
+    const currentAttachments = attachments.length > 0 ? [...attachments] : undefined;
+    
+    // 2. Clear state and REMOUNT instantly (Bulletproof clear)
     setMessage('');
     clearAttachments();
-    inputRef.current?.focus();
-    if (imageMode === 'force') {
-      setImageMode('auto');
-      onImageModeChange?.('auto');
+    setInputKey(prev => prev + 1);
+
+    try {
+      // 3. Send message with captured data
+      await onSend(currentMessage, currentAttachments, imageMode);
+    } catch (sendError) {
+      console.error("Error en generación:", sendError);
+    } finally {
+      // Allow the new component instance to mount before focusing
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+      
+      if (imageMode === 'force') {
+        setImageMode('auto');
+        onImageModeChange?.('auto');
+      }
     }
   };
 
@@ -150,7 +176,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   ) : isGenerating && onStop ? (
     <TouchableOpacity
       testID="stop-button"
-      style={[styles.circleButton, styles.circleButtonStop, { backgroundColor: 'transparent' }]}
+      style={[styles.circleButton, styles.circleButtonStop]}
       onPress={handleStop}
     >
       <Icon name="square" size={18} color={colors.error} />
@@ -179,19 +205,21 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         queuedTexts={queuedTexts}
         onClearQueue={onClearQueue}
       />
-      <View style={{
-        backgroundColor: colors.surface,
-        borderRadius: 16,
-        borderWidth: 0.5,
-        borderColor: colors.border,
-        padding: 12,
-        paddingTop: 8,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2,
-      }}>
-        <TextInput
+      <View style={styles.inputWrapper}>
+        <TouchableOpacity 
+          onPress={handleAttachPress} 
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} 
+          style={styles.attachButton}
+        >
+          <Icon name="paperclip" size={20} color={disabled ? colors.textMuted : colors.textSecondary} />
+        </TouchableOpacity>
+
+        {Platform.OS === 'android' && isIncognito ? (
+          <IncognitoTextInput
+            key={inputKey}
             ref={inputRef}
             testID="chat-input"
-            style={[styles.pillInput, { minHeight: 48, paddingBottom: 16 }]}
+            style={styles.pillInput}
             value={message}
             onChangeText={setMessage}
             placeholder={placeholder}
@@ -200,23 +228,47 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             scrollEnabled
             editable={!disabled}
             blurOnSubmit={false}
-        />
+            underlineColorAndroid="transparent"
+            onSubmitEditing={handleSend}
+          />
+        ) : (
+          <TextInput
+            key={inputKey}
+            ref={inputRef}
+            testID="chat-input"
+            style={styles.pillInput}
+            value={message}
+            onChangeText={setMessage}
+            placeholder={placeholder}
+            placeholderTextColor={colors.textMuted}
+            multiline
+            scrollEnabled
+            editable={!disabled}
+            blurOnSubmit={false}
+            autoCorrect={!isIncognito}
+            spellCheck={!isIncognito}
+            autoComplete={isIncognito ? 'off' : undefined}
+            onSubmitEditing={handleSend}
+          />
+        )}
 
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity onPress={handleAttachPress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Icon name="paperclip" size={18} color={disabled ? colors.textMuted : colors.textSecondary} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleQuickSettingsPress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Icon name="settings" size={18} color={disabled ? colors.textMuted : colors.textSecondary} />
-            </TouchableOpacity>
-            {isCharacterMode && (
-              <TouchableOpacity onPress={handleCharActionsPress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Icon name="zap" size={18} color={disabled ? colors.textMuted : colors.primary} />
-              </TouchableOpacity>
-            )}
-          </View>
+        <View style={styles.rightActionRow}>
+          <TouchableOpacity 
+            onPress={handleQuickSettingsPress} 
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Icon name="settings" size={20} color={disabled ? colors.textMuted : colors.textSecondary} />
+          </TouchableOpacity>
           
+          {isCharacterMode && (
+            <TouchableOpacity 
+              onPress={handleCharActionsPress} 
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Icon name="zap" size={20} color={disabled ? colors.textMuted : colors.primary} />
+            </TouchableOpacity>
+          )}
+
           <View>
             {activeSpotlight === 12 ? (
               <AttachStep index={12} style={spotlightStyles.centered}>{actionButton}</AttachStep>
@@ -270,7 +322,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   return content;
 };
 
-const spotlightStyles = StyleSheet.create({
-  centered: { alignSelf: 'center' },
-});
+const spotlightStyles = {
+  centered: { alignSelf: 'center' as const },
+};
 

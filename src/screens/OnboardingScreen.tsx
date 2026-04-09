@@ -2,12 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
-  Image,
   FlatList,
   Dimensions,
   Animated,
   TouchableOpacity,
-  Linking,
+  Platform,
 } from 'react-native';
 import ReanimatedAnimated, {
   useSharedValue,
@@ -227,7 +226,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         <View style={styles.header}>
           {!isLastSlide && (
             <Button
-              title="Skip"
+              title="Saltar"
               variant="ghost"
               onPress={handleSkip}
               testID="onboarding-skip"
@@ -251,13 +250,14 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             const index = Math.round(e.nativeEvent.contentOffset.x / width);
             setCurrentIndex(index);
           }}
+          removeClippedSubviews={Platform.OS !== 'android'}
         />
 
         {renderDots()}
 
         <View style={styles.footer}>
           <Button
-            title={isLastSlide ? 'Get Started' : 'Next'}
+            title={isLastSlide ? 'Empezar' : 'Siguiente'}
             onPress={handleNext}
             size="large"
             style={styles.nextButton}

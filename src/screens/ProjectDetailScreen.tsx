@@ -49,7 +49,7 @@ export const ProjectDetailScreen: React.FC = () => {
 
   const handleNewChat = () => {
     if (!hasModels) {
-      setAlertState(showAlert('No Model', 'Please download a model first from the Models tab.'));
+      setAlertState(showAlert('Sin modelo', 'Por favor, descarga un modelo primero desde la pestaña de Modelos.'));
       return;
     }
     const modelId = activeModelId || downloadedModels[0]?.id;
@@ -61,12 +61,12 @@ export const ProjectDetailScreen: React.FC = () => {
 
   const handleDeleteProject = () => {
     setAlertState(showAlert(
-      'Delete Project',
-      `Delete "${project?.name}"? This will not delete the chats associated with this project.`,
+      'Eliminar proyecto',
+      `¿Eliminar "${project?.name}"? Esto no eliminará los chats asociados a este proyecto.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Eliminar',
           style: 'destructive',
           onPress: () => {
             deleteProject(projectId);
@@ -79,12 +79,12 @@ export const ProjectDetailScreen: React.FC = () => {
 
   const handleDeleteChat = (conversation: Conversation) => {
     setAlertState(showAlert(
-      'Delete Chat',
-      `Delete "${conversation.title}"?`,
+      'Eliminar chat',
+      `¿Eliminar "${conversation.title}"?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Eliminar',
           style: 'destructive',
           onPress: () => deleteConversation(conversation.id),
         },
@@ -100,7 +100,7 @@ export const ProjectDetailScreen: React.FC = () => {
     if (diffDays === 0) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else if (diffDays === 1) {
-      return 'Yesterday';
+      return 'Ayer';
     } else if (diffDays < 7) {
       return date.toLocaleDateString([], { weekday: 'short' });
     }
@@ -141,7 +141,7 @@ export const ProjectDetailScreen: React.FC = () => {
             </View>
             {lastMessage && (
               <Text style={styles.chatPreview} numberOfLines={1}>
-                {lastMessage.role === 'user' ? 'You: ' : ''}{lastMessage.content}
+                {lastMessage.role === 'user' ? 'Tú: ' : ''}{lastMessage.content}
               </Text>
             )}
           </View>
@@ -155,9 +155,9 @@ export const ProjectDetailScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Project not found</Text>
+          <Text style={styles.errorText}>Proyecto no encontrado</Text>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.errorLink}>Go back</Text>
+            <Text style={styles.errorLink}>Volver</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -212,7 +212,7 @@ export const ProjectDetailScreen: React.FC = () => {
             </View>
             <View style={styles.sectionActions}>
               <Button
-                title="New"
+                title="Nuevo"
                 variant="primary"
                 size="small"
                 onPress={handleNewChat}
@@ -232,10 +232,10 @@ export const ProjectDetailScreen: React.FC = () => {
             {projectChats.length === 0 ? (
               <View style={styles.emptyState}>
                 <Icon name="message-circle" size={24} color={colors.textMuted} />
-                <Text style={styles.emptyStateText}>No chats yet</Text>
+                <Text style={styles.emptyStateText}>Aún no hay chats</Text>
                 {hasModels && (
                   <Button
-                    title="Start a Chat"
+                    title="Iniciar un chat"
                     variant="primary"
                     size="small"
                     onPress={handleNewChat}
@@ -257,7 +257,7 @@ export const ProjectDetailScreen: React.FC = () => {
       {/* Delete Project Button */}
       <View style={styles.footer}>
         <Button
-          title="Delete Project"
+          title="Eliminar proyecto"
           variant="ghost"
           size="medium"
           onPress={handleDeleteProject}

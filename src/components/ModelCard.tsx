@@ -41,6 +41,7 @@ interface ModelCardProps {
   onSelect?: () => void;
   onRepairVision?: () => void;
   onCancel?: () => void;
+  onOpenRepo?: () => void;
   compact?: boolean;
 }
 
@@ -102,6 +103,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({
   onSelect,
   onRepairVision,
   onCancel,
+  onOpenRepo,
   compact,
 }) => {
   const styles = useThemedStyles(createStyles);
@@ -193,6 +195,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({
           onDelete={onDelete}
           onRepairVision={onRepairVision}
           onCancel={onCancel}
+          onOpenRepo={onOpenRepo}
         />
       </View>
     </TouchableOpacity>

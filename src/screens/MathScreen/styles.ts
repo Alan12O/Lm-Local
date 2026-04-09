@@ -1,5 +1,4 @@
-import { StyleSheet } from 'react-native';
-import { TYPOGRAPHY, SPACING } from '../../constants';
+import { TYPOGRAPHY } from '../../constants';
 import type { ThemeColors, ThemeShadows } from '../../theme';
 
 export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({

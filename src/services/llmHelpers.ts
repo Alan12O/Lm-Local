@@ -110,7 +110,7 @@ export interface ContextInitResult {
  * Se usa 12s (en vez de 8s) porque el DSP Hexagon tiene handshake adicional
  * en el primer arranque (carga del skel desde /vendor/lib/rfsa/adsp/).
  */
-const GPU_INIT_TIMEOUT_MS = 12000;
+const GPU_INIT_TIMEOUT_MS = 60000; // El DSP Hexagon puede tardar hasta 40s en compilar el grafo neuronal (JIT) la primera vez.
 /** Race a promise against a timeout; rejects with descriptive error on expiry. */
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;

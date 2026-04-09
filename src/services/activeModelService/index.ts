@@ -210,7 +210,12 @@ class ActiveModelService {
     }
     const model = store.downloadedImageModels.find(m => m.id === modelId);
     if (!model) {
-      throw new Error('Model not found');
+      // Bug #5 fix: el activeImageModelId apuntaba a un modelo que ya no existe.
+      // Limpiar el estado stale para que la UI no quede bloqueada.
+      if (store.activeImageModelId === modelId) {
+        store.setActiveImageModelId(null);
+      }
+      throw new Error(`Modelo de imagen no encontrado: ${modelId}. Es posible que haya sido eliminado.`);
     }
     const check = await this.checkImageModelCanLoad(modelId, model);
     if (!check.canLoad) {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Switch, Platform, TouchableOpacity } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { AdvancedToggle, Card } from '../../components';
+import { AdvancedToggle } from '../../components';
 import { Button } from '../../components/Button';
 import { useTheme, useThemedStyles } from '../../theme';
 import { useAppStore } from '../../stores';
@@ -19,11 +19,11 @@ const EnhanceImageToggle: React.FC = () => {
   return (
     <View style={styles.toggleRow}>
       <View style={styles.toggleInfo}>
-        <Text style={styles.toggleLabel}>Enhance Image Prompts</Text>
+        <Text style={styles.toggleLabel}>Mejorar Prompts de Imagen</Text>
         <Text style={styles.toggleDesc}>
           {settings?.enhanceImagePrompts
-            ? 'Text model refines your prompt before image generation (slower but better results)'
-            : 'Use your prompt directly for image generation (faster)'}
+            ? 'El modelo de texto refina tu prompt antes de generar la imagen (más lento pero mejores resultados)'
+            : 'Usar tu prompt directamente para generar la imagen (más rápido)'}
         </Text>
       </View>
       <Switch
@@ -48,9 +48,9 @@ const ImageGpuSection: React.FC = () => {
     <>
       <View style={styles.toggleRow}>
         <View style={styles.toggleInfo}>
-          <Text style={styles.toggleLabel}>OpenCL GPU Acceleration</Text>
+          <Text style={styles.toggleLabel}>Aceleración por GPU OpenCL</Text>
           <Text style={styles.toggleDesc}>
-            Use GPU for faster image generation. First run may be slower while optimizing for your device.
+            Usa la GPU para una generación de imagen más rápida. La primera ejecución puede ser más lenta mientras se optimiza para tu dispositivo.
           </Text>
         </View>
         <Switch
@@ -67,7 +67,7 @@ const ImageGpuSection: React.FC = () => {
           disabled={clearing}
         >
           <Text style={styles.clearCacheText}>
-            {clearing ? 'Clearing...' : 'Clear GPU Cache'}
+            {clearing ? 'Limpiando...' : 'Limpiar caché de GPU'}
           </Text>
         </TouchableOpacity>
       )}
@@ -83,15 +83,15 @@ const DetectionMethodRow: React.FC = () => {
 
   return (
     <View style={styles.settingSection}>
-      <Text style={styles.settingLabel}>Detection Method</Text>
+      <Text style={styles.settingLabel}>Método de detección</Text>
       <Text style={styles.settingDesc}>
         {settings?.autoDetectMethod === 'pattern'
-          ? 'Fast keyword matching'
-          : 'Uses text model for classification'}
+          ? 'Coincidencia rápida de palabras clave'
+          : 'Usa el modelo de texto para la clasificación'}
       </Text>
       <View style={styles.buttonRow}>
         <Button
-          title="Pattern"
+          title="Patrón"
           variant="secondary"
           size="medium"
           active={settings?.autoDetectMethod === 'pattern'}
@@ -122,10 +122,10 @@ const ImageAdvancedSection: React.FC = () => {
     <>
       <View style={styles.sliderSection}>
         <View style={styles.sliderHeader}>
-          <Text style={styles.sliderLabel}>Guidance Scale</Text>
+          <Text style={styles.sliderLabel}>Escala de Guía (Guidance Scale)</Text>
           <Text style={styles.sliderValue}>{(settings?.imageGuidanceScale || 7.5).toFixed(1)}</Text>
         </View>
-        <Text style={styles.sliderDesc}>Higher = follows prompt more strictly</Text>
+        <Text style={styles.sliderDesc}>Más alto = sigue el prompt de forma más estricta</Text>
         <Slider
           style={styles.slider}
           minimumValue={1}
@@ -141,11 +141,11 @@ const ImageAdvancedSection: React.FC = () => {
 
       <View style={styles.sliderSection}>
         <View style={styles.sliderHeader}>
-          <Text style={styles.sliderLabel}>Image Threads</Text>
+          <Text style={styles.sliderLabel}>Hilos de imagen</Text>
           <Text style={styles.sliderValue}>{settings?.imageThreads ?? 4}</Text>
         </View>
         <Text style={styles.sliderDesc}>
-          CPU threads used for image generation (applies on next image model load)
+          Hilos de CPU usados para la generación de imagen (se aplica en la siguiente carga del modelo)
         </Text>
         <Slider
           style={styles.slider}
@@ -180,20 +180,20 @@ export const ImageGenerationSection: React.FC = () => {
   const trackColor = { false: colors.surfaceLight, true: `${colors.primary}80` };
 
   return (
-    <Card style={styles.section}>
+    <View style={styles.card}>
       <Text style={styles.settingHelp}>
-        Control how image generation requests are handled in chat.
+        Controla cómo se manejan las solicitudes de generación de imagen en el chat.
       </Text>
 
       {/* ── Basic Settings ── */}
 
       <View style={styles.toggleRow}>
         <View style={styles.toggleInfo}>
-          <Text style={styles.toggleLabel}>Automatic Detection</Text>
+          <Text style={styles.toggleLabel}>Detección automática</Text>
           <Text style={styles.toggleDesc}>
             {isAutoMode
-              ? 'LLM will classify if your message is asking for an image'
-              : 'Only generate images when you tap the image button'}
+              ? 'El LLM clasificará si tu mensaje solicita una imagen'
+              : 'Solo genera imágenes cuando tocas el botón de imagen'}
           </Text>
         </View>
         <Switch
@@ -207,16 +207,16 @@ export const ImageGenerationSection: React.FC = () => {
       </View>
       <Text style={styles.toggleNote}>
         {isAutoMode
-          ? 'In Auto mode, messages like "Draw me a sunset" will automatically generate an image when an image model is loaded.'
-          : 'In Manual mode, you must tap the IMG button in chat to generate images.'}
+          ? 'En modo Auto, mensajes como "Dibújame un atardecer" generarán automáticamente una imagen si hay un modelo cargado.'
+          : 'En modo Manual, debes tocar el botón IMG en el chat para generar imágenes.'}
       </Text>
 
       <View style={styles.sliderSection}>
         <View style={styles.sliderHeader}>
-          <Text style={styles.sliderLabel}>Image Steps</Text>
+          <Text style={styles.sliderLabel}>Pasos de imagen</Text>
           <Text style={styles.sliderValue}>{settings?.imageSteps || 8}</Text>
         </View>
-        <Text style={styles.sliderDesc}>More steps = better quality but slower (4-8 fast, 20-50 high quality)</Text>
+        <Text style={styles.sliderDesc}>Más pasos = mejor calidad pero más lento (4-8 rápido, 20-50 alta calidad)</Text>
         <Slider
           style={styles.slider}
           minimumValue={4}
@@ -232,10 +232,10 @@ export const ImageGenerationSection: React.FC = () => {
 
       <View style={styles.sliderSection}>
         <View style={styles.sliderHeader}>
-          <Text style={styles.sliderLabel}>Image Size</Text>
+          <Text style={styles.sliderLabel}>Tamaño de imagen</Text>
           <Text style={styles.sliderValue}>{settings?.imageWidth ?? 256}x{settings?.imageHeight ?? 256}</Text>
         </View>
-        <Text style={styles.sliderDesc}>Output resolution (smaller = faster, larger = more detail)</Text>
+        <Text style={styles.sliderDesc}>Resolución de salida (más pequeña = más rápido, más grande = más detalle)</Text>
         <Slider
           style={styles.slider}
           minimumValue={128}
@@ -252,6 +252,7 @@ export const ImageGenerationSection: React.FC = () => {
       <AdvancedToggle isExpanded={showAdvanced} onPress={() => setShowAdvanced(!showAdvanced)} testID="image-advanced-toggle" />
 
       {showAdvanced && <ImageAdvancedSection />}
-    </Card>
+    </View>
+
   );
 };

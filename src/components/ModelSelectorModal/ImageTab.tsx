@@ -16,18 +16,18 @@ export interface ImageTabProps {
   onSelectImageModel: (model: ONNXImageModel) => void;
   onSelectRemoteVisionModel: (model: RemoteModel, serverId: string) => void;
   onUnloadImageModel: () => void;
+  onImportLocalModel?: () => void;
 }
 
 export const ImageTab: React.FC<ImageTabProps> = ({
   downloadedImageModels, remoteVisionModels, activeImageModelId, activeRemoteImageModelId, isAnyLoading, isLoadingImage,
-  onSelectImageModel, onUnloadImageModel, onSelectRemoteVisionModel,
+  onSelectImageModel, onUnloadImageModel, onSelectRemoteVisionModel, onImportLocalModel,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createAllStyles);
   const hasLoaded = !!activeImageModelId || !!activeRemoteImageModelId;
   const activeModel = downloadedImageModels.find(m => m.id === activeImageModelId);
 
-  // Find active remote vision model info
   const activeRemoteModelInfo = useMemo(() => {
     if (!activeRemoteImageModelId) return null;
     for (const group of remoteVisionModels) {
@@ -39,21 +39,34 @@ export const ImageTab: React.FC<ImageTabProps> = ({
 
   return (
     <>
+      {onImportLocalModel && (
+        <TouchableOpacity 
+          style={styles.importModelItem} 
+          onPress={onImportLocalModel}
+          disabled={isAnyLoading}
+        >
+          <View style={styles.importModelIcon}>
+            <Icon name="plus" size={18} color={colors.info} />
+          </View>
+          <Text style={styles.importModelText}>Importar Modelo Local (.zip, .safetensors...)</Text>
+        </TouchableOpacity>
+      )}
+
       {hasLoaded && (
         <View style={[styles.loadedSection, styles.loadedSectionImage]}>
           <View style={styles.loadedHeader}>
-            <Icon name="check-circle" size={14} color={colors.success} />
-            <Text style={styles.loadedLabel}>Currently Loaded</Text>
+            <Icon name="check-circle" size={16} color={colors.success} />
+            <Text style={styles.loadedLabel}>Modelo Cargado</Text>
           </View>
           <View style={styles.loadedModelItem}>
             <View style={styles.loadedModelInfo}>
               <Text style={styles.loadedModelName} numberOfLines={1}>
-                {activeModel?.name || activeRemoteModelInfo?.model?.name || 'Unknown'}
+                {activeModel?.name || activeRemoteModelInfo?.model?.name || 'Desconocido'}
               </Text>
               <Text style={styles.loadedModelMeta}>
                 {activeModel
-                  ? `${activeModel.style || 'Image'} • ${hardwareService.formatBytes(activeModel.size ?? 0)}`
-                  : `Remote • ${activeRemoteModelInfo?.serverName ?? 'Model'}`}
+                  ? `${activeModel.style || 'Imagen'} • ${hardwareService.formatBytes(activeModel.size ?? 0)}`
+                  : `Remoto • ${activeRemoteModelInfo?.serverName ?? 'Servidor'}`}
               </Text>
             </View>
             <TouchableOpacity style={styles.unloadButton} onPress={onUnloadImageModel} disabled={isAnyLoading}>
@@ -61,8 +74,8 @@ export const ImageTab: React.FC<ImageTabProps> = ({
                 <ActivityIndicator size="small" color={colors.error} />
               ) : (
                 <>
-                  <Icon name="power" size={16} color={colors.error} />
-                  <Text style={styles.unloadButtonText}>Unload</Text>
+                  <Icon name="power" size={14} color={colors.error} />
+                  <Text style={styles.unloadButtonText}>Liberar</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -70,20 +83,22 @@ export const ImageTab: React.FC<ImageTabProps> = ({
         </View>
       )}
 
-      <Text style={styles.sectionTitle}>{hasLoaded ? 'Switch Model' : 'Available Models'}</Text>
+      <Text style={styles.sectionTitle}>{hasLoaded ? 'Cambiar Modelo' : 'Modelos Disponibles'}</Text>
 
-      {/* Local Image Models */}
       {downloadedImageModels.length === 0 && remoteVisionModels.length === 0 && (
         <View style={styles.emptyState}>
-          <Icon name="image" size={40} color={colors.textMuted} />
-          <Text style={styles.emptyTitle}>No Image Models</Text>
-          <Text style={styles.emptyText}>Download image models from the Models tab</Text>
+          <Icon name="image" size={48} color={`${colors.text}10`} />
+          <Text style={styles.emptyTitle}>Sin Modelos de Imagen</Text>
+          <Text style={styles.emptyText}>Descarga modelos desde la pestaña de Modelos</Text>
         </View>
       )}
 
       {downloadedImageModels.length > 0 && (
         <>
-          <Text style={styles.sectionSubTitle}>📁 Local Models</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Icon name="hard-drive" size={14} color={colors.textMuted} />
+            <Text style={styles.sectionSubTitle}>Locales</Text>
+          </View>
           {downloadedImageModels.map((model) => {
             const isCurrent = activeImageModelId === model.id;
             return (
@@ -102,14 +117,14 @@ export const ImageTab: React.FC<ImageTabProps> = ({
                     {!!model.style && (
                       <>
                         <Text style={styles.metaSeparator}>•</Text>
-                        <Text style={styles.modelStyle}>{model.style}</Text>
+                        <Text style={styles.modelQuant}>{model.style}</Text>
                       </>
                     )}
                   </View>
                 </View>
                 {isCurrent && (
-                  <View style={[styles.checkmark, styles.checkmarkImage]}>
-                    <Icon name="check" size={16} color={colors.background} />
+                  <View style={styles.checkmarkImage}>
+                    <Icon name="check" size={14} color={colors.background} />
                   </View>
                 )}
               </TouchableOpacity>
@@ -118,10 +133,12 @@ export const ImageTab: React.FC<ImageTabProps> = ({
         </>
       )}
 
-      {/* Remote Vision Models */}
       {remoteVisionModels.map(({ serverId, serverName, models }) => (
-        <View key={serverId}>
-          <Text style={styles.sectionSubTitle}>🌐 {serverName}</Text>
+        <View key={serverId} style={{ marginTop: 12 }}>
+          <View style={styles.sectionHeaderRow}>
+            <Icon name="globe" size={14} color={colors.textMuted} />
+            <Text style={styles.sectionSubTitle}>{serverName}</Text>
+          </View>
           {models.map((model) => {
             const isCurrent = activeRemoteImageModelId === model.id;
             return (
@@ -136,8 +153,7 @@ export const ImageTab: React.FC<ImageTabProps> = ({
                     {model.name}
                   </Text>
                   <View style={styles.modelMeta}>
-                    <Text style={styles.remoteBadge}>Remote</Text>
-                    <Text style={styles.metaSeparator}>•</Text>
+                    <Text style={styles.remoteBadge}>Remoto</Text>
                     <View style={styles.visionBadge}>
                       <Icon name="eye" size={10} color={colors.info} />
                       <Text style={styles.visionBadgeText}>Vision</Text>
@@ -145,8 +161,8 @@ export const ImageTab: React.FC<ImageTabProps> = ({
                   </View>
                 </View>
                 {isCurrent && (
-                  <View style={[styles.checkmark, styles.checkmarkImage]}>
-                    <Icon name="check" size={16} color={colors.background} />
+                  <View style={styles.checkmarkImage}>
+                    <Icon name="check" size={14} color={colors.background} />
                   </View>
                 )}
               </TouchableOpacity>

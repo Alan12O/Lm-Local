@@ -4,16 +4,14 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Linking,
-  Alert,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import { AttachStep } from 'react-native-spotlight-tour';
-import { useNavigation, CommonActions, CompositeNavigationProp } from '@react-navigation/native';
+import { useNavigation, CommonActions, CompositeNavigationProp, DrawerActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { Card } from '../components';
 import { AnimatedEntry } from '../components/AnimatedEntry';
 import { AnimatedListItem } from '../components/AnimatedListItem';
 
@@ -21,14 +19,9 @@ import { useFocusTrigger } from '../hooks/useFocusTrigger';
 import { useTheme, useThemedStyles } from '../theme';
 import type { ThemeColors, ThemeShadows } from '../theme';
 import { TYPOGRAPHY, SPACING } from '../constants';
-import DeviceInfo from 'react-native-device-info';
-import RNFS from 'react-native-fs';
-import { useAppStore, useRemoteServerStore } from '../stores';
-import { hardwareService } from '../services';
-import { RootStackParamList, MainTabParamList } from '../navigation/types';
-
 import packageJson from '../../package.json';
-
+import { useAppStore } from '../stores';
+import { RootStackParamList, MainTabParamList } from '../navigation/types';
 
 type NavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'SettingsTab'>,
@@ -45,18 +38,13 @@ export const SettingsScreen: React.FC = () => {
   const setThemeMode = useAppStore((s) => s.setThemeMode);
   const completeChecklistStep = useAppStore((s) => s.completeChecklistStep);
   const resetChecklist = useAppStore((s) => s.resetChecklist);
-  const deviceInfo = useAppStore((s) => s.deviceInfo);
 
   useEffect(() => {
     completeChecklistStep('exploredSettings');
-
   }, []);
-
 
   const handleResetOnboarding = () => {
     setOnboardingComplete(false);
-    // Navigate to root stack and reset to Onboarding
-    // getParent() reaches the RootStack from inside the Tab navigator
     navigation.getParent()?.dispatch(
       CommonActions.reset({
         index: 0,
@@ -65,109 +53,126 @@ export const SettingsScreen: React.FC = () => {
     );
   };
 
+  const navItems = [
+    { icon: 'sliders', title: 'Ajustes de Modelo', desc: 'Prompts y rendimiento de generación', screen: 'ModelSettings' as const },
+    { icon: 'wifi', title: 'Servidores Remotos', desc: 'Conectar a Ollama, LM Studio...', screen: 'RemoteServers' as const },
+    { icon: 'mic', title: 'Ajustes de Voz', desc: 'Transcripción de texto a voz local', screen: 'VoiceSettings' as const },
+    { icon: 'lock', title: 'Seguridad', desc: 'Contraseña y bloqueo de app', screen: 'SecuritySettings' as const },
+    { icon: 'smartphone', title: 'Dispositivo', desc: 'Hardware y compatibilidad', screen: 'DeviceInfo' as const },
+    { icon: 'hard-drive', title: 'Almacenamiento', desc: 'Modelos descargados y chats', screen: 'StorageSettings' as const },
+  ];
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-        <Text style={styles.title}>Ajustes</Text>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.menuButton} 
+          onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+        >
+          <Icon name="menu" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Ajustes</Text>
+      </View>
 
-        {/* Theme Selector */}
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        
+        {/* Appearance Group */}
         <AnimatedEntry index={0} staggerMs={40} trigger={focusTrigger}>
-          <View style={styles.themeToggleRow}>
-            <Text style={styles.themeToggleLabel}>Apariencia</Text>
-            <View style={styles.themeSelector}>
-              {([
-                { mode: 'system' as const, icon: 'monitor' },
-                { mode: 'light' as const, icon: 'sun' },
-                { mode: 'dark' as const, icon: 'moon' },
-              ]).map(({ mode, icon }) => (
-                <TouchableOpacity
-                  key={mode}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>APARIENCIA</Text>
+            <View style={styles.appearanceCard}>
+              <View style={styles.appearanceRow}>
+                <View style={styles.appearanceLabelContainer}>
+                  <Text style={styles.itemTitle}>Tema</Text>
+                  <Text style={styles.itemDesc}>Cambia el aspecto visual del sistema</Text>
+                </View>
+                <View style={styles.themeSelector}>
+                  {([
+                    { mode: 'system' as const, icon: 'monitor' },
+                    { mode: 'light' as const, icon: 'sun' },
+                    { mode: 'dark' as const, icon: 'moon' },
+                  ]).map(({ mode, icon }) => (
+                    <TouchableOpacity
+                      key={mode}
+                      style={[
+                        styles.themeOption,
+                        themeMode === mode && styles.themeOptionActive,
+                      ]}
+                      onPress={() => setThemeMode(mode)}
+                    >
+                      <Icon
+                        name={icon}
+                        size={14}
+                        color={themeMode === mode ? '#FFF' : colors.textMuted}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </View>
+          </View>
+        </AnimatedEntry>
+
+        {/* Navigation Group */}
+        <AttachStep index={5} fill>
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>PREFERENCIAS</Text>
+            <View style={styles.navGroup}>
+              {navItems.map((item, index) => (
+                <AnimatedListItem
+                  key={item.screen}
+                  index={index + 1}
+                  staggerMs={40}
+                  trigger={focusTrigger}
                   style={[
-                    styles.themeSelectorOption,
-                    themeMode === mode && styles.themeSelectorOptionActive,
+                    styles.navItem,
+                    index === navItems.length - 1 && styles.navItemLast
                   ]}
-                  onPress={() => setThemeMode(mode)}
+                  onPress={() => navigation.navigate(item.screen)}
                 >
-                  <Icon
-                    name={icon}
-                    size={16}
-                    color={themeMode === mode ? colors.background : colors.textMuted}
-                  />
-                </TouchableOpacity>
+                  <View style={styles.navItemIconContainer}>
+                    <Icon name={item.icon} size={18} color={colors.primary} />
+                  </View>
+                  <View style={styles.navItemTextContainer}>
+                    <Text style={styles.itemTitle}>{item.title}</Text>
+                    <Text style={styles.itemDesc}>{item.desc}</Text>
+                  </View>
+                  <Icon name="chevron-right" size={16} color={colors.textDisabled} />
+                </AnimatedListItem>
               ))}
             </View>
           </View>
-        </AnimatedEntry>
-
-        {/* Navigation Items */}
-        <AttachStep index={5} fill>
-          <View style={styles.navSection}>
-            {[
-              { icon: 'sliders', title: 'Ajustes de Modelo', desc: 'Prompts y rendimiento de generación', screen: 'ModelSettings' as const },
-              { icon: 'wifi', title: 'Servidores Remotos', desc: 'Conectar a Ollama, LM Studio...', screen: 'RemoteServers' as const },
-              { icon: 'mic', title: 'Ajustes de Voz', desc: 'Transcripción de texto a voz local', screen: 'VoiceSettings' as const },
-              { icon: 'lock', title: 'Seguridad', desc: 'Contraseña y bloqueo de app', screen: 'SecuritySettings' as const },
-              { icon: 'smartphone', title: 'Dispositivo', desc: 'Hardware y compatibilidad', screen: 'DeviceInfo' as const },
-              { icon: 'hard-drive', title: 'Almacenamiento', desc: 'Modelos descargados y chats', screen: 'StorageSettings' as const },
-            ].map((item, index, arr) => (
-              <AnimatedListItem
-                key={item.screen}
-                index={index + 1}
-                staggerMs={40}
-                trigger={focusTrigger}
-                style={[styles.navItem, index === arr.length - 1 && styles.navItemLast]}
-                onPress={() => navigation.navigate(item.screen)}
-              >
-                <View style={styles.navItemIcon}>
-                  <Icon name={item.icon} size={16} color={colors.textSecondary} />
-                </View>
-                <View style={styles.navItemContent}>
-                  <Text style={styles.navItemTitle}>{item.title}</Text>
-                  <Text style={styles.navItemDesc}>{item.desc}</Text>
-                </View>
-                <Icon name="chevron-right" size={16} color={colors.textMuted} />
-              </AnimatedListItem>
-            ))}
-          </View>
         </AttachStep>
 
-
-        {/* About */}
+        {/* Support & Privacy */}
         <AnimatedEntry index={7} staggerMs={40} trigger={focusTrigger}>
-          <Card style={styles.section}>
-            <View style={styles.aboutRow}>
-              <Text style={styles.aboutLabel}>Versión</Text>
-              <Text style={styles.aboutValue}>{packageJson.version}</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>ACERCA DE</Text>
+            <View style={styles.navGroup}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Versión</Text>
+                <Text style={styles.infoValue}>{packageJson.version}</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.privacyCard}>
+                <Icon name="shield" size={16} color={colors.primary} style={{ marginRight: 12, marginTop: 2 }} />
+                <Text style={styles.privacyText}>
+                  LM Local procesa toda la información localmente. Tu privacidad es nuestra prioridad.
+                </Text>
+              </View>
             </View>
-            <Text style={styles.aboutText}>
-              LM Local lleva la IA a tu dispositivo sin comprometer tu privacidad.
-            </Text>
-          </Card>
+          </View>
         </AnimatedEntry>
 
-        {/* Privacy */}
-        <AnimatedEntry index={8} staggerMs={40} trigger={focusTrigger}>
-          <Card style={styles.privacyCard}>
-            <View style={styles.privacyIconContainer}>
-              <Icon name="shield" size={18} color={colors.textSecondary} />
-            </View>
-            <Text style={styles.privacyTitle}>Privacidad Primero</Text>
-            <Text style={styles.privacyText}>
-              Toda tu información está dentro de tu dispositivo. No se envían mensajes, datos, o información personal a ningún servidor externo.
-            </Text>
-          </Card>
-        </AnimatedEntry>
-
-        {/* Reset Onboarding */}
+        {/* Development Group */}
         <AnimatedEntry index={9} staggerMs={40} trigger={focusTrigger}>
-          <View style={styles.devButtonGroup}>
-            <TouchableOpacity style={styles.devButton} onPress={handleResetOnboarding}>
-              <Icon name="rotate-ccw" size={14} color={colors.textMuted} />
-              <Text style={styles.devButtonText}>Reiniciar Tutorial Inicial</Text>
+          <View style={styles.devSection}>
+            <TouchableOpacity style={styles.devLink} onPress={handleResetOnboarding}>
+              <Text style={styles.devLinkText}>Reiniciar Tutorial</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.devButton} onPress={resetChecklist}>
-              <Icon name="list" size={14} color={colors.textMuted} />
-              <Text style={styles.devButtonText}>Reiniciar Checklists Ocultos</Text>
+            <Text style={styles.devSeparator}>•</Text>
+            <TouchableOpacity style={styles.devLink} onPress={resetChecklist}>
+              <Text style={styles.devLinkText}>Reiniciar Checklist</Text>
             </TouchableOpacity>
           </View>
         </AnimatedEntry>
@@ -178,65 +183,164 @@ export const SettingsScreen: React.FC = () => {
 };
 
 const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   header: {
-    flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const,
-    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, minHeight: 60,
-    borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.surface, ...shadows.small, zIndex: 1,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.lg,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
   },
-  title: { ...TYPOGRAPHY.h2, color: colors.text },
-  scrollView: { flex: 1 },
-  content: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg, paddingBottom: SPACING.xxl },
-  themeToggleRow: {
-    flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const,
-    backgroundColor: colors.surface, borderRadius: 8, padding: SPACING.md, marginBottom: SPACING.lg, ...shadows.small,
+  menuButton: {
+    marginRight: SPACING.md,
+    padding: 4,
   },
-  themeToggleLabel: { ...TYPOGRAPHY.body, color: colors.text },
-  themeSelector: { flexDirection: 'row' as const, backgroundColor: colors.surfaceLight, borderRadius: 8, padding: 3, gap: 2 },
-  themeSelectorOption: { width: 34, height: 30, borderRadius: 6, alignItems: 'center' as const, justifyContent: 'center' as const },
-  themeSelectorOptionActive: { backgroundColor: colors.primary },
-  navSection: {
+  headerTitle: {
+    ...TYPOGRAPHY.h1,
+    fontSize: 28,
+    fontWeight: '700' as const,
+    color: colors.text,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.xxl,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionLabel: {
+    ...TYPOGRAPHY.label,
+    fontSize: 12,
+    letterSpacing: 1.2,
+    color: colors.textMuted,
+    marginBottom: 12,
+    paddingLeft: 4,
+  },
+  appearanceCard: {
     backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  appearanceRow: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+  },
+  appearanceLabelContainer: {
+    flex: 1,
+    marginRight: SPACING.md,
+  },
+  itemTitle: {
+    ...TYPOGRAPHY.body,
+    fontWeight: '600' as const,
+    color: colors.text,
+    fontSize: 16,
+  },
+  itemDesc: {
+    ...TYPOGRAPHY.bodySmall,
+    color: colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 18,
+  },
+  themeSelector: {
+    flexDirection: 'row' as const,
+    backgroundColor: colors.surfaceLight,
+    padding: 4,
+    borderRadius: 12,
+  },
+  themeOption: {
+    width: 36,
+    height: 32,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     borderRadius: 8,
-    marginBottom: SPACING.lg,
-    overflow: 'hidden' as const,
+  },
+  themeOptionActive: {
+    backgroundColor: colors.primary,
     ...shadows.small,
+  },
+  navGroup: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    overflow: 'hidden' as const,
   },
   navItem: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    padding: SPACING.md,
-    borderBottomWidth: 1,
+    padding: SPACING.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  navItemLast: { borderBottomWidth: 0 },
-  navItemIcon: {
-    width: 28, height: 28, borderRadius: 6, backgroundColor: 'transparent',
-    alignItems: 'center' as const, justifyContent: 'center' as const, marginRight: SPACING.md,
+  navItemLast: {
+    borderBottomWidth: 0,
   },
-  navItemContent: { flex: 1 },
-  navItemTitle: { ...TYPOGRAPHY.body, fontWeight: '400' as const, color: colors.text },
-  navItemDesc: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted, marginTop: 2 },
-  section: { marginBottom: SPACING.lg },
-  aboutRow: {
-    flexDirection: 'row' as const, justifyContent: 'space-between' as const,
-    alignItems: 'center' as const, marginBottom: SPACING.sm,
+  navItemIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: `${colors.primary}10`,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    marginRight: SPACING.md,
   },
-  aboutLabel: { ...TYPOGRAPHY.body, color: colors.textSecondary },
-  aboutValue: { ...TYPOGRAPHY.body, fontWeight: '400' as const, color: colors.text },
-  aboutText: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted, lineHeight: 18 },
-  privacyCard: { alignItems: 'center' as const, backgroundColor: colors.surface },
-  privacyIconContainer: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: 'transparent',
-    alignItems: 'center' as const, justifyContent: 'center' as const, marginBottom: SPACING.md,
+  navItemTextContainer: {
+    flex: 1,
   },
-  privacyTitle: { ...TYPOGRAPHY.h3, color: colors.text, marginBottom: SPACING.sm },
-  privacyText: { ...TYPOGRAPHY.body, color: colors.textSecondary, textAlign: 'center' as const, lineHeight: 20 },
-  devButton: {
-    flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const,
-    gap: SPACING.sm, paddingVertical: SPACING.md, marginTop: SPACING.lg,
-    borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed' as const, borderRadius: 6,
+  infoRow: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    padding: SPACING.lg,
   },
-  devButtonGroup: { gap: 12 },
-  devButtonText: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted },
+  infoLabel: {
+    ...TYPOGRAPHY.body,
+    color: colors.textSecondary,
+  },
+  infoValue: {
+    ...TYPOGRAPHY.body,
+    fontWeight: '600' as const,
+    color: colors.text,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginHorizontal: SPACING.lg,
+  },
+  privacyCard: {
+    flexDirection: 'row' as const,
+    padding: SPACING.lg,
+    alignItems: 'flex-start' as const,
+  },
+  privacyText: {
+    ...TYPOGRAPHY.bodySmall,
+    color: colors.textMuted,
+    flex: 1,
+    lineHeight: 18,
+  },
+  devSection: {
+    flexDirection: 'row' as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    marginTop: 8,
+  },
+  devLink: {
+    padding: 8,
+  },
+  devLinkText: {
+    ...TYPOGRAPHY.bodySmall,
+    color: colors.textMuted,
+    textDecorationLine: 'underline' as const,
+  },
+  devSeparator: {
+    marginHorizontal: 4,
+    color: colors.textMuted,
+  },
 });

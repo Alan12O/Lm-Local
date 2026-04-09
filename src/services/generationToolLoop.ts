@@ -127,10 +127,12 @@ async function callRemoteLLMWithTools(
   const provider = providerRegistry.getProvider(activeServerId);
   if (!provider) throw new Error('Remote provider not found');
   const settings = useAppStore.getState().settings;
-  const thinkingEnabled = !opts?.disableThinking && settings.thinkingEnabled && provider.capabilities.supportsThinking;
+  const { temperature, maxTokens, topP, thinkingEnabled: globalThinking, thinkingLevel } = settings;
+  const thinkingEnabled = !opts?.disableThinking && globalThinking && provider.capabilities.supportsThinking;
   const options: GenerationOptions = {
-    temperature: settings.temperature, maxTokens: settings.maxTokens, topP: settings.topP,
-    tools, enableThinking: thinkingEnabled,
+    temperature, maxTokens, topP,
+    tools, enableThinking: thinkingEnabled, 
+    thinkingLevel: thinkingLevel,
   };
   logger.log(`[ToolLoop] callRemoteLLM — server=${activeServerId}, tools=${tools.length}, thinking=${thinkingEnabled}`);
   let _fullContent = '';

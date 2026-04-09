@@ -66,13 +66,14 @@ export type GenerationDeps = {
   generatingForConversationRef: MutableRefObject<string | null>;
   navigation: any;
   setShowSettingsPanel?: SetState<boolean>;
+  setShowModelSelector: SetState<boolean>;
   ensureModelLoaded: () => Promise<void>;
 };
 function applyCompactionPrefix(conversation: any, systemPrompt: string, messages: Message[]): { prefix: Message[]; filtered: Message[] } {
   const prefix: Message[] = [{ id: 'system', role: 'system', content: systemPrompt, timestamp: 0 }];
   let filtered = messages;
   if (conversation?.compactionSummary && conversation?.compactionCutoffMessageId) {
-    prefix.push({ id: 'compaction-summary', role: 'assistant', content: `[Previous conversation summary]\n${conversation.compactionSummary}`, timestamp: 0 });
+    prefix.push({ id: 'compaction-summary', role: 'assistant', content: `[Resumen de la conversación anterior]\n${conversation.compactionSummary}`, timestamp: 0 });
     const cutoffIdx = messages.findIndex(m => m.id === conversation.compactionCutoffMessageId);
     if (cutoffIdx !== -1) filtered = messages.slice(cutoffIdx + 1);
   }
@@ -82,7 +83,7 @@ function applyCompactionPrefix(conversation: any, systemPrompt: string, messages
 function appendAttachmentText(text: string, attachments?: MediaAttachment[]): string {
   if (!attachments) return text;
   return attachments.filter(a => a.type === 'document' && a.textContent)
-    .reduce((acc, doc) => `${acc}\n\n---\n📄 **Attached Document: ${doc.fileName || 'document'}**\n\`\`\`\n${doc.textContent}\n\`\`\`\n---`, text);
+    .reduce((acc, doc) => `${acc}\n\n---\n📄 **Documento Adjunto: ${doc.fileName || 'documento'}**\n\`\`\`\n${doc.textContent}\n\`\`\`\n---`, text);
 }
 
 function buildMessagesForContext(conversationId: string, messageText: string, systemPrompt: string): Message[] {
@@ -140,7 +141,7 @@ export async function handleImageGenerationFn(
 ): Promise<void> {
   const { prompt, conversationId, skipUserMessage = false } = call;
   if (!deps.activeImageModel) {
-    deps.setAlertState(showAlert('Error', 'No image model loaded.'));
+    deps.setAlertState(showAlert('Error', 'No hay modelo de imagen cargado.'));
     return;
   }
   if (!skipUserMessage) {
@@ -154,7 +155,7 @@ export async function handleImageGenerationFn(
     previewInterval: 2,
   });
   if (!result && deps.imageGenState.error && !deps.imageGenState.error.includes('cancelled')) {
-    deps.setAlertState(showAlert('Error', `Image generation failed: ${deps.imageGenState.error}`));
+    deps.setAlertState(showAlert('Error', `La generación de imagen falló: ${deps.imageGenState.error}`));
   }
 }
 export type StartGenerationCall = { setDebugInfo: SetState<any>; targetConversationId: string; messageText: string };
@@ -212,8 +213,8 @@ async function injectRagContext(projectId: string | undefined, query: string, pr
       embeddingService.load().catch(err => logger.error('[RAG] Embedding warmup failed', err));
     }
     const docList = enabledDocs.map((d: import('../../services/rag').RagDocument) => `- ${d.name}`).join('\n');
-    let kbPrompt = `\n\nYou have a knowledge base with these documents:\n${docList}`;
-    kbPrompt += '\nUse the search_knowledge_base tool to look up specific information from these documents.';
+    let kbPrompt = `\n\nTienes una base de conocimientos con estos documentos:\n${docList}`;
+    kbPrompt += '\nUsa la herramienta search_knowledge_base para buscar información específica en estos documentos.';
 
     const r = await ragService.searchProject(projectId, query);
     if (r.chunks.length > 0) {
@@ -277,7 +278,7 @@ export async function startGenerationFn(deps: GenerationDeps, call: StartGenerat
   // For remote models, skip local model loading
   if (!deps.activeModelInfo?.isRemote && deps.activeModel) {
     if (!(await ensureModelReady(deps))) {
-      deps.setAlertState(showAlert('Error', 'Failed to load model. Please try again.'));
+      deps.setAlertState(showAlert('Error', 'Fallo al cargar el modelo. Por favor, intenta de nuevo.'));
       deps.generatingForConversationRef.current = null;
       return;
     }
@@ -296,9 +297,9 @@ export async function startGenerationFn(deps: GenerationDeps, call: StartGenerat
   try {
     await generateWithCompactionRetry({ id: targetConversationId, prompt: systemPrompt, messages: messagesForContext }, activeTools, conversation?.projectId);
   } catch (error: any) {
-    const msg = error?.message || error?.toString?.() || 'Failed to generate response';
+    const msg = error?.message || error?.toString?.() || 'Error al generar respuesta';
     logger.error('[ChatGen] Generation failed:', msg, error);
-    deps.setAlertState(showAlert('Generation Error', msg));
+    deps.setAlertState(showAlert('Error de Generación', msg));
     deps.generatingForConversationRef.current = null;
     return;
   }
@@ -307,18 +308,26 @@ export async function startGenerationFn(deps: GenerationDeps, call: StartGenerat
 export type SendCall = { text: string; attachments?: MediaAttachment[]; imageMode?: 'auto' | 'force' | 'disabled'; startGeneration: (convId: string, text: string) => Promise<void>; setDebugInfo: SetState<any> };
 export async function handleSendFn(deps: GenerationDeps, call: SendCall): Promise<void> {
   const { text, attachments, imageMode, startGeneration } = call;
-  if (!deps.activeConversationId || !deps.hasActiveModel) {
-    deps.setAlertState(showAlert('No Model Selected', 'Please select a model first.'));
+  
+  if (!deps.hasActiveModel) {
+    deps.setShowModelSelector(true);
     return;
   }
-  const targetConversationId = deps.activeConversationId;
+
+  let targetConversationId = deps.activeConversationId;
+  if (!targetConversationId && deps.activeModelId) {
+    // Session initialization decoupling: create conversation on-the-fly if missing
+    targetConversationId = useChatStore.getState().createConversation(deps.activeModelId);
+  }
+
+  if (!targetConversationId) return;
   let messageText = appendAttachmentText(text, attachments);
   const shouldGenerateImage = imageMode !== 'disabled' && await shouldRouteToImageGenerationFn(deps, messageText, imageMode === 'force');
   if (shouldGenerateImage && deps.activeImageModel) {
     await handleImageGenerationFn(deps, { prompt: text, conversationId: targetConversationId });
     return;
   }
-  if (shouldGenerateImage && !deps.activeImageModel) messageText = `[User wanted an image but no image model is loaded] ${messageText}`;
+  if (shouldGenerateImage && !deps.activeImageModel) messageText = `[El usuario quería una imagen pero no hay modelo de imagen cargado] ${messageText}`;
   if (generationService.getState().isGenerating) {
     generationService.enqueueMessage({ id: nextMsgId(), conversationId: targetConversationId, text, attachments, messageText });
     return;
@@ -371,7 +380,7 @@ export async function regenerateResponseFn(deps: GenerationDeps, call: Regenerat
   try {
     await generateWithCompactionRetry({ id: targetConversationId, prompt: systemPrompt, messages: [...prefix, ...filtered] }, activeTools, conversation?.projectId);
   } catch (error: any) {
-    deps.setAlertState(showAlert('Generation Error', error.message || 'Failed to generate response'));
+    deps.setAlertState(showAlert('Error de Generación', error.message || 'Error al generar respuesta'));
   }
   deps.generatingForConversationRef.current = null;
 }

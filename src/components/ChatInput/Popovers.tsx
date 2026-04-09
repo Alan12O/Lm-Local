@@ -93,6 +93,18 @@ function getToolsStyle(supported: boolean, count: number, colors: any) {
   return { iconColor, badgeBg, labelColor, badgeLabel };
 }
 
+function getThinkingBadge(enabled: boolean, level: string, colors: any) {
+  if (!enabled) return { label: 'OFF', bg: colors.textMuted };
+  switch (level) {
+    case 'super_lite': return { label: 'LITE', bg: colors.primary };
+    case 'reduced': return { label: 'RED', bg: colors.primary };
+    case 'medium': return { label: 'MED', bg: colors.primary };
+    case 'normal': return { label: 'NORM', bg: colors.primary };
+    case 'super_extended': return { label: 'EXT', bg: colors.primary };
+    default: return { label: 'ON', bg: colors.primary };
+  }
+}
+
 export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
   visible, onClose, anchorY, anchorX,
   imageMode, onImageModeToggle, imageModelLoaded, supportsThinking,
@@ -105,6 +117,24 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
 
   const imgBadge = getImageModeBadge(imageMode, colors);
   const tools = getToolsStyle(supportsToolCalling, enabledToolCount, colors);
+  const thinking = getThinkingBadge(!!settings.thinkingEnabled, settings.thinkingLevel || 'normal', colors);
+
+  const handleThinkingCycle = () => {
+    triggerHaptic('impactLight');
+    if (!settings.thinkingEnabled) {
+      updateSettings({ thinkingEnabled: true, thinkingLevel: 'super_lite' });
+    } else if (settings.thinkingLevel === 'super_lite') {
+      updateSettings({ thinkingLevel: 'reduced' });
+    } else if (settings.thinkingLevel === 'reduced') {
+      updateSettings({ thinkingLevel: 'medium' });
+    } else if (settings.thinkingLevel === 'medium') {
+      updateSettings({ thinkingLevel: 'normal' });
+    } else if (settings.thinkingLevel === 'normal') {
+      updateSettings({ thinkingLevel: 'super_extended' });
+    } else {
+      updateSettings({ thinkingEnabled: false });
+    }
+  };
 
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
@@ -123,7 +153,7 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
                 onPress={() => { triggerHaptic('impactLight'); onImageModeToggle(); }}
               >
                 <Icon name="image" size={16} color={imageModelLoaded ? colors.text : colors.textMuted} />
-                <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Image Gen</Text>
+                <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Imagen (IA)</Text>
                 <View testID={imageMode === 'force' ? 'image-mode-force-badge' : undefined} style={[popoverStyles.badge, { backgroundColor: imgBadge.bg }]}>
                   <Text style={[popoverStyles.badgeText, { color: colors.background }]}>{imgBadge.label}</Text>
                 </View>
@@ -133,18 +163,13 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
                 <TouchableOpacity
                   testID="quick-thinking-toggle"
                   style={popoverStyles.row}
-                  onPress={() => {
-                    triggerHaptic('impactLight');
-                    updateSettings({ thinkingEnabled: !settings.thinkingEnabled });
-                  }}
+                  onPress={handleThinkingCycle}
                 >
                   <Icon name="zap" size={16} color={settings.thinkingEnabled ? colors.primary : colors.textMuted} />
-                  <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Thinking</Text>
-                  <View style={[popoverStyles.badge, {
-                    backgroundColor: settings.thinkingEnabled ? colors.primary : colors.textMuted,
-                  }]}>
+                  <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Pensamiento</Text>
+                  <View style={[popoverStyles.badge, { backgroundColor: thinking.bg }]}>
                     <Text style={[popoverStyles.badgeText, { color: colors.background }]}>
-                      {settings.thinkingEnabled ? 'ON' : 'OFF'}
+                      {thinking.label}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -160,7 +185,7 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
                 }}
               >
                 <Icon name="tool" size={16} color={tools.iconColor} />
-                <Text style={[popoverStyles.rowLabel, { color: tools.labelColor }]}>Tools</Text>
+                <Text style={[popoverStyles.rowLabel, { color: tools.labelColor }]}>Herramientas</Text>
                 <View style={[popoverStyles.badge, { backgroundColor: tools.badgeBg }]}>
                   <Text style={[popoverStyles.badgeText, { color: colors.background }]}>{tools.badgeLabel}</Text>
                 </View>
@@ -210,7 +235,7 @@ export const AttachPickerPopover: React.FC<AttachPickerPopoverProps> = ({
                 onPress={() => { onClose(); onPhoto(); }}
               >
                 <Icon name="camera" size={16} color={supportsVision ? colors.primary : colors.textMuted} />
-                <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Photo</Text>
+                <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Foto / Cámara</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 testID="attach-document"
@@ -218,7 +243,7 @@ export const AttachPickerPopover: React.FC<AttachPickerPopoverProps> = ({
                 onPress={() => { onClose(); onDocument(); }}
               >
                 <Icon name="file" size={16} color={colors.text} />
-                <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Document</Text>
+                <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Documentos</Text>
               </TouchableOpacity>
             </View>
           </TouchableWithoutFeedback>

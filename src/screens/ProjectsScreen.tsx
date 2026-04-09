@@ -50,12 +50,12 @@ export const ProjectsScreen: React.FC = () => {
 
   const handleDeleteProject = (project: Project) => {
     setAlertState(showAlert(
-      'Delete Project',
-      `Delete "${project.name}"? This will not delete the chats associated with this project.`,
+      'Eliminar proyecto',
+      `¿Eliminar "${project.name}"? Esto no eliminará los chats asociados a este proyecto.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Eliminar',
           style: 'destructive',
           onPress: () => {
             setAlertState(hideAlert());
@@ -146,17 +146,17 @@ export const ProjectsScreen: React.FC = () => {
             </View>
           </AnimatedEntry>
           <AnimatedEntry index={1} staggerMs={60} trigger={focusTrigger}>
-            <Text style={styles.emptyTitle}>No Projects Yet</Text>
+            <Text style={styles.emptyTitle}>Aún no hay proyectos</Text>
           </AnimatedEntry>
           <AnimatedEntry index={2} staggerMs={60} trigger={focusTrigger}>
             <Text style={styles.emptyText}>
-              Create a project to organize your chats by topic, like "Spanish Learning" or "Code Review".
+              Crea un proyecto para organizar tus chats por temas, como "Aprendizaje de español" o "Revisión de código".
             </Text>
           </AnimatedEntry>
           <AnimatedEntry index={3} staggerMs={60} trigger={focusTrigger}>
             <TouchableOpacity style={styles.emptyButton} onPress={handleNewProject}>
               <Icon name="plus" size={14} color={colors.primary} />
-              <Text style={styles.emptyButtonText}>Create Project</Text>
+              <Text style={styles.emptyButtonText}>Crear proyecto</Text>
             </TouchableOpacity>
           </AnimatedEntry>
         </View>

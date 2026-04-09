@@ -22,6 +22,7 @@ type AppSettings = {
   enableGpu: boolean; gpuLayers: number; flashAttn: boolean;
   cacheType: CacheType; showGenerationDetails: boolean; enabledTools: string[];
   thinkingEnabled: boolean;
+  thinkingLevel: 'super_lite' | 'reduced' | 'medium' | 'normal' | 'super_extended';
   toolsEnabled: boolean;
 };
 
@@ -127,6 +128,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   showGenerationDetails: false,
   enabledTools: ['web_search', 'calculator', 'get_current_datetime', 'get_device_info', 'read_url', 'search_knowledge_base'],
   thinkingEnabled: true,
+  thinkingLevel: 'normal',
   toolsEnabled: true,
 };
 
@@ -137,6 +139,9 @@ function migrateEnabledTools(merged: any): void {
   // Migrar usuarios que no tienen toolsEnabled guardado → asumir habilitado
   if (merged.settings && merged.settings.toolsEnabled === undefined) {
     merged.settings = { ...merged.settings, toolsEnabled: true };
+  }
+  if (merged.settings && (merged.settings.thinkingLevel === undefined || !['super_lite', 'reduced', 'medium', 'normal', 'super_extended'].includes(merged.settings.thinkingLevel))) {
+    merged.settings = { ...merged.settings, thinkingLevel: 'normal' };
   }
 }
 function migratePersistedState(persistedState: any, currentState: AppState): AppState {

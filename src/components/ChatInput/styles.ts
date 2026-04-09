@@ -11,8 +11,8 @@ export const ANIM_DURATION_OUT = 200;
 export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
   container: {
     paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingTop: 8,
+    paddingBottom: 12,
     backgroundColor: colors.background,
     borderTopWidth: 1,
     borderTopColor: colors.border,
@@ -106,38 +106,43 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     alignItems: 'center' as const,
     gap: 8,
   },
-  // Pill container
-  pill: {
-    flex: 1,
+  // The "pill" is now the main horizontal wrapper
+  inputWrapper: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     backgroundColor: colors.surface,
-    borderRadius: 24,
+    borderRadius: 28,
     borderWidth: 1,
     borderColor: colors.border,
-    overflow: 'hidden' as const,
-    paddingLeft: 14,
-    paddingRight: 4,
-    paddingVertical: 4,
-    minHeight: 48,
+    paddingHorizontal: 16,
+    paddingVertical: Platform.OS === 'ios' ? 8 : 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  attachButton: {
+    marginRight: 4,
   },
   pillInput: {
     flex: 1,
     color: colors.text,
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: FONTS.mono,
-    minHeight: 36,
+    minHeight: 40,
     maxHeight: 150,
-    textAlignVertical: 'top' as const,
-    paddingTop: Platform.OS === 'ios' ? 10 : 6,
-    paddingBottom: Platform.OS === 'ios' ? 10 : 6,
-    paddingRight: 4,
+    textAlignVertical: 'center' as const,
+    paddingTop: Platform.OS === 'ios' ? 8 : 4,
+    paddingBottom: Platform.OS === 'ios' ? 8 : 4,
+    paddingHorizontal: 8,
   },
   // Icons row inside pill (right side)
-  pillIcons: {
+  rightActionRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 0,
+    gap: 12,
+    marginLeft: 4,
   },
   pillIconButton: {
     width: PILL_ICON_SIZE,
@@ -189,7 +194,7 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     backgroundColor: colors.primary,
   },
   circleButtonStop: {
-    backgroundColor: `${colors.error}`,
+    backgroundColor: 'transparent',
   },
   circleButtonIdle: {
     backgroundColor: colors.surface,

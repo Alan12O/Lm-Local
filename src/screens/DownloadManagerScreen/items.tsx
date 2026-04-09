@@ -55,14 +55,14 @@ export function extractQuantization(fileName: string): string {
     if (upperName.includes(pattern)) return pattern;
   }
   const match = /[QqFf]\d+_?[KkMmSs]*/.exec(fileName);
-  return match ? match[0].toUpperCase() : 'Unknown';
+  return match ? match[0].toUpperCase() : 'Desconocido';
 }
 
 export function getStatusText(status: string): string {
-  if (status === 'running') return 'Downloading...';
-  if (status === 'pending') return 'Queued';
-  if (status === 'paused') return 'Paused';
-  if (status === 'unknown') return 'Stuck - Remove & retry';
+  if (status === 'running') return 'Descargando...';
+  if (status === 'pending') return 'En cola';
+  if (status === 'paused') return 'Pausado';
+  if (status === 'unknown') return 'Atascado - Elimina y reintenta';
   return status;
 }
 
@@ -86,7 +86,7 @@ export function buildDownloadItems(data: DownloadItemsData): DownloadItem[] {
       modelType: fullModelId.startsWith('image:') ? 'image' : 'text',
       modelId: fullModelId,
       fileName,
-      author: fullModelId.split('/')[0] ?? 'Unknown',
+      author: fullModelId.split('/')[0] ?? 'Desconocido',
       quantization: extractQuantization(fileName),
       fileSize: progress.totalBytes,
       bytesDownloaded: progress.bytesDownloaded,
@@ -150,7 +150,7 @@ export function buildDownloadItems(data: DownloadItemsData): DownloadItem[] {
       modelType: 'image',
       modelId: model.id,
       fileName: model.name,
-      author: 'Image Generation',
+      author: 'Generación de imágenes',
       quantization: '',
       fileSize: model.size,
       bytesDownloaded: model.size,
@@ -175,14 +175,14 @@ export const ActiveDownloadCard: React.FC<ActiveDownloadCardProps> = ({ item, on
   const styles = useThemedStyles(createStyles);
 
   return (
-    <Card style={styles.downloadCard}>
+    <View style={styles.downloadCard}>
       <View style={styles.downloadHeader}>
         <View style={styles.downloadInfo}>
           <Text style={styles.fileName} numberOfLines={1}>{item.fileName}</Text>
           <Text style={styles.modelId} numberOfLines={1}>{item.author}</Text>
         </View>
         <TouchableOpacity style={styles.cancelButton} onPress={() => onRemove(item)}>
-          <Icon name="x" size={20} color={colors.error} />
+          <Icon name="x" size={16} color={colors.error} />
         </TouchableOpacity>
       </View>
       <View style={styles.progressContainer}>
@@ -190,7 +190,7 @@ export const ActiveDownloadCard: React.FC<ActiveDownloadCardProps> = ({ item, on
           <View style={[styles.progressBarFill, { width: `${Math.round(item.progress * 100)}%` as const }]} />
         </View>
         <Text style={styles.progressText}>
-          {formatBytes(item.bytesDownloaded)} / {formatBytes(item.fileSize)}
+          {formatBytes(item.bytesDownloaded)} de {formatBytes(item.fileSize)} ({Math.round(item.progress * 100)}%)
         </Text>
       </View>
       <View style={styles.downloadMeta}>
@@ -201,9 +201,10 @@ export const ActiveDownloadCard: React.FC<ActiveDownloadCardProps> = ({ item, on
           {getStatusText(item.status)}{item.reason ? ` · ${item.reason}` : ''}
         </Text>
       </View>
-    </Card>
+    </View>
   );
 };
+
 
 interface CompletedDownloadCardProps {
   item: DownloadItem;
@@ -217,12 +218,12 @@ export const CompletedDownloadCard: React.FC<CompletedDownloadCardProps> = ({ it
   const needsVisionRepair = item.isVisionModel && !item.mmProjPath;
 
   return (
-    <Card style={styles.downloadCard}>
+    <View style={styles.downloadCard}>
       <View style={styles.downloadHeader}>
         <View style={styles.modelTypeIcon}>
           <Icon
             name={item.modelType === 'image' ? 'image' : 'message-square'}
-            size={16}
+            size={14}
             color={item.modelType === 'image' ? colors.info : colors.primary}
           />
         </View>
@@ -230,28 +231,30 @@ export const CompletedDownloadCard: React.FC<CompletedDownloadCardProps> = ({ it
           <Text style={styles.fileName} numberOfLines={1}>{item.fileName}</Text>
           <Text style={styles.modelId} numberOfLines={1}>{item.author}</Text>
         </View>
-        {needsVisionRepair && onRepairVision && (
+        <View style={{ flexDirection: 'row' }}>
+          {needsVisionRepair && onRepairVision && (
+            <TouchableOpacity
+              style={styles.repairButton}
+              testID="repair-vision-button"
+              onPress={() => onRepairVision(item)}
+            >
+              <Icon name="eye" size={16} color={colors.warning} />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            style={styles.repairButton}
-            testID="repair-vision-button"
-            onPress={() => onRepairVision(item)}
+            style={styles.deleteButton}
+            testID="delete-model-button"
+            onPress={() => onDelete(item)}
           >
-            <Icon name="eye" size={18} color={colors.warning} />
+            <Icon name="trash-2" size={16} color={colors.error} />
           </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={styles.deleteButton}
-          testID="delete-model-button"
-          onPress={() => onDelete(item)}
-        >
-          <Icon name="trash-2" size={18} color={colors.error} />
-        </TouchableOpacity>
+        </View>
       </View>
       <View style={styles.downloadMeta}>
         {!!item.quantization && (
           <View style={[styles.quantBadge, item.modelType === 'image' && styles.imageBadge]}>
             <Text style={[styles.quantText, item.modelType === 'image' && styles.imageQuantText]}>
-              {item.quantization}
+              {item.quantization || 'Auto'}
             </Text>
           </View>
         )}
@@ -260,6 +263,7 @@ export const CompletedDownloadCard: React.FC<CompletedDownloadCardProps> = ({ it
           <Text style={styles.dateText}>{new Date(item.downloadedAt).toLocaleDateString()}</Text>
         )}
       </View>
-    </Card>
+    </View>
   );
 };
+

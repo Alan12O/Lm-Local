@@ -8,10 +8,12 @@ export type ChatMessageItem = {
   timestamp: number;
   isThinking?: boolean;
   isStreaming?: boolean;
+  isThinkingBlock?: boolean;
 };
 
 export type StreamingState = {
   isThinking: boolean;
+  isThinkingBlock: boolean;
   streamingMessage: string;
   streamingReasoningContent: string;
   isStreamingForThisConversation: boolean;
@@ -21,7 +23,7 @@ export function getDisplayMessages(
   allMessages: Message[],
   streaming: StreamingState,
 ): (Message | ChatMessageItem)[] {
-  const { isThinking, streamingMessage, streamingReasoningContent, isStreamingForThisConversation } = streaming;
+  const { isThinking, isThinkingBlock, streamingMessage, streamingReasoningContent, isStreamingForThisConversation } = streaming;
   if (isThinking && isStreamingForThisConversation) {
     return [
       ...allMessages,
@@ -31,13 +33,21 @@ export function getDisplayMessages(
   if ((streamingMessage || streamingReasoningContent) && isStreamingForThisConversation) {
     return [
       ...allMessages,
-      { id: 'streaming', role: 'assistant' as const, content: streamingMessage, reasoningContent: streamingReasoningContent || undefined, timestamp: Date.now(), isStreaming: true },
+      {
+        id: 'streaming',
+        role: 'assistant' as const,
+        content: streamingMessage,
+        reasoningContent: streamingReasoningContent || undefined,
+        timestamp: Date.now(),
+        isStreaming: true,
+        isThinkingBlock,
+      },
     ];
   }
   return allMessages;
 }
 
 export function getPlaceholderText(isModelLoaded: boolean, supportsVision: boolean): string {
-  if (!isModelLoaded) return 'Loading model...';
-  return supportsVision ? 'Type a message or add an image...' : 'Type a message...';
+  if (!isModelLoaded) return 'Cargando modelo...';
+  return supportsVision ? 'Escribe o añade una imagen...' : 'Escribe un mensaje...';
 }

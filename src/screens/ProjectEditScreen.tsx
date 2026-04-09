@@ -63,11 +63,11 @@ export const ProjectEditScreen: React.FC = () => {
 
   const handleSave = () => {
     if (!formData.name.trim()) {
-      setAlertState(showAlert('Error', 'Please enter a name for the project'));
+      setAlertState(showAlert('Error', 'Por favor, introduce un nombre para el proyecto'));
       return;
     }
     if (!formData.systemPrompt.trim()) {
-      setAlertState(showAlert('Error', 'Please enter a system prompt'));
+      setAlertState(showAlert('Error', 'Por favor, introduce una instrucción del sistema'));
       return;
     }
 
@@ -97,13 +97,13 @@ export const ProjectEditScreen: React.FC = () => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={styles.cancelText}>Cancelar</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            {existingProject ? 'Edit Project' : 'New Project'}
+            {existingProject ? 'Editar proyecto' : 'Nuevo proyecto'}
           </Text>
           <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
-            <Text style={styles.saveText}>Save</Text>
+            <Text style={styles.saveText}>Guardar</Text>
           </TouchableOpacity>
         </View>
 
@@ -113,44 +113,44 @@ export const ProjectEditScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled"
         >
           {/* Name */}
-          <Text style={styles.label}>Name *</Text>
+          <Text style={styles.label}>Nombre *</Text>
           <AttachStep index={8} fill>
             <TextInput
               style={styles.input}
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
-              placeholder="e.g., Spanish Learning, Code Review"
+              placeholder="ej. Aprendizaje de español, Revisión de código"
               placeholderTextColor={colors.textMuted}
             />
           </AttachStep>
 
           {/* Description */}
-          <Text style={styles.label}>Description</Text>
+          <Text style={styles.label}>Descripción</Text>
           <TextInput
             style={styles.input}
             value={formData.description}
             onChangeText={(text) => setFormData({ ...formData, description: text })}
-            placeholder="Brief description of this project"
+            placeholder="Breve descripción de este proyecto"
             placeholderTextColor={colors.textMuted}
           />
 
           {/* System Prompt */}
-          <Text style={styles.label}>System Prompt *</Text>
+          <Text style={styles.label}>Instrucción del sistema *</Text>
           <Text style={styles.hint}>
-            This context is sent to the AI at the start of every chat in this project.
+            Este contexto se envía a la IA al inicio de cada chat en este proyecto.
           </Text>
           <TextInput
             style={[styles.input, styles.textArea]}
             value={formData.systemPrompt}
             onChangeText={(text) => setFormData({ ...formData, systemPrompt: text })}
-            placeholder="Enter the instructions or context for the AI..."
+            placeholder="Introduce las instrucciones o el contexto para la IA..."
             placeholderTextColor={colors.textMuted}
             multiline
             textAlignVertical="top"
           />
 
           <Text style={styles.tip}>
-            Tip: Be specific about what you want the AI to do, how it should respond, and any context it needs.
+            Consejo: Sé específico sobre lo que quieres que haga la IA, cómo debe responder y cualquier contexto que necesite.
           </Text>
 
           <View style={styles.bottomPadding} />

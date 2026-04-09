@@ -65,7 +65,7 @@ const TAB_ICON_MAP: Record<string, string> = {
   SettingsTab: 'settings',
 };
 
-const TabBarIcon: React.FC<{ name: string; focused: boolean }> = ({ name, focused }) => {
+const TabBarIcon: React.FC<{ name: keyof typeof TAB_ICON_MAP | string; focused: boolean }> = ({ name, focused }) => {
   const { colors } = useTheme();
   const tabStyles = useThemedStyles(createTabBarStyles);
   const scale = useSharedValue(focused ? 1.1 : 1);
@@ -83,7 +83,7 @@ const TabBarIcon: React.FC<{ name: string; focused: boolean }> = ({ name, focuse
     <View style={tabStyles.iconContainer}>
       <Animated.View style={animatedStyle}>
         <Icon
-          name={TAB_ICON_MAP[name] || 'circle'}
+          name={(TAB_ICON_MAP as Record<string, string>)[name] || 'circle'}
           size={22}
           color={focused ? colors.primary : colors.textMuted}
         />
@@ -147,13 +147,12 @@ const MainTabs: React.FC = () => {
 export const AppNavigator: React.FC = () => {
   const { colors, isDark } = useTheme();
   const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
-  const downloadedModels = useAppStore((s) => s.downloadedModels);
   const steps = useMemo(() => createSpotlightSteps(), []);
 
   // Determine initial route
   let initialRoute: keyof RootStackParamList = 'Onboarding';
   if (hasCompletedOnboarding) {
-    initialRoute = downloadedModels.length > 0 ? 'Main' : 'ModelDownload';
+    initialRoute = 'Main';
   }
 
   return (

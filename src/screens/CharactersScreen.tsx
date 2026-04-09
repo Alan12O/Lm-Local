@@ -24,10 +24,7 @@ import { useCharacterStore, useChatStore } from '../stores';
 import { AICharacter } from '../types';
 import { RootStackParamList, MainTabParamList } from '../navigation/types';
 
-type NavigationProp = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList, 'CharactersTab'>,
-  NativeStackNavigationProp<RootStackParamList>
->;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Characters'>;
 
 export const CharactersScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -93,8 +90,8 @@ export const CharactersScreen: React.FC = () => {
           style={styles.characterItem}
           onPress={() => handleCharacterPress(item)}
         >
-          <View style={[styles.characterIcon, { backgroundColor: (item.themeColor || item.icon) ? (item.themeColor || item.icon) + '20' : colors.surfaceLight }]}>
-            <Text style={[styles.characterIconText, { color: item.themeColor || item.icon || colors.textMuted }]}>
+          <View style={[styles.characterIcon, { backgroundColor: (item.themeColor?.startsWith('#') ? item.themeColor : (item.icon?.startsWith('#') ? item.icon : colors.primary)) + '20' }]}>
+            <Text style={[styles.characterIconText, { color: (item.themeColor?.startsWith('#') ? item.themeColor : (item.icon?.startsWith('#') ? item.icon : colors.primary)) }]}>
               {item.name.charAt(0).toUpperCase()}
             </Text>
           </View>

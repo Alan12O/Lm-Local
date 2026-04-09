@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Clipboard } from 'react-native';
+import { View, Text, TouchableOpacity, Clipboard, Image } from 'react-native';
 import { useTheme, useThemedStyles } from '../../theme';
 import Icon from 'react-native-vector-icons/Feather';
 import { stripControlTokens } from '../../utils/messageContent';
@@ -67,7 +67,7 @@ const ToolResultBubble: React.FC<ToolResultBubbleProps> = ({
         disabled={!hasDetails}
       >
         <Icon name={toolIcon} size={13} color={colors.textMuted} />
-        <Text style={styles.toolStatusText} numberOfLines={expanded ? undefined : 2} testID={`tool-result-label-${toolName || 'unknown'}`}>
+        <Text style={styles.toolStatusText} numberOfLines={expanded ? undefined : 2} testID={`tool-result-label-${toolName || 'unknown'}`} selectable={true}>
           {toolLabel}{durationLabel}
         </Text>
         {hasDetails && (
@@ -103,7 +103,7 @@ const ToolCallMessage: React.FC<{ message: Message; styles: any; colors: any }> 
       return (
         <View key={`${tc.id || i}`} style={styles.toolStatusRow}>
           <Icon name={getToolIcon(tc.name)} size={13} color={colors.primary} />
-          <Text style={[styles.toolStatusText, { color: colors.primary }]} numberOfLines={1}>
+          <Text style={[styles.toolStatusText, { color: colors.primary }]} numberOfLines={1} selectable={true}>
             Using {tc.name}{argsPreview ? `: ${argsPreview}` : ''}
           </Text>
         </View>
@@ -118,7 +118,7 @@ const SystemInfoMessage: React.FC<{
 }> = ({ content, styles, alertState, onCloseAlert }) => (
   <>
     <View testID="system-info-message" style={styles.systemInfoContainer}>
-      <Text style={styles.systemInfoText}>{content}</Text>
+      <Text style={styles.systemInfoText} selectable={true}>{content}</Text>
     </View>
     <CustomAlert
       visible={alertState.visible} title={alertState.title}
@@ -138,9 +138,9 @@ type MetaRowProps = {
 
 const MessageMetaRow: React.FC<MetaRowProps> = ({ message, styles, isStreaming, showActions, onMenuOpen }) => (
   <View style={styles.metaRow}>
-    <Text style={styles.timestamp}>{formatTime(message.timestamp)}</Text>
+    <Text style={styles.timestamp} selectable={true}>{formatTime(message.timestamp)}</Text>
     {message.generationTimeMs != null && message.role === 'assistant' && (
-      <Text style={styles.generationTime}>{formatDuration(message.generationTimeMs)}</Text>
+      <Text style={styles.generationTime} selectable={true}>{formatDuration(message.generationTimeMs)}</Text>
     )}
     {showActions && !isStreaming && (
       <TouchableOpacity style={styles.actionHint} onPress={onMenuOpen}>
@@ -257,18 +257,20 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     <View style={[styles.container, isUser ? styles.userContainer : styles.assistantContainer]}>
       {!isUser && (
         <View style={{
-          width: 32, height: 32, borderRadius: 8, backgroundColor: colors.background,
-          borderWidth: 1, borderColor: colors.primary, justifyContent: 'center', alignItems: 'center',
+          width: 32, height: 32, borderRadius: 8, overflow: 'hidden',
           marginRight: 10, marginTop: 4,
         }}>
-          <Text style={{ ...TYPOGRAPHY.h3, color: colors.primary, fontWeight: '700' as const }}>A</Text>
+          <Image 
+            source={require('../../assets/logo.png')} 
+            style={{ width: '100%', height: '100%' }} 
+            resizeMode="cover"
+          />
         </View>
       )}
       <View style={{ flex: 1, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
         <TouchableOpacity
           testID={isUser ? 'user-message' : 'assistant-message'}
-          activeOpacity={0.8}
-          onLongPress={handleLongPress}
+          activeOpacity={0.9}
           delayLongPress={300}
         >
       <View style={bubbleStyle}>

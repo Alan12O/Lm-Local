@@ -1,5 +1,6 @@
 import type { ThemeColors, ThemeShadows } from '../theme';
 import { TYPOGRAPHY, SPACING } from '../constants';
+import { StyleSheet } from 'react-native';
 
 export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
   container: {
@@ -7,53 +8,58 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     backgroundColor: colors.background,
   },
   header: {
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.lg,
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
-    zIndex: 1,
-    gap: SPACING.md,
   },
   backButton: {
-    padding: SPACING.xs,
+    marginRight: SPACING.md,
+    padding: 4,
   },
   title: {
-    ...TYPOGRAPHY.h2,
-    flex: 1,
+    ...TYPOGRAPHY.h1,
+    fontSize: 24,
+    fontWeight: '700' as const,
     color: colors.text,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xxl,
   },
   section: {
-    marginBottom: SPACING.lg,
+    marginBottom: 24,
   },
   sectionTitle: {
     ...TYPOGRAPHY.label,
-    textTransform: 'uppercase' as const,
+    fontSize: 12,
+    letterSpacing: 1.2,
     color: colors.textMuted,
-    marginBottom: SPACING.md,
-    letterSpacing: 0.3,
+    marginBottom: 12,
+    paddingLeft: 4,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    overflow: 'hidden' as const,
   },
   storageBar: {
-    height: 12,
+    height: 8,
     backgroundColor: colors.surfaceLight,
-    borderRadius: 6,
+    borderRadius: 4,
     overflow: 'hidden' as const,
     marginBottom: SPACING.md,
   },
   storageUsed: {
     height: '100%' as const,
     backgroundColor: colors.primary,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   storageLegend: {
     flexDirection: 'row' as const,
@@ -62,15 +68,16 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
   legendItem: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: SPACING.xs,
+    gap: 6,
   },
   legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   legendText: {
     ...TYPOGRAPHY.meta,
+    fontSize: 12,
     color: colors.textSecondary,
   },
   infoRow: {
@@ -78,7 +85,7 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
     paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
   lastRow: {
@@ -91,10 +98,12 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
   },
   infoLabel: {
     ...TYPOGRAPHY.body,
+    fontSize: 15,
     color: colors.text,
   },
   infoValue: {
     ...TYPOGRAPHY.body,
+    fontWeight: '600' as const,
     color: colors.primary,
   },
   modelRow: {
@@ -102,7 +111,7 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
     paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
   modelInfo: {
@@ -111,6 +120,7 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
   },
   modelName: {
     ...TYPOGRAPHY.body,
+    fontWeight: '500' as const,
     color: colors.text,
   },
   modelMeta: {
@@ -119,7 +129,7 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     marginTop: 2,
   },
   modelSize: {
-    ...TYPOGRAPHY.body,
+    ...TYPOGRAPHY.bodySmall,
     color: colors.textSecondary,
   },
   hint: {
@@ -127,18 +137,20 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     color: colors.textMuted,
     textAlign: 'center' as const,
     lineHeight: 18,
+    marginTop: SPACING.md,
   },
   sectionHeader: {
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
-    marginBottom: SPACING.md,
+    marginBottom: 8,
   },
   clearAllButton: {
-    padding: SPACING.sm,
+    padding: 4,
   },
   clearAllText: {
-    ...TYPOGRAPHY.body,
+    ...TYPOGRAPHY.bodySmall,
+    fontWeight: '600' as const,
     color: colors.primary,
   },
   orphanedRow: {
@@ -146,7 +158,7 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
     paddingVertical: SPACING.sm,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
   orphanedInfo: {
@@ -154,7 +166,8 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     marginRight: SPACING.md,
   },
   orphanedName: {
-    ...TYPOGRAPHY.body,
+    ...TYPOGRAPHY.bodySmall,
+    fontWeight: '500' as const,
     color: colors.text,
   },
   orphanedMeta: {
@@ -163,7 +176,7 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     marginTop: 2,
   },
   deleteButton: {
-    padding: SPACING.sm,
+    padding: 4,
   },
   deleteAllButton: {
     flexDirection: 'row' as const,
@@ -175,10 +188,11 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: colors.error,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   deleteAllText: {
-    ...TYPOGRAPHY.body,
+    ...TYPOGRAPHY.bodySmall,
+    fontWeight: '600' as const,
     color: colors.error,
   },
 });

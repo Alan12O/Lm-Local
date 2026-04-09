@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, Switch } from 'react-native';
+import { View, Text, Switch, TouchableOpacity } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { AdvancedToggle, Card } from '../../components';
+import { AdvancedToggle } from '../../components';
 import { useTheme, useThemedStyles } from '../../theme';
 import { useAppStore } from '../../stores';
 import { createStyles } from './styles';
@@ -29,17 +29,17 @@ export const TextGenerationSection: React.FC = () => {
   const ctxSliderMax = modelMaxContext || FALLBACK_MAX_CONTEXT;
 
   return (
-    <Card style={styles.section}>
-      <Text style={styles.settingHelp}>Configure LLM behavior for text responses.</Text>
+    <View style={styles.card}>
+      <Text style={styles.settingHelp}>Configura el comportamiento del LLM para respuestas de texto.</Text>
 
       {/* ── Basic Settings ── */}
 
       <View style={styles.sliderSection}>
         <View style={styles.sliderHeader}>
-          <Text style={styles.sliderLabel}>Temperature</Text>
+          <Text style={styles.sliderLabel}>Temperatura</Text>
           <Text style={styles.sliderValue}>{(settings?.temperature || 0.7).toFixed(2)}</Text>
         </View>
-        <Text style={styles.sliderDesc}>Higher = more creative, Lower = more focused</Text>
+        <Text style={styles.sliderDesc}>Más alto = más creativo, más bajo = más enfocado</Text>
         <Slider
           style={styles.slider}
           minimumValue={0}
@@ -55,10 +55,10 @@ export const TextGenerationSection: React.FC = () => {
 
       <View style={styles.sliderSection}>
         <View style={styles.sliderHeader}>
-          <Text style={styles.sliderLabel}>Max Tokens</Text>
+          <Text style={styles.sliderLabel}>Tokens máximos</Text>
           <Text style={styles.sliderValue}>{maxTokensLabel}</Text>
         </View>
-        <Text style={styles.sliderDesc}>Maximum response length</Text>
+        <Text style={styles.sliderDesc}>Longitud máxima de la respuesta</Text>
         <Slider
           style={styles.slider}
           minimumValue={64}
@@ -74,13 +74,13 @@ export const TextGenerationSection: React.FC = () => {
 
       <View style={styles.sliderSection}>
         <View style={styles.sliderHeader}>
-          <Text style={styles.sliderLabel}>Context Length</Text>
+          <Text style={styles.sliderLabel}>Longitud de contexto</Text>
           <Text style={styles.sliderValue}>{contextLengthLabel}</Text>
         </View>
-        <Text style={styles.sliderDesc}>KV cache size — larger uses more RAM (requires reload)</Text>
+        <Text style={styles.sliderDesc}>Tamaño de la caché KV — valores mayores usan más RAM (requiere recarga)</Text>
         {contextLength > HIGH_CONTEXT_THRESHOLD && (
           <Text style={[styles.sliderDesc, { color: colors.error }]}>
-            High context uses significant RAM and may crash on some devices
+            Un contexto alto usa mucha RAM y puede cerrar la app en algunos dispositivos
           </Text>
         )}
         <Slider
@@ -98,9 +98,70 @@ export const TextGenerationSection: React.FC = () => {
 
       <View style={styles.toggleRow}>
         <View style={styles.toggleInfo}>
-          <Text style={styles.toggleLabel}>Show Generation Details</Text>
+          <Text style={styles.toggleLabel}>Activar Pensamiento (Thinking)</Text>
           <Text style={styles.toggleDesc}>
-            Display tokens/sec, timing, and memory usage on responses
+            Permite que el modelo razone antes de responder (o1, DeepSeek-R1, etc.)
+          </Text>
+        </View>
+        <Switch
+          value={settings?.thinkingEnabled ?? false}
+          onValueChange={(value) => updateSettings({ thinkingEnabled: value })}
+          trackColor={trackColor}
+          thumbColor={settings?.thinkingEnabled ? colors.primary : colors.textMuted}
+        />
+      </View>
+
+      {settings?.thinkingEnabled && (
+        <View style={styles.levelSelectorContainer}>
+          <Text style={styles.levelLabel}>Nivel de Pensamiento</Text>
+          <View style={styles.levelSelector}>
+            {([
+              { id: 'super_lite' as const, label: 'Lite' },
+              { id: 'reduced' as const, label: 'Reducido' },
+              { id: 'medium' as const, label: 'Medio' },
+              { id: 'normal' as const, label: 'Normal' },
+              { id: 'super_extended' as const, label: 'S-Ext' },
+            ]).map((lvl) => (
+              <TouchableOpacity
+                key={lvl.id}
+                style={[
+                  styles.levelOption,
+                  settings?.thinkingLevel === lvl.id && styles.levelOptionActive,
+                ]}
+                onPress={() => updateSettings({ thinkingLevel: lvl.id })}
+              >
+                <Text
+                  style={[
+                    styles.levelOptionText,
+                    settings?.thinkingLevel === lvl.id && styles.levelOptionTextActive,
+                    { fontSize: 10 }, // Ajuste para que quepan 5
+                  ]}
+                  numberOfLines={1}
+                >
+                  {lvl.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={[styles.toggleDesc, { marginTop: 8 }]}>
+            {settings?.thinkingLevel === 'super_lite'
+              ? 'Pensamiento ultrarrápido (64 tokens)'
+              : settings?.thinkingLevel === 'reduced'
+                ? 'Pensamiento breve (256 tokens)'
+                : settings?.thinkingLevel === 'medium'
+                  ? 'Balance entre razonamiento y velocidad (1K)'
+                  : settings?.thinkingLevel === 'super_extended'
+                    ? 'Modo Experto: Optimización de prompt + Razonamiento máximo (8K)'
+                    : 'Razonamiento profundo completo (4K)'}
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.toggleRow}>
+        <View style={styles.toggleInfo}>
+          <Text style={styles.toggleLabel}>Mostrar Detalles de Generación</Text>
+          <Text style={styles.toggleDesc}>
+            Muestra tokens/seg, tiempo y uso de memoria en las respuestas
           </Text>
         </View>
         <Switch
@@ -114,6 +175,6 @@ export const TextGenerationSection: React.FC = () => {
       <AdvancedToggle isExpanded={showAdvanced} onPress={() => setShowAdvanced(!showAdvanced)} testID="text-advanced-toggle" />
 
       {showAdvanced && <TextGenerationAdvanced />}
-    </Card>
+    </View>
   );
 };

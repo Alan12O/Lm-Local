@@ -8,12 +8,12 @@ export const SystemPromptSection: React.FC = () => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { settings, updateSettings } = useAppStore();
-  const systemPrompt = settings?.systemPrompt ?? 'You are a helpful AI assistant.';
+  const systemPrompt = settings?.systemPrompt ?? 'Eres un asistente de IA servicial.';
 
   return (
-    <View style={styles.systemPromptContainer}>
+    <View style={[styles.card, styles.systemPromptContainer]}>
       <Text style={styles.settingHelp}>
-        Instructions given to the model before each conversation. Used when chatting without a project selected.
+        Instrucciones dadas al modelo antes de cada conversación. Se utilizan al chatear sin un proyecto seleccionado.
       </Text>
       <TextInput
         style={styles.textArea}
@@ -21,9 +21,10 @@ export const SystemPromptSection: React.FC = () => {
         onChangeText={(text) => updateSettings({ systemPrompt: text })}
         multiline
         numberOfLines={4}
-        placeholder="Enter system prompt..."
+        placeholder="Introduce el system prompt..."
         placeholderTextColor={colors.textMuted}
       />
     </View>
+
   );
 };

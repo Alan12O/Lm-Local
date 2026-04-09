@@ -14,11 +14,11 @@ export async function saveImageToGallery(
       await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
         {
-          title: 'Storage Permission',
-          message: 'App needs access to save images',
-          buttonNeutral: 'Ask Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
+          title: 'Permiso de almacenamiento',
+          message: 'La aplicación necesita acceso para guardar imágenes',
+          buttonNeutral: 'Preguntar más tarde',
+          buttonNegative: 'Cancelar',
+          buttonPositive: 'Aceptar',
         },
       );
     }
@@ -30,16 +30,16 @@ export async function saveImageToGallery(
       await RNFS.mkdir(picturesDir);
     }
     const timestamp = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
-    const fileName = `generated_${timestamp}.png`;
+    const fileName = `generada_${timestamp}.png`;
     await RNFS.copyFile(sourcePath, `${picturesDir}/${fileName}`);
     setAlertState(showAlert(
-      'Image Saved',
+      'Imagen guardada',
       Platform.OS === 'android'
-        ? `Saved to Pictures/OffgridMobile/${fileName}`
-        : `Saved to ${fileName}`,
+        ? `Guardado en Pictures/OffgridMobile/${fileName}`
+        : `Guardado en ${fileName}`,
     ));
   } catch (error: any) {
     logger.error('[ChatScreen] Failed to save image:', error);
-    setAlertState(showAlert('Error', `Failed to save image: ${error?.message || 'Unknown error'}`));
+    setAlertState(showAlert('Error', `Error al guardar la imagen: ${error?.message || 'Error desconocido'}`));
   }
 }

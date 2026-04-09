@@ -18,17 +18,22 @@ interface Props {
   setQuantFilter: (quant: string) => void;
 }
 
+import Icon from 'react-native-vector-icons/Feather';
+import { useTheme } from '../../theme';
+
 export const TextFiltersSection: React.FC<Props> = ({
   filterState, hasActiveFilters, clearFilters,
   toggleFilterDimension, toggleOrg, setTypeFilter, setSourceFilter, setSizeFilter, setQuantFilter,
 }) => {
   const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
 
-  const renderPill = ({ label, isActive, dim, badge }: { label: string; isActive: boolean; dim: FilterDimension; badge?: number }) => (
+  const renderPill = ({ label, isActive, dim, icon, badge }: { label: string; isActive: boolean; dim: FilterDimension; icon: string; badge?: number }) => (
     <TouchableOpacity
-      style={[styles.filterPill, isActive && styles.filterPillActive]}
+      style={[styles.filterPill, (isActive || filterState.expandedDimension === dim) && styles.filterPillActive]}
       onPress={() => toggleFilterDimension(dim)}
     >
+      <Icon name={icon} size={14} color={isActive ? colors.primary : colors.textSecondary} />
       <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>
         {label} {filterState.expandedDimension === dim ? '\u25B4' : '\u25BE'}
       </Text>
@@ -40,22 +45,22 @@ export const TextFiltersSection: React.FC<Props> = ({
     </TouchableOpacity>
   );
 
-  const typeLabel = filterState.type === 'all' ? 'Type' : (MODEL_TYPE_OPTIONS.find(o => o.key === filterState.type)?.label ?? 'Type');
-  const sourceLabel = filterState.source === 'all' ? 'Source' : (CREDIBILITY_OPTIONS.find(o => o.key === filterState.source)?.label ?? 'Source');
-  const sizeLabel = filterState.size === 'all' ? 'Size' : (SIZE_OPTIONS.find(o => o.key === filterState.size)?.label ?? 'Size');
-  const quantLabel = filterState.quant === 'all' ? 'Quant' : filterState.quant;
+  const typeLabel = filterState.type === 'all' ? 'Tipo' : (MODEL_TYPE_OPTIONS.find(o => o.key === filterState.type)?.label ?? 'Tipo');
+  const sourceLabel = filterState.source === 'all' ? 'Fuente' : (CREDIBILITY_OPTIONS.find(o => o.key === filterState.source)?.label ?? 'Fuente');
+  const sizeLabel = filterState.size === 'all' ? 'Tamaño' : (SIZE_OPTIONS.find(o => o.key === filterState.size)?.label ?? 'Tamaño');
+  const quantLabel = filterState.quant === 'all' ? 'Cuant.' : filterState.quant;
 
   return (
     <View style={styles.filterBar}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPillRow} keyboardShouldPersistTaps="handled">
-        {renderPill({ label: 'Org', isActive: filterState.orgs.length > 0, dim: 'org', badge: filterState.orgs.length })}
-        {renderPill({ label: typeLabel, isActive: filterState.type !== 'all', dim: 'type' })}
-        {renderPill({ label: sourceLabel, isActive: filterState.source !== 'all', dim: 'source' })}
-        {renderPill({ label: sizeLabel, isActive: filterState.size !== 'all', dim: 'size' })}
-        {renderPill({ label: quantLabel, isActive: filterState.quant !== 'all', dim: 'quant' })}
+        {renderPill({ label: 'Org.', isActive: filterState.orgs.length > 0, dim: 'org', icon: 'users', badge: filterState.orgs.length })}
+        {renderPill({ label: typeLabel, isActive: filterState.type !== 'all', dim: 'type', icon: 'grid' })}
+        {renderPill({ label: sourceLabel, isActive: filterState.source !== 'all', dim: 'source', icon: 'shield' })}
+        {renderPill({ label: sizeLabel, isActive: filterState.size !== 'all', dim: 'size', icon: 'database' })}
+        {renderPill({ label: quantLabel, isActive: filterState.quant !== 'all', dim: 'quant', icon: 'activity' })}
         {hasActiveFilters && (
           <TouchableOpacity style={styles.clearFiltersButton} onPress={clearFilters}>
-            <Text style={styles.clearFiltersText}>Clear</Text>
+            <Text style={styles.clearFiltersText}>Limpiar</Text>
           </TouchableOpacity>
         )}
       </ScrollView>

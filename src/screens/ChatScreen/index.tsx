@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, InteractionManager } from 'react-native';
+import { FlatList, KeyboardAvoidingView, InteractionManager, View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSpotlightTour } from 'react-native-spotlight-tour';
@@ -15,6 +15,8 @@ import { MessageRenderer } from './MessageRenderer';
 import { NoModelScreen, LoadingScreen, ChatHeader } from './ChatScreenComponents';
 import { ChatModalSection } from './ChatModalSection';
 import { ChatMessageArea } from './ChatMessageArea';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Icon from 'react-native-vector-icons/Feather';
 
 function countConversationImages(conv: Conversation | undefined): number {
   return (conv?.messages || []).reduce((n: number, m: Message) =>
@@ -106,22 +108,6 @@ export const ChatScreen: React.FC = () => {
       onClose={() => chat.setAlertState(hideAlert())}
     />
   );
-  if (chat.isModelLoading) {
-    const sizeSource = chat.loadingModel ?? chat.activeModel;
-    const modelName = chat.loadingModel?.name || chat.activeModelName || 'Unknown';
-    return (
-      <>
-        <LoadingScreen
-          styles={styles} colors={colors}
-          navigation={chat.navigation}
-          loadingModelName={modelName}
-          modelSize={sizeSource ? chat.hardwareService.formatModelSize(sizeSource) : ''}
-          hasVision={!!(chat.loadingModel?.mmProjPath || chat.activeModel?.mmProjPath)}
-        />
-        {alertEl}
-      </>
-    );
-  }
 
   const handleScroll = (event: any) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
@@ -149,62 +135,156 @@ export const ChatScreen: React.FC = () => {
 
   const imageCount = countConversationImages(chat.activeConversation);
 
+  const currModel = chat.loadingModel ?? chat.activeModel;
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView testID="chat-screen" style={styles.keyboardView} behavior="padding" keyboardVerticalOffset={0}>
-        <ChatHeader
-          styles={styles} colors={colors}
-          activeConversation={chat.activeConversation}
-          activeModel={chat.activeModel}
-          activeModelName={chat.activeModelName}
-          activeImageModel={chat.activeImageModel}
-          activeProject={chat.activeProject}
-          navigation={chat.navigation}
-          setShowModelSelector={chat.setShowModelSelector}
-          setShowSettingsPanel={chat.setShowSettingsPanel}
-          setShowProjectSelector={chat.setShowProjectSelector}
-          isRemote={chat.activeModelInfo?.isRemote}
-        />
-        <ChatMessageArea
-          flatListRef={flatListRef}
-          isNearBottomRef={isNearBottomRef}
-          chat={chat}
-          styles={styles}
-          colors={colors}
-          handleScroll={handleScroll}
-          renderItem={renderItem}
-          chatSpotlight={chatSpotlight}
-        />
-        <ChatModalSection
-          styles={styles} colors={colors}
-          showProjectSelector={chat.showProjectSelector}
-          setShowProjectSelector={chat.setShowProjectSelector}
-          showDebugPanel={chat.showDebugPanel}
-          setShowDebugPanel={chat.setShowDebugPanel}
-          showModelSelector={chat.showModelSelector}
-          setShowModelSelector={chat.setShowModelSelector}
-          showSettingsPanel={chat.showSettingsPanel}
-          setShowSettingsPanel={chat.setShowSettingsPanel}
-          debugInfo={chat.debugInfo}
-          activeProject={chat.activeProject}
-          activeConversation={chat.activeConversation}
-          settings={chat.settings}
-          projects={chat.projects}
-          handleSelectProject={chat.handleSelectProject}
-          handleModelSelect={chat.handleModelSelect}
-          handleUnloadModel={chat.handleUnloadModel}
-          handleDeleteConversation={chat.handleDeleteConversation}
-          isModelLoading={chat.isModelLoading}
-          imageCount={imageCount}
-          activeConversationId={chat.activeConversationId}
-          navigation={chat.navigation}
-          viewerImageUri={chat.viewerImageUri}
-          setViewerImageUri={chat.setViewerImageUri}
-          handleSaveImage={chat.handleSaveImage}
-          isRemote={chat.activeModelInfo?.isRemote}
-        />
+        {chat.isModelLoading ? (
+          <LoadingScreen
+            styles={styles} colors={colors}
+            navigation={chat.navigation}
+            loadingModelName={chat.loadingModel?.name || chat.activeModelName || 'Unknown'}
+            modelSize={currModel ? chat.hardwareService.formatModelSize(currModel) : ''}
+            hasVision={!!(chat.loadingModel?.mmProjPath || chat.activeModel?.mmProjPath)}
+          />
+        ) : !chat.hasActiveModel ? (
+          <NoModelScreen
+            styles={styles}
+            colors={colors}
+            navigation={chat.navigation}
+            downloadedModelsCount={chat.downloadedModels.length}
+            showModelSelector={chat.showModelSelector}
+            setShowModelSelector={chat.setShowModelSelector}
+            onSelectModel={chat.handleModelSelect}
+            onUnloadModel={chat.handleUnloadModel}
+            isModelLoading={chat.isModelLoading}
+          />
+        ) : (
+          <>
+            {chat.isIncognito && (
+              <View 
+                pointerEvents="none"
+                style={{ 
+                  position: 'absolute', 
+                  top: 6, 
+                  right: 6, 
+                  zIndex: 1000, 
+                  flexDirection: 'row', 
+                  alignItems: 'center',
+                  backgroundColor: 'rgba(0,0,0,0.2)',
+                  paddingHorizontal: 4,
+                  paddingVertical: 1,
+                  borderRadius: 4,
+                  opacity: 0.7
+                }}
+              >
+                <Icon name="eye-off" size={8} color="#FFD700" />
+                <Text style={{ fontSize: 7, color: '#AAA', fontWeight: 'bold', marginLeft: 2 }}>PRIVADO</Text>
+              </View>
+            )}
+            <ChatHeader
+              styles={styles} colors={colors}
+              activeConversation={chat.activeConversation}
+              activeModel={chat.activeModel}
+              activeModelName={chat.activeModelName}
+              activeImageModel={chat.activeImageModel}
+              activeProject={chat.activeProject}
+              navigation={chat.navigation}
+              setShowModelSelector={chat.setShowModelSelector}
+              setShowSettingsPanel={chat.setShowSettingsPanel}
+              setShowProjectSelector={chat.setShowProjectSelector}
+              isRemote={chat.activeModelInfo?.isRemote}
+              isIncognito={chat.isIncognito}
+              setIsIncognito={chat.handleToggleIncognito}
+            />
+            <ChatMessageArea
+              flatListRef={flatListRef}
+              isNearBottomRef={isNearBottomRef}
+              chat={chat}
+              styles={styles}
+              colors={colors}
+              handleScroll={handleScroll}
+              renderItem={renderItem}
+              chatSpotlight={chatSpotlight}
+            />
+            <ChatModalSection
+              styles={styles} colors={colors}
+              showProjectSelector={chat.showProjectSelector}
+              setShowProjectSelector={chat.setShowProjectSelector}
+              showDebugPanel={chat.showDebugPanel}
+              setShowDebugPanel={chat.setShowDebugPanel}
+              showModelSelector={chat.showModelSelector}
+              setShowModelSelector={chat.setShowModelSelector}
+              showSettingsPanel={chat.showSettingsPanel}
+              setShowSettingsPanel={chat.setShowSettingsPanel}
+              debugInfo={chat.debugInfo}
+              activeProject={chat.activeProject}
+              activeConversation={chat.activeConversation}
+              settings={chat.settings}
+              projects={chat.projects}
+              handleSelectProject={chat.handleSelectProject}
+              handleModelSelect={chat.handleModelSelect}
+              handleUnloadModel={chat.handleUnloadModel}
+              handleDeleteConversation={chat.handleDeleteConversation}
+              isModelLoading={chat.isModelLoading}
+              imageCount={imageCount}
+              activeConversationId={chat.activeConversationId}
+              navigation={chat.navigation}
+              viewerImageUri={chat.viewerImageUri}
+              setViewerImageUri={chat.setViewerImageUri}
+              handleSaveImage={chat.handleSaveImage}
+              isRemote={chat.activeModelInfo?.isRemote}
+            />
+          </>
+        )}
       </KeyboardAvoidingView>
       {alertEl}
+
+      {chat.showIncognitoToast && (
+        <Animated.View 
+          pointerEvents="none"
+          entering={FadeIn.duration(300)} 
+          exiting={FadeOut.duration(300)}
+          style={toastStyles.toastContainer}
+        >
+          <View style={toastStyles.toastPill}>
+            <Icon name="eye-off" size={16} color="#FFD700" style={{ marginRight: 8 }} />
+            <Text style={toastStyles.toastText}>Iniciando chat incógnito...</Text>
+          </View>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 };
+
+const toastStyles = StyleSheet.create({
+  toastContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  toastPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.3)',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  toastText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});

@@ -35,11 +35,8 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
       {chat.displayMessages.length === 0 ? (
         <EmptyChat
           styles={styles} colors={colors}
-          activeModel={chat.activeModel}
-          activeModelName={chat.activeModelName}
           activeProject={chat.activeProject}
           setShowProjectSelector={chat.setShowProjectSelector}
-          isRemote={chat.activeModelInfo?.isRemote}
           onQuickAction={(text) => chat.handleSend(text)}
         />
       ) : (
@@ -50,8 +47,7 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messageList}
           onScroll={handleScroll}
-          onContentSizeChange={(_w, _h) => { if (isNearBottomRef.current) flatListRef.current?.scrollToEnd({ animated: false }); }}
-          onLayout={() => { }}
+          onContentSizeChange={() => { if (isNearBottomRef.current) flatListRef.current?.scrollToEnd({ animated: false }); }}
           scrollEventThrottle={16}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
@@ -79,12 +75,12 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
       {chat.isClassifying && (
         <View style={styles.classifyingBar}>
           <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={styles.classifyingText}>Understanding your request...</Text>
+          <Text style={styles.classifyingText}>Entendiendo tu solicitud...</Text>
         </View>
       )}
       {chat.isCompacting && (
         <Animated.View entering={FadeIn.duration(200)} style={styles.classifyingBar}>
-          <ThinkingIndicator text="Compacting your conversation..." />
+          <ThinkingIndicator text="Compactando tu conversación..." />
         </Animated.View>
       )}
       {chat.hasPendingSettings && !chat.isCompacting && !chat.activeModelInfo?.isRemote && (
@@ -92,7 +88,7 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
           <AnimatedPressable style={styles.pendingSettingsBar} onPress={chat.handleReloadTextModel}>
             <Icon name="alert-circle" size={16} color={colors.warning} />
             <Text style={styles.pendingSettingsText}>
-              Settings changed — tap to reload model
+              Ajustes cambiados — toca para recargar el modelo
             </Text>
             <Icon name="refresh-cw" size={14} color={colors.warning} />
           </AnimatedPressable>
@@ -119,8 +115,9 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
             enabledToolCount={chat.toolsEnabled ? chat.enabledTools.length : 0}
             supportsToolCalling={chat.supportsToolCalling}
             supportsThinking={chat.supportsThinking}
-            activeSpotlight={chatSpotlight === 12 ? chatSpotlight : null}
+            activeSpotlight={chatSpotlight === 12 ? 12 : null}
             isCharacterMode={chat.isCharacterMode}
+            isIncognito={chat.isIncognito}
           />
         </AttachStep>
       </View>

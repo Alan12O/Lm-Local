@@ -36,9 +36,9 @@ const GpuSection: React.FC<GpuSectionProps> = ({
     <>
       <View style={styles.toggleRow}>
         <View style={styles.toggleInfo}>
-          <Text style={styles.toggleLabel}>GPU Acceleration</Text>
+          <Text style={styles.toggleLabel}>Aceleración por GPU</Text>
           <Text style={styles.toggleDesc}>
-            Offload model layers to GPU. Requires model reload.
+            Delegar capas del modelo a la GPU. Requiere recarga del modelo.
           </Text>
         </View>
         <Switch
@@ -53,11 +53,11 @@ const GpuSection: React.FC<GpuSectionProps> = ({
       {isGpuEnabled && (
         <View style={styles.sliderSection}>
           <View style={styles.sliderHeader}>
-            <Text style={styles.sliderLabel}>GPU Layers</Text>
+            <Text style={styles.sliderLabel}>Capas de GPU</Text>
             <Text style={styles.sliderValue}>{gpuLayersEffective}</Text>
           </View>
           <Text style={styles.sliderDesc}>
-            Layers offloaded to GPU. Higher = faster but may crash on low-VRAM devices.
+            Capas delegadas a la GPU. Valores más altos = más rápido, pero puede fallar en dispositivos con poca VRAM.
           </Text>
           <Slider
             testID="gpu-layers-slider"
@@ -89,7 +89,7 @@ const FlashAttentionSection: React.FC<{ trackColor: { false: string; true: strin
       <View style={styles.toggleInfo}>
         <Text style={styles.toggleLabel}>Flash Attention</Text>
         <Text style={styles.toggleDesc}>
-          Faster inference and lower memory. Required for quantized KV cache (q8_0/q4_0). Requires model reload.
+          Inferencia más rápida y menor uso de memoria. Requerido para caché KV cuantizada (q8_0/q4_0). Requiere recarga del modelo.
         </Text>
       </View>
       <Switch
@@ -113,7 +113,7 @@ const KvCacheSection: React.FC<{ cacheDisabled: boolean }> = ({ cacheDisabled })
     <>
       <View style={styles.toggleRow}>
         <View style={styles.toggleInfo}>
-          <Text style={styles.toggleLabel}>KV Cache Type</Text>
+          <Text style={styles.toggleLabel}>Tipo de caché KV</Text>
           <Text style={styles.toggleDesc}>
             {CACHE_TYPE_DESCRIPTIONS[displayCacheType]}
           </Text>
@@ -135,12 +135,12 @@ const KvCacheSection: React.FC<{ cacheDisabled: boolean }> = ({ cacheDisabled })
       </View>
       {cacheDisabled && (
         <Text style={styles.warningText}>
-          GPU acceleration on Android requires f16 KV cache.
+          La aceleración por GPU en Android requiere caché KV f16.
         </Text>
       )}
       {!cacheDisabled && !isFlashAttnOn && (
         <Text style={styles.warningText}>
-          Quantized cache (q8_0/q4_0) will auto-enable flash attention.
+          La caché cuantizada (q8_0/q4_0) activará automáticamente Flash Attention.
         </Text>
       )}
     </>
@@ -157,17 +157,17 @@ const ModelLoadingStrategySection: React.FC = () => {
     <>
       <View style={styles.toggleRow}>
         <View style={styles.toggleInfo}>
-          <Text style={styles.toggleLabel}>Model Loading Strategy</Text>
+          <Text style={styles.toggleLabel}>Estrategia de carga de modelo</Text>
           <Text style={styles.toggleDesc}>
             {settings?.modelLoadingStrategy === 'performance'
-              ? 'Keep models loaded for faster responses'
-              : 'Load models on demand to save memory'}
+              ? 'Mantener modelos cargados para respuestas más rápidas'
+              : 'Cargar modelos bajo demanda para ahorrar memoria'}
           </Text>
         </View>
       </View>
       <View style={styles.strategyButtons}>
         <Button
-          title="Save Memory"
+          title="Ahorrar memoria"
           variant="secondary"
           size="small"
           testID="strategy-memory-button"
@@ -176,7 +176,7 @@ const ModelLoadingStrategySection: React.FC = () => {
           style={styles.flex1}
         />
         <Button
-          title="Fast"
+          title="Rápido"
           variant="secondary"
           size="small"
           testID="strategy-performance-button"
@@ -211,7 +211,7 @@ export const TextGenerationAdvanced: React.FC = () => {
           <Text style={styles.sliderLabel}>Top P</Text>
           <Text style={styles.sliderValue}>{(settings?.topP || 0.9).toFixed(2)}</Text>
         </View>
-        <Text style={styles.sliderDesc}>Nucleus sampling threshold</Text>
+        <Text style={styles.sliderDesc}>Umbral de muestreo nucleus (Nucleus sampling)</Text>
         <Slider
           style={styles.slider}
           minimumValue={0.1}
@@ -230,7 +230,7 @@ export const TextGenerationAdvanced: React.FC = () => {
           <Text style={styles.sliderLabel}>Repeat Penalty</Text>
           <Text style={styles.sliderValue}>{(settings?.repeatPenalty || 1.1).toFixed(2)}</Text>
         </View>
-        <Text style={styles.sliderDesc}>Penalize repeated tokens</Text>
+        <Text style={styles.sliderDesc}>Penaliza la repetición de tokens</Text>
         <Slider
           style={styles.slider}
           minimumValue={1.0}
@@ -246,10 +246,10 @@ export const TextGenerationAdvanced: React.FC = () => {
 
       <View style={styles.sliderSection}>
         <View style={styles.sliderHeader}>
-          <Text style={styles.sliderLabel}>CPU Threads</Text>
+          <Text style={styles.sliderLabel}>Hilos de CPU</Text>
           <Text style={styles.sliderValue}>{settings?.nThreads || 6}</Text>
         </View>
-        <Text style={styles.sliderDesc}>Parallel threads for inference</Text>
+        <Text style={styles.sliderDesc}>Hilos paralelos para la inferencia</Text>
         <Slider
           style={styles.slider}
           minimumValue={1}
@@ -265,10 +265,10 @@ export const TextGenerationAdvanced: React.FC = () => {
 
       <View style={styles.sliderSection}>
         <View style={styles.sliderHeader}>
-          <Text style={styles.sliderLabel}>Batch Size</Text>
+          <Text style={styles.sliderLabel}>Tamaño de lote (Batch Size)</Text>
           <Text style={styles.sliderValue}>{settings?.nBatch || 256}</Text>
         </View>
-        <Text style={styles.sliderDesc}>Tokens processed per batch</Text>
+        <Text style={styles.sliderDesc}>Tokens procesados por lote</Text>
         <Slider
           style={styles.slider}
           minimumValue={32}

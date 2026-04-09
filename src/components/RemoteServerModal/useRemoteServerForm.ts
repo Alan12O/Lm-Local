@@ -43,17 +43,17 @@ export function useRemoteServerForm({ server, visible, onSave, onClose }: FormOp
   const validateForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) {
-      newErrors.name = 'Server name is required';
+      newErrors.name = 'El nombre del servidor es obligatorio';
     }
     if (endpoint.trim()) {
       try {
         // Validate URL format by parsing it - constructor throws on invalid URLs
         new URL(endpoint); // eslint-disable-line no-new
       } catch {
-        newErrors.endpoint = 'Invalid URL format';
+        newErrors.endpoint = 'Formato de URL no válido';
       }
     } else {
-      newErrors.endpoint = 'Endpoint URL is required';
+      newErrors.endpoint = 'La URL del Endpoint es obligatoria';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -67,13 +67,13 @@ export function useRemoteServerForm({ server, visible, onSave, onClose }: FormOp
     try {
       const result = await remoteServerManager.testConnectionByEndpoint(endpoint);
       if (result.success) {
-        setTestResult({ success: true, message: `Connected (${result.latency}ms)` });
+        setTestResult({ success: true, message: `Conectado (${result.latency}ms)` });
         if (result.models) setDiscoveredModels(result.models);
       } else {
-        setTestResult({ success: false, message: result.error || 'Connection failed' });
+        setTestResult({ success: false, message: result.error || 'Error de conexión' });
       }
     } catch (error) {
-      setTestResult({ success: false, message: error instanceof Error ? error.message : 'Unknown error' });
+      setTestResult({ success: false, message: error instanceof Error ? error.message : 'Error desconocido' });
     } finally {
       setIsTesting(false);
     }
@@ -100,7 +100,7 @@ export function useRemoteServerForm({ server, visible, onSave, onClose }: FormOp
       }
       onClose();
     } catch (error) {
-      setAlertState(showAlert('Error', error instanceof Error ? error.message : 'Failed to save server'));
+      setAlertState(showAlert('Error', error instanceof Error ? error.message : 'Error al guardar el servidor'));
     }
   }, [server, name, endpoint, notes, discoveredModels, onSave, onClose]);
 
@@ -109,11 +109,11 @@ export function useRemoteServerForm({ server, visible, onSave, onClose }: FormOp
     // Warn if connecting to public internet
     if (endpoint && !isPrivateNetworkEndpoint(endpoint)) {
       setAlertState(showAlert(
-        'Public Network Warning',
-        'This endpoint appears to be on the public internet. Your data will be sent to a remote server. Continue?',
+        'Advertencia de red pública',
+        'Este endpoint parece estar en la internet pública. Tus datos se enviarán a un servidor remoto. ¿Continuar?',
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Continue', onPress: () => saveServer() },
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Continuar', onPress: () => saveServer() },
         ]
       ));
     } else {

@@ -105,7 +105,7 @@ export function useDownloadManager(): UseDownloadManagerResult {
     });
 
     const unsubError = backgroundDownloadService.onAnyError(async (event) => {
-      setAlertState(showAlert('Download Failed', event.reason || 'Unknown error'));
+      setAlertState(showAlert('Error de descarga', event.reason || 'Error desconocido'));
       await loadActiveDownloads();
     });
 
@@ -159,19 +159,19 @@ export function useDownloadManager(): UseDownloadManagerResult {
       }, 1000);
     } catch (error) {
       logger.error('[DownloadManager] Failed to remove download:', error);
-      setAlertState(showAlert('Error', 'Failed to remove download'));
+      setAlertState(showAlert('Error', 'No se pudo eliminar la descarga'));
     }
   };
 
   const handleRemoveDownload = (item: DownloadItem) => {
     setAlertState(
       showAlert(
-        'Remove Download',
-        'Are you sure you want to remove this download?',
+        'Eliminar descarga',
+        '¿Estás seguro de que quieres eliminar esta descarga?',
         [
           { text: 'No', style: 'cancel' },
           {
-            text: 'Yes',
+            text: 'Sí',
             style: 'destructive',
             onPress: () => { executeRemoveDownload(item); },
           },
@@ -187,19 +187,19 @@ export function useDownloadManager(): UseDownloadManagerResult {
       removeDownloadedModel(model.id);
     } catch (error) {
       logger.error('[DownloadManager] Failed to delete model:', error);
-      setAlertState(showAlert('Error', 'Failed to delete model'));
+      setAlertState(showAlert('Error', 'No se pudo eliminar el modelo'));
     }
   };
   const handleDeleteModel = (model: DownloadedModel) => {
     const totalSize = hardwareService.getModelTotalSize(model);
     setAlertState(
       showAlert(
-        'Delete Model',
-        `Are you sure you want to delete "${model.fileName}"? This will free up ${formatBytes(totalSize)}.`,
+        'Eliminar modelo',
+        `¿Estás seguro de que quieres eliminar "${model.fileName}"? Esto liberará ${formatBytes(totalSize)}.`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: 'Cancelar', style: 'cancel' },
           {
-            text: 'Delete',
+            text: 'Eliminar',
             style: 'destructive',
             onPress: () => { executeDeleteModel(model); },
           },
@@ -216,18 +216,18 @@ export function useDownloadManager(): UseDownloadManagerResult {
       removeDownloadedImageModel(model.id);
     } catch (error) {
       logger.error('[DownloadManager] Failed to delete image model:', error);
-      setAlertState(showAlert('Error', 'Failed to delete image model'));
+      setAlertState(showAlert('Error', 'No se pudo eliminar el modelo de imagen'));
     }
   };
   const handleDeleteImageModel = (model: ONNXImageModel) => {
     setAlertState(
       showAlert(
-        'Delete Image Model',
-        `Are you sure you want to delete "${model.name}"? This will free up ${formatBytes(model.size)}.`,
+        'Eliminar modelo de imagen',
+        `¿Estás seguro de que quieres eliminar "${model.name}"? Esto liberará ${formatBytes(model.size)}.`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: 'Cancelar', style: 'cancel' },
           {
-            text: 'Delete',
+            text: 'Eliminar',
             style: 'destructive',
             onPress: () => { executeDeleteImageModel(model); },
           },
@@ -253,14 +253,14 @@ export function useDownloadManager(): UseDownloadManagerResult {
     setDownloadProgress(downloadKey, { progress: 0, bytesDownloaded: 0, totalBytes: 0 });
     huggingFaceService.getModelFiles(repoId).then(async (files) => {
       const file = files.find(f => f.name === fileName);
-      if (!file?.mmProjFile) { setDownloadProgress(downloadKey, null); setAlertState(showAlert('Error', 'Could not find vision projection file for this model')); return; }
+      if (!file?.mmProjFile) { setDownloadProgress(downloadKey, null); setAlertState(showAlert('Error', 'No se pudo encontrar el archivo de proyección de visión para este modelo')); return; }
       setDownloadProgress(downloadKey, { progress: 0, bytesDownloaded: 0, totalBytes: file.mmProjFile.size });
       await modelManager.repairMmProj(repoId, file, { onProgress: (p) => setDownloadProgress(downloadKey, p) });
       setDownloadProgress(downloadKey, null);
       const models = await modelManager.getDownloadedModels();
       setDownloadedModels(models);
-      setAlertState(showAlert('Vision Repaired', `Vision file restored for ${item.fileName}. Reload the model to enable vision.`));
-    }).catch((e: Error) => { setDownloadProgress(downloadKey, null); setAlertState(showAlert('Repair Failed', e.message)); });
+      setAlertState(showAlert('Visión reparada', `Archivo de visión restaurado para ${item.fileName}. Recarga el modelo para habilitar la visión.`));
+    }).catch((e: Error) => { setDownloadProgress(downloadKey, null); setAlertState(showAlert('Error de reparación', e.message)); });
   };
 
   // Build items from store state

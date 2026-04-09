@@ -55,7 +55,7 @@ export const OrphanedFilesSection: React.FC<Props> = ({ onStorageChange }) => {
       setOrphanedFiles(prev => prev.filter(f => f.path !== file.path));
       onStorageChange();
     } catch (_err) {
-      setAlertState(showAlert('Error', 'Failed to delete file'));
+      setAlertState(showAlert('Error', 'Error al eliminar el archivo'));
     } finally {
       setIsDeleting(null);
     }
@@ -65,12 +65,12 @@ export const OrphanedFilesSection: React.FC<Props> = ({ onStorageChange }) => {
     (file: OrphanedFile) => {
       setAlertState(
         showAlert(
-          'Delete Orphaned File',
-          `Delete "${file.name}"?\n\nThis will free up ${hardwareService.formatBytes(file.size)}.`,
+          'Eliminar archivo huérfano',
+          `¿Eliminar "${file.name}"?\n\nEsto liberará ${hardwareService.formatBytes(file.size)}.`,
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: 'Cancelar', style: 'cancel' },
             {
-              text: 'Delete',
+              text: 'Eliminar',
               style: 'destructive',
               onPress: () => {
                 setAlertState(hideAlert());
@@ -89,12 +89,12 @@ export const OrphanedFilesSection: React.FC<Props> = ({ onStorageChange }) => {
     const totalSize = orphanedFiles.reduce((sum, f) => sum + f.size, 0);
     setAlertState(
       showAlert(
-        'Delete All Orphaned Files',
-        `Delete ${orphanedFiles.length} orphaned file(s)?\n\nThis will free up ${hardwareService.formatBytes(totalSize)}.`,
+        'Eliminar todos los archivos huérfanos',
+        `¿Eliminar ${orphanedFiles.length} archivo(s) huérfano(s)?\n\nEsto liberará ${hardwareService.formatBytes(totalSize)}.`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: 'Cancelar', style: 'cancel' },
           {
-            text: 'Delete All',
+            text: 'Eliminar todo',
             style: 'destructive',
             onPress: () => {
               const doDeleteAll = async () => {
@@ -123,7 +123,7 @@ export const OrphanedFilesSection: React.FC<Props> = ({ onStorageChange }) => {
     <>
       <Card style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Orphaned Files</Text>
+          <Text style={styles.sectionTitle}>Archivos huérfanos</Text>
           <TouchableOpacity
             style={styles.scanButton}
             onPress={scanForOrphanedFiles}
@@ -139,13 +139,13 @@ export const OrphanedFilesSection: React.FC<Props> = ({ onStorageChange }) => {
 
         {orphanedFiles.length === 0 ? (
           <Text style={styles.emptyText}>
-            {isScanning ? 'Scanning...' : 'No orphaned files found'}
+            {isScanning ? 'Escaneando...' : 'No se encontraron archivos huérfanos'}
           </Text>
         ) : (
           <>
             <Text style={styles.warningText}>
-              These files/folders exist on disk but aren't tracked as models.
-              They may be from failed or cancelled downloads.
+              Estos archivos/carpetas existen en el disco pero no están registrados como modelos.
+              Pueden ser restos de descargas fallidas o canceladas.
             </Text>
             {orphanedFiles.map(file => (
               <View key={file.path} style={styles.orphanedRow}>
@@ -175,7 +175,7 @@ export const OrphanedFilesSection: React.FC<Props> = ({ onStorageChange }) => {
               onPress={handleDeleteAll}
             >
               <Icon name="trash-2" size={16} color={colors.error} />
-              <Text style={styles.deleteAllText}>Delete All Orphaned Files</Text>
+              <Text style={styles.deleteAllText}>Eliminar todos los archivos huérfanos</Text>
             </TouchableOpacity>
           </>
         )}

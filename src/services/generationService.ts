@@ -25,6 +25,7 @@ export interface QueuedMessage {
 export interface GenerationState {
   isGenerating: boolean;
   isThinking: boolean;
+  isThinkingBlock: boolean;
   conversationId: string | null;
   streamingContent: string;
   startTime: number | null;
@@ -36,7 +37,7 @@ type QueueProcessor = (item: QueuedMessage) => Promise<void>;
 
 class GenerationService {
   private state: GenerationState = {
-    isGenerating: false, isThinking: false, conversationId: null,
+    isGenerating: false, isThinking: false, isThinkingBlock: false, conversationId: null,
     streamingContent: '', startTime: null, queuedMessages: [],
   };
 
@@ -52,6 +53,8 @@ class GenerationService {
   private reasoningBuffer: string = '';
   private totalReasoningLength: number = 0;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  private isParsingThinking: boolean = false;
+  private tagBuffer: string = '';
 
   /** Get the current provider (local or remote) */
   private getCurrentProvider() {
@@ -88,6 +91,9 @@ class GenerationService {
     if (this.reasoningBuffer) {
       store.appendToStreamingReasoningContent(this.reasoningBuffer);
       this.reasoningBuffer = '';
+    }
+    if (store.isThinkingBlock !== this.isParsingThinking) {
+      store.setIsThinkingBlock(this.isParsingThinking);
     }
     this.flushTimer = null;
   }
@@ -138,8 +144,8 @@ class GenerationService {
     let finalMessages = messages;
     if (!isRemote) {
       const usage = await llmService.estimateContextUsage(messages);
-      if (usage.percentUsed > 85) {
-        logger.log('[GenerationService] Proactive compaction triggered (context >85%)');
+      if (usage.percentUsed > 92) {
+        logger.log('[GenerationService] Proactive compaction triggered (context >92%)');
         const systemPrompt = messages.find(m => m.role === 'system')?.content || '';
         const conv = useChatStore.getState().conversations.find((c: any) => c.id === conversationId);
         finalMessages = await require('./contextCompaction').contextCompactionService.compact({
@@ -171,8 +177,8 @@ class GenerationService {
     let finalMessages = messages;
     if (!isRemote) {
       const usage = await llmService.estimateContextUsage(messages);
-      if (usage.percentUsed > 85) {
-        logger.log('[GenerationService] Proactive compaction triggered (context >85%)');
+      if (usage.percentUsed > 92) {
+        logger.log('[GenerationService] Proactive compaction triggered (context >92%)');
         const systemPrompt = messages.find(m => m.role === 'system')?.content || '';
         const conv = useChatStore.getState().conversations.find((c: any) => c.id === conversationId);
         finalMessages = await require('./contextCompaction').contextCompactionService.compact({
@@ -277,6 +283,59 @@ class GenerationService {
     return streamingContent;
   }
 
+  /**
+   * Generate a simple string response from the current provider (local or remote).
+   * Unlike generateResponse, this DOES NOT update the chat store.
+   * Useful for background tasks like prompt enhancement.
+   */
+  async generateStringResponse(messages: Message[]): Promise<string> {
+    const { activeServerId } = useRemoteServerStore.getState();
+    const localLoaded = llmService.isModelLoaded();
+    
+    // Si hay un servidor remoto activo, intentamos usarlo (incluso si hay un modelo local cargado)
+    // Esto permite al usuario elegir qué LLM usar para tareas como mejora de prompts.
+    if (activeServerId) {
+      const provider = providerRegistry.getProvider(activeServerId);
+      logger.log(`[GenerationService] Attempting string response via remote provider: ${activeServerId}`);
+      
+      if (provider) {
+        try {
+          const { temperature, maxTokens, topP } = useAppStore.getState().settings;
+          const result = await new Promise<string>((resolve, reject) => {
+            let content = '';
+            provider.generate(
+              messages,
+              { temperature, maxTokens, topP },
+              {
+                onToken: (token: string) => { content += token; },
+                onReasoning: () => {},
+                onComplete: (res) => resolve(res.content || content),
+                onError: (err) => reject(err),
+              }
+            ).catch(reject);
+          });
+          logger.log('[GenerationService] Remote string response successful');
+          return result;
+        } catch (error) {
+          logger.warn('[GenerationService] Remote provider failed, checking for local fallback...', error);
+          if (!localLoaded) throw error; // No hay fallback disponible
+          // Si falló el remoto pero hay local, continuamos al flujo local
+        }
+      } else {
+        logger.warn(`[GenerationService] Active remote server ${activeServerId} has no registered provider`);
+        if (!localLoaded) throw new Error(`Remote provider ${activeServerId} not found and no local model loaded`);
+      }
+    }
+
+    // Ruta Local (Default o Fallback)
+    if (!localLoaded) {
+      throw new Error('No local or remote model available for generation');
+    }
+    
+    logger.log('[GenerationService] Generating string response via local model');
+    return llmService.generateResponse(messages);
+  }
+
   /** Generate a response using a remote provider */
   async generateRemoteResponse(
     conversationId: string,
@@ -332,10 +391,13 @@ class GenerationService {
     this.tokenBuffer = '';
     this.reasoningBuffer = '';
     this.totalReasoningLength = 0;
+    this.isParsingThinking = false;
+    this.tagBuffer = '';
     this.remoteTimeToFirstToken = undefined;
     this.updateState({
       isGenerating: false,
       isThinking: false,
+      isThinkingBlock: false,
       conversationId: null,
       streamingContent: '',
       startTime: null,

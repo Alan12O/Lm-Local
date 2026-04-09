@@ -27,22 +27,22 @@ export const VERIFIED_QUANTIZERS: Record<string, string> = {};
 export const CREDIBILITY_LABELS = {
   lmstudio: {
     label: 'LM Studio',
-    description: 'Official LM Studio quantization - highest quality GGUF',
+    description: 'Cuantización oficial de LM Studio - GGUF de máxima calidad',
     color: '#22D3EE', // cyan
   },
   official: {
-    label: 'Official',
-    description: 'From the original model creator',
+    label: 'Oficial',
+    description: 'Del creador original del modelo',
     color: '#3B82F6', // blue
   },
   'verified-quantizer': {
-    label: 'Verified',
-    description: 'From a trusted quantization provider',
+    label: 'Verificado',
+    description: 'De un proveedor de cuantización de confianza',
     color: '#A78BFA', // purple
   },
   community: {
-    label: 'Community',
-    description: 'Community contributed model',
+    label: 'Comunidad',
+    description: 'Modelo contribuido por la comunidad',
     color: '#64748B', // gray
   },
 };
@@ -52,13 +52,13 @@ export const APP_CONFIG = {
   modelStorageDir: 'models',
   whisperStorageDir: 'whisper-models',
   maxConcurrentDownloads: 1,
-  defaultSystemPrompt: `You are a helpful AI assistant running locally on the user's device. Your responses should be:
-- Accurate and factual - never make up information
-- Concise but complete - answer the question fully without unnecessary elaboration
-- Helpful and friendly - focus on solving the user's actual need
-- Honest about limitations - if you don't know something, say so
+  defaultSystemPrompt: `Eres un asistente de IA útil que se ejecuta localmente en el dispositivo del usuario. Tus respuestas deben ser:
+- Precisas y factuales - nunca inventes información.
+- Concisas pero completas - responde la pregunta totalmente sin rodeos innecesarios.
+- Útiles y amigables - enfócate en resolver la necesidad real del usuario.
+- Honesto sobre las limitaciones - si no sabes algo, dilo.
 
-If asked about yourself, you can mention you're a local AI assistant that prioritizes user privacy.`,
+Si te preguntan sobre ti, puedes mencionar que eres un asistente de IA local que prioriza la privacidad del usuario.`,
   streamingEnabled: true,
   maxContextLength: 2048, // Balanced for speed and context (increase to 4096 if you need more history)
 };
@@ -67,27 +67,27 @@ If asked about yourself, you can mention you're a local AI assistant that priori
 export const ONBOARDING_SLIDES = [
   {
     id: 'freedom',
-    keyword: 'YOURS',
-    title: 'Your AI.\nNo Strings Attached.',
-    description: 'No subscriptions, no sign-ups, no company reading your chats. An AI that lives on your device and answers to no one else.',
+    keyword: 'TUYA',
+    title: 'Tu IA.\nSin ataduras.',
+    description: 'Sin suscripciones, sin registros y sin empresas leyendo tus chats. Una IA que vive en tu dispositivo y no responde a nadie más.',
   },
   {
     id: 'magic',
-    keyword: 'MAGIC',
-    title: 'Just Talk.\nIt Figures Out the Rest.',
-    description: 'Describe an image \u2014 it creates one. Show it a photo \u2014 it understands. Attach a document \u2014 it reads it. One conversation, no modes, no friction.',
+    keyword: 'MAGIA',
+    title: 'Solo habla.\nElla se encarga del resto.',
+    description: 'Describe una imagen y la crea. Muéstrale una foto y la entiende. Adjunta un documento y lo lee. Una sola conversación, sin modos, sin fricciones.',
   },
   {
     id: 'create',
-    keyword: 'CREATE',
-    title: 'Say It Simply.\nGet Something Stunning.',
-    description: 'Type \u201Cimagine a cat on the moon\u201D and watch your words become a vivid image in seconds. AI enhances your ideas automatically \u2014 no prompt engineering needed.',
+    keyword: 'CREA',
+    title: 'Dilo simple.\nObtén algo increíble.',
+    description: 'Escribe "imagina un gato en la luna" y mira cómo tus palabras se vuelven una imagen vívida en segundos. La IA mejora tus ideas automáticamente, sin necesidad de ingeniería de prompts.',
   },
   {
     id: 'hardware',
     keyword: 'READY',
-    title: 'Powered\nYour Way.',
-    description: 'Run models on your phone with Metal and Neural Engine acceleration \u2014 or connect to powerful models already on your home network. We\u2019ll find the best setup for you.',
+    title: 'Potencia\na tu manera.',
+    description: 'Ejecuta modelos en tu teléfono con aceleración de hardware, o conéctate a modelos potentes en tu red local. Encontraremos la mejor configuración para ti.',
   },
 ];
 

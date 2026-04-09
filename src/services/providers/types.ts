@@ -68,6 +68,8 @@ export interface GenerationOptions {
   stopSequences?: string[];
   /** Whether to enable thinking/reasoning mode (Ollama: sends "think" param; others: parsed from response) */
   enableThinking?: boolean;
+  /** Depth of reasoning/thinking (super_lite, reduced, medium, normal, super_extended) */
+  thinkingLevel?: 'super_lite' | 'reduced' | 'medium' | 'normal' | 'super_extended';
 }
 
 /** Tool definition for function calling */

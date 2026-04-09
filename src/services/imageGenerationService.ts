@@ -28,6 +28,7 @@ interface GenerateImageParams {
   guidanceScale?: number;
   seed?: number;
   previewInterval?: number;
+  skipEnhancement?: boolean;
 }
 
 interface ActiveImageModel {
@@ -112,7 +113,7 @@ class ImageGenerationService {
     if (!conversationId || !tempMessageId) return;
     const chatStore = useChatStore.getState();
     if (enhancedPrompt && enhancedPrompt !== originalPrompt) {
-      chatStore.updateMessageContent(conversationId, tempMessageId, `<think>__LABEL:Enhanced prompt__\n${enhancedPrompt}</think>`);
+      chatStore.updateMessageContent(conversationId, tempMessageId, `<think>__LABEL:Prompt mejorado__\n${enhancedPrompt}</think>`);
       chatStore.updateMessageThinking(conversationId, tempMessageId, false);
     } else {
       logger.warn('[ImageGen] Enhancement produced no change, deleting thinking message');
@@ -135,14 +136,14 @@ class ImageGenerationService {
     }
     this.updateState({
       isGenerating: true, prompt: params.prompt, conversationId: params.conversationId || null,
-      status: 'Enhancing prompt with AI...', previewPath: null,
+      status: 'Mejorando prompt con IA...', previewPath: null,
       progress: { step: 0, totalSteps: steps }, error: null, result: null,
     });
     const contextMessages = params.conversationId ? getConversationContext(params.conversationId) : [];
     let tempMessageId: string | null = null;
     if (params.conversationId) {
       const tempMessage = useChatStore.getState().addMessage(params.conversationId, {
-        role: 'assistant', content: 'Enhancing your prompt...', isThinking: true,
+        role: 'assistant', content: 'Mejorando tu prompt...', isThinking: true,
       });
       tempMessageId = tempMessage.id;
     }
@@ -176,15 +177,15 @@ class ImageGenerationService {
     const needsThreadReload = loadedThreads == null || loadedThreads !== desiredThreads;
     if (isImageModelLoaded && loadedPath === activeImageModel.modelPath && !needsThreadReload) return true;
     if (!activeImageModelId) {
-      this.updateState({ error: 'No image model selected', isGenerating: false });
+      this.updateState({ error: 'No hay modelo de imagen seleccionado', isGenerating: false });
       return false;
     }
     try {
-      this.updateState({ status: `Loading ${activeImageModel.name}...` });
+      this.updateState({ status: `Cargando ${activeImageModel.name}...` });
       await activeModelService.loadImageModel(activeImageModelId);
       return true;
     } catch (error: any) {
-      this.updateState({ isGenerating: false, progress: null, status: null, error: `Failed to load image model: ${error?.message || 'Unknown error'}` });
+      this.updateState({ isGenerating: false, progress: null, status: null, error: `Error al cargar el modelo de imagen: ${error?.message || 'Error desconocido'}` });
       return false;
     }
   }
@@ -199,7 +200,7 @@ class ImageGenerationService {
       const genTime = Date.now() - meta.startTime;
       useChatStore.getState().addMessage(params.conversationId, {
         role: 'assistant',
-        content: `Generated image for: "${params.prompt}"`,
+        content: `Imagen generada para: "${params.prompt}"`,
         attachments: [{ id: result.id, type: 'image', uri: `file://${result.imagePath}`, width: result.width, height: result.height }],
         generationTimeMs: genTime,
         generationMeta: buildImageGenMeta(activeImageModel, { steps: meta.steps, guidanceScale: meta.guidanceScale, result, useOpenCL: meta.useOpenCL }),
@@ -207,6 +208,10 @@ class ImageGenerationService {
     }
     this.updateState({ isGenerating: false, progress: null, status: null, previewPath: null, result, error: null });
     return result;
+  }
+
+  public clearResult(): void {
+    this.updateState({ result: null, previewPath: null, error: null, progress: null, status: null });
   }
 
   private async _runGenerationAndSave(opts: RunGenerationOptions): Promise<GeneratedImage | null> {
@@ -226,8 +231,8 @@ class ImageGenerationService {
 
     this.updateState({
       status: isFirstGpuRun
-        ? 'Optimizing GPU for your device (~120s, one-time)...'
-        : 'Starting image generation...',
+        ? 'Optimizando GPU para tu dispositivo (~120s, solo una vez)...'
+        : 'Iniciando generación de imagen...',
     });
     const startTime = Date.now();
     try {
@@ -240,17 +245,17 @@ class ImageGenerationService {
             this.updateState({
               progress: { step: displayStep, totalSteps: steps },
               status: displayStep <= 1
-                ? 'Optimizing GPU for your device (~120s, one-time)...'
-                : `GPU optimization in progress... (${displayStep}/${steps})`,
+                ? 'Optimizando GPU para tu dispositivo (~120s, solo una vez)...'
+                : `Optimización de GPU en curso... (${displayStep}/${steps})`,
             });
           } else {
-            this.updateState({ progress: { step: displayStep, totalSteps: steps }, status: `Generating image (${displayStep}/${steps})...` });
+            this.updateState({ progress: { step: displayStep, totalSteps: steps }, status: `Generando imagen (${displayStep}/${steps})...` });
           }
         },
         (preview) => {
           if (this.cancelRequested) return;
           const displayStep = Math.min(preview.step, steps);
-          this.updateState({ previewPath: `file://${preview.previewPath}?t=${Date.now()}`, status: `Refining image (${displayStep}/${steps})...` });
+          this.updateState({ previewPath: `file://${preview.previewPath}?t=${Date.now()}`, status: `Refinando imagen (${displayStep}/${steps})...` });
         },
       );
       if (this.cancelRequested || !result?.imagePath) { this.resetState(); return null; }
@@ -269,7 +274,7 @@ class ImageGenerationService {
           errorMsg.includes('ERR_NO_MODEL') ||
           errorMsg.includes('TextEncoder');
         const userMessage = isPipelineCrash
-          ? 'Image generation failed — the model encountered an error and was unloaded. Please try again.'
+          ? 'Fallo en la generación de imagen — el modelo encontró un error y fue descargado. Por favor, intenta de nuevo.'
           : errorMsg;
 
         this.updateState({ isGenerating: false, progress: null, status: null, previewPath: null, error: userMessage });
@@ -289,25 +294,27 @@ class ImageGenerationService {
     }
     const { settings, activeImageModelId, downloadedImageModels } = useAppStore.getState();
     const activeImageModel = downloadedImageModels.find(m => m.id === activeImageModelId);
-    if (!activeImageModel) { this.updateState({ error: 'No image model selected' }); return null; }
+    if (!activeImageModel) { this.updateState({ error: 'No hay modelo de imagen seleccionado' }); return null; }
 
     const steps = params.steps || settings.imageSteps || 8;
     const guidanceScale = params.guidanceScale || settings.imageGuidanceScale || 2.0;
     const imageWidth = settings.imageWidth || 256;
     const imageHeight = settings.imageHeight || 256;
 
-    const enhancedPrompt = await this._enhancePrompt(params, steps);
-    logger.log('[ImageGen] enhanceImagePrompts setting:', settings.enhanceImagePrompts);
+    const shouldEnhance = settings.enhanceImagePrompts && !params.skipEnhancement;
+    const enhancedPrompt = shouldEnhance ? await this._enhancePrompt(params, steps) : params.prompt;
+
+    logger.log('[ImageGen] enhanceImagePrompts setting:', settings.enhanceImagePrompts, 'skipEnhancement:', params.skipEnhancement);
     this.cancelRequested = false;
 
-    if (!settings.enhanceImagePrompts) {
+    if (!shouldEnhance) {
       this.updateState({
         isGenerating: true, prompt: params.prompt, conversationId: params.conversationId || null,
-        status: 'Preparing image generation...', previewPath: null,
+        status: 'Preparando generación de imagen...', previewPath: null,
         progress: { step: 0, totalSteps: steps }, error: null, result: null,
       });
     } else {
-      this.updateState({ status: 'Preparing image generation...' });
+      this.updateState({ status: 'Preparando generación de imagen...' });
     }
 
     const loaded = await this._ensureImageModelLoaded(activeImageModelId, activeImageModel, settings.imageThreads ?? 4);

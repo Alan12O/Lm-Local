@@ -43,7 +43,7 @@ const TestResultSection: React.FC<TestResultSectionProps> = ({ testResult, disco
     )}
     {discoveredModels.length > 0 && (
       <View style={styles.modelList}>
-        <Text style={styles.sectionHeader}>Discovered Models</Text>
+        <Text style={styles.sectionHeader}>Modelos descubiertos</Text>
         <ScrollView style={styles.modelScroll} nestedScrollEnabled>
           {discoveredModels.map((model) => (
             <View key={model.id} style={styles.modelItem}>
@@ -84,23 +84,23 @@ export const RemoteServerModal: React.FC<RemoteServerModalProps> = ({
     <AppSheet
       visible={visible}
       onClose={onClose}
-      title={server ? 'Edit Server' : 'Add Remote Server'}
+      title={server ? 'Editar servidor' : 'Añadir servidor remoto'}
       snapPoints={['80%']}
       enableDynamicSizing
     >
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.label}>Server Name</Text>
+        <Text style={styles.label}>Nombre del servidor</Text>
         <TextInput
           style={[styles.input, errors.name && styles.inputError]}
-          placeholder="e.g., Ollama Desktop"
+          placeholder="ej. Ollama Desktop"
           placeholderTextColor={theme.colors.textMuted}
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
         />
         {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-
-        <Text style={styles.label}>Endpoint URL</Text>
+|
+        <Text style={styles.label}>URL del Endpoint</Text>
         <TextInput
           style={[styles.input, errors.endpoint && styles.inputError]}
           placeholder="http://192.168.1.50:11434"
@@ -115,18 +115,18 @@ export const RemoteServerModal: React.FC<RemoteServerModalProps> = ({
         {isPublicNetwork && (
           <View style={styles.warningContainer}>
             <Text style={styles.warningText}>
-              ⚠️ This endpoint is on the public internet. Your data will be sent to a remote server.
+              ⚠️ Este endpoint está en la internet pública. Tus datos se enviarán a un servidor remoto.
             </Text>
           </View>
         )}
         <Text style={styles.helperText}>
-          Enter the base URL of your LLM server (Ollama, LM Studio, etc.)
+          Introduce la URL base de tu servidor LLM (Ollama, LM Studio, etc.)
         </Text>
 
-        <Text style={styles.label}>Notes (Optional)</Text>
+        <Text style={styles.label}>Notas (Opcional)</Text>
         <TextInput
           style={[styles.input, styles.notesInput]}
-          placeholder="Add notes about this server..."
+          placeholder="Añade notas sobre este servidor..."
           placeholderTextColor={theme.colors.textMuted}
           value={notes}
           onChangeText={setNotes}
@@ -146,7 +146,7 @@ export const RemoteServerModal: React.FC<RemoteServerModalProps> = ({
               <ActivityIndicator size="small" color={theme.colors.background} />
             ) : (
               <Text style={[styles.testButtonText, isTesting && styles.testButtonTextDisabled]}>
-                Test Connection
+                Probar conexión
               </Text>
             )}
           </TouchableOpacity>
@@ -157,7 +157,7 @@ export const RemoteServerModal: React.FC<RemoteServerModalProps> = ({
             disabled={!testResult?.success}
           >
             <Text style={[styles.saveButtonText, !testResult?.success && styles.saveButtonTextDisabled]}>
-              {server ? 'Update Server' : 'Add Server'}
+              {server ? 'Actualizar servidor' : 'Añadir servidor'}
             </Text>
           </TouchableOpacity>
         </View>

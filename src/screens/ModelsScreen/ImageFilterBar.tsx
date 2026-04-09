@@ -24,15 +24,15 @@ function getBackendLabel(filter: BackendFilter): string {
   if (filter === 'mnn') return 'GPU';
   if (filter === 'qnn') return 'NPU';
   if (filter === 'coreml') return 'Core ML';
-  return 'Backend';
+  return 'Motor';
 }
 
 function getSdLabel(filter: string): string {
-  return filter === 'all' ? 'Version' : (SD_VERSION_OPTIONS.find(o => o.key === filter)?.label ?? 'Version');
+  return filter === 'all' ? 'Versión' : (SD_VERSION_OPTIONS.find(o => o.key === filter)?.label ?? 'Versión');
 }
 
 function getStyleLabel(filter: string): string {
-  return filter === 'all' ? 'Style' : (STYLE_OPTIONS.find(o => o.key === filter)?.label ?? 'Style');
+  return filter === 'all' ? 'Estilo' : (STYLE_OPTIONS.find(o => o.key === filter)?.label ?? 'Estilo');
 }
 
 interface ExpandedSectionProps {
@@ -111,6 +111,15 @@ const FilterExpandedSection: React.FC<ExpandedSectionProps> = ({
   return null;
 };
 
+import Icon from 'react-native-vector-icons/Feather';
+
+function getBackendIcon(filter: BackendFilter): string {
+  if (filter === 'mnn') return 'cpu';
+  if (filter === 'qnn') return 'zap';
+  if (filter === 'coreml') return 'box';
+  return 'settings';
+}
+
 export const ImageFilterBar: React.FC<Props> = ({
   backendFilter, setBackendFilter,
   styleFilter, setStyleFilter,
@@ -120,19 +129,21 @@ export const ImageFilterBar: React.FC<Props> = ({
   setUserChangedBackendFilter,
 }) => {
   const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
 
   const backendLabel = getBackendLabel(backendFilter);
   const sdLabel = getSdLabel(sdVersionFilter);
   const styleLabel = getStyleLabel(styleFilter);
 
   return (
-    <View style={[styles.filterBar, { marginHorizontal: -SPACING.lg }]}>
+    <View style={styles.filterBar}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPillRow} keyboardShouldPersistTaps="handled">
         {Platform.OS !== 'ios' && (
           <TouchableOpacity
-            style={[styles.filterPill, backendFilter !== 'all' && styles.filterPillActive]}
+            style={[styles.filterPill, (backendFilter !== 'all' || imageFilterExpanded === 'backend') && styles.filterPillActive]}
             onPress={() => setImageFilterExpanded(prev => prev === 'backend' ? null : 'backend')}
           >
+            <Icon name={getBackendIcon(backendFilter)} size={14} color={backendFilter !== 'all' ? colors.primary : colors.textSecondary} />
             <Text style={[styles.filterPillText, backendFilter !== 'all' && styles.filterPillTextActive]}>
               {backendLabel} {imageFilterExpanded === 'backend' ? '\u25B4' : '\u25BE'}
             </Text>
@@ -140,9 +151,10 @@ export const ImageFilterBar: React.FC<Props> = ({
         )}
         {Platform.OS === 'ios' && (
           <TouchableOpacity
-            style={[styles.filterPill, sdVersionFilter !== 'all' && styles.filterPillActive]}
+            style={[styles.filterPill, (sdVersionFilter !== 'all' || imageFilterExpanded === 'sdVersion') && styles.filterPillActive]}
             onPress={() => setImageFilterExpanded(prev => prev === 'sdVersion' ? null : 'sdVersion')}
           >
+            <Icon name="layers" size={14} color={sdVersionFilter !== 'all' ? colors.primary : colors.textSecondary} />
             <Text style={[styles.filterPillText, sdVersionFilter !== 'all' && styles.filterPillTextActive]}>
               {sdLabel} {imageFilterExpanded === 'sdVersion' ? '\u25B4' : '\u25BE'}
             </Text>
@@ -150,9 +162,10 @@ export const ImageFilterBar: React.FC<Props> = ({
         )}
         {Platform.OS !== 'ios' && (
           <TouchableOpacity
-            style={[styles.filterPill, styleFilter !== 'all' && styles.filterPillActive]}
+            style={[styles.filterPill, (styleFilter !== 'all' || imageFilterExpanded === 'style') && styles.filterPillActive]}
             onPress={() => setImageFilterExpanded(prev => prev === 'style' ? null : 'style')}
           >
+            <Icon name="palette" size={14} color={styleFilter !== 'all' ? colors.primary : colors.textSecondary} />
             <Text style={[styles.filterPillText, styleFilter !== 'all' && styles.filterPillTextActive]}>
               {styleLabel} {imageFilterExpanded === 'style' ? '\u25B4' : '\u25BE'}
             </Text>
@@ -160,7 +173,7 @@ export const ImageFilterBar: React.FC<Props> = ({
         )}
         {hasActiveImageFilters && (
           <TouchableOpacity style={styles.clearFiltersButton} onPress={clearImageFilters}>
-            <Text style={styles.clearFiltersText}>Clear</Text>
+            <Text style={styles.clearFiltersText}>Limpiar</Text>
           </TouchableOpacity>
         )}
       </ScrollView>

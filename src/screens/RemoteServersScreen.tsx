@@ -51,12 +51,12 @@ export const RemoteServersScreen: React.FC = () => {
     try {
       const result = await testConnection(serverId);
       if (result.success) {
-        setAlertState(showAlert('Success', `Connected successfully (${result.latency}ms)`));
+        setAlertState(showAlert('Éxito', `Conectado con éxito (${result.latency}ms)`));
       } else {
-        setAlertState(showAlert('Connection Failed', result.error || 'Unknown error'));
+        setAlertState(showAlert('Error de conexión', result.error || 'Error desconocido'));
       }
     } catch (error) {
-      setAlertState(showAlert('Error', error instanceof Error ? error.message : 'Unknown error'));
+      setAlertState(showAlert('Error', error instanceof Error ? error.message : 'Error desconocido'));
     } finally {
       setTestingId(null);
     }
@@ -67,13 +67,13 @@ export const RemoteServersScreen: React.FC = () => {
     try {
       const discovered = await discoverLANServers();
       if (discovered.length === 0) {
-        setAlertState(showAlert('No Servers Found', 'No LLM servers were found on your local network.'));
+        setAlertState(showAlert('No se encontraron servidores', 'No se encontraron servidores LLM en tu red local.'));
         return;
       }
       const existingEndpoints = new Set(servers.map(s => s.endpoint));
       const newServers = discovered.filter(d => !existingEndpoints.has(d.endpoint));
       if (newServers.length === 0) {
-        setAlertState(showAlert('Already Added', 'All discovered servers are already in your list.'));
+        setAlertState(showAlert('Ya añadidos', 'Todos los servidores descubiertos ya están en tu lista.'));
         return;
       }
       const added = await Promise.all(
@@ -86,10 +86,10 @@ export const RemoteServersScreen: React.FC = () => {
         )
       );
       added.forEach(s => remoteServerManager.testConnection(s.id).catch(() => { }));
-      setAlertState(showAlert('Discovery Complete', `Added ${newServers.length} server${newServers.length > 1 ? 's' : ''}.`));
+      setAlertState(showAlert('Búsqueda completa', `Se añadió ${newServers.length} servidor${newServers.length > 1 ? 'es' : ''}.`));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      setAlertState(showAlert('Scan Failed', message));
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      setAlertState(showAlert('Escaneo fallido', message));
     } finally {
       setIsScanning(false);
     }
@@ -97,12 +97,12 @@ export const RemoteServersScreen: React.FC = () => {
 
   const handleDeleteServer = useCallback((server: typeof servers[0]) => {
     setAlertState(showAlert(
-      'Delete Server',
-      `Are you sure you want to delete "${server.name}"?`,
+      'Eliminar servidor',
+      `¿Estás seguro de que quieres eliminar "${server.name}"?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Eliminar',
           style: 'destructive',
           onPress: async () => {
             if (activeServerId === server.id) setActiveServerId(null);
@@ -117,10 +117,11 @@ export const RemoteServersScreen: React.FC = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-left" size={24} color={theme.colors.text} />
+          <Icon name="arrow-left" size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Remote Servers</Text>
+        <Text style={styles.title}>Servidores remotos</Text>
       </View>
+
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {servers.length === 0 ? (
@@ -128,13 +129,13 @@ export const RemoteServersScreen: React.FC = () => {
             <View style={styles.emptyIcon}>
               <Icon name="wifi" size={32} color={theme.colors.textMuted} />
             </View>
-            <Text style={styles.emptyTitle}>No Remote Servers</Text>
+            <Text style={styles.emptyTitle}>Sin servidores remotos</Text>
             <Text style={styles.emptyText}>
-              Connect to Ollama, LM Studio, or other LLM servers on your network
+              Conéctate a Ollama, LM Studio u otros servidores LLM en tu red
             </Text>
             <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
               <Icon name="plus" size={20} color={theme.colors.background} />
-              <Text style={styles.addButtonText}>Add Server</Text>
+              <Text style={styles.addButtonText}>Añadir servidor</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.scanButton} onPress={handleScanNetwork} disabled={isScanning}>
               {isScanning ? (
@@ -142,7 +143,7 @@ export const RemoteServersScreen: React.FC = () => {
               ) : (
                 <Icon name="wifi" size={20} color={theme.colors.text} />
               )}
-              <Text style={styles.scanButtonText}>{isScanning ? 'Scanning...' : 'Scan Network'}</Text>
+              <Text style={styles.scanButtonText}>{isScanning ? 'Escaneando...' : 'Escanear red'}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -155,10 +156,10 @@ export const RemoteServersScreen: React.FC = () => {
               if (health?.isHealthy === true) statusColor = styles.statusDotActive;
               else if (health?.isHealthy === false) statusColor = styles.statusDotInactive;
 
-              let statusText = 'Unknown';
-              if (isTesting) statusText = 'Testing...';
-              else if (health?.isHealthy === true) statusText = 'Connected';
-              else if (health?.isHealthy === false) statusText = 'Offline';
+              let statusText = 'Desconocido';
+              if (isTesting) statusText = 'Probando...';
+              else if (health?.isHealthy === true) statusText = 'Conectado';
+              else if (health?.isHealthy === false) statusText = 'Desconectado';
 
               return (
                 <View key={server.id} style={styles.serverItem}>
@@ -185,7 +186,7 @@ export const RemoteServersScreen: React.FC = () => {
                       ) : (
                         <>
                           <Icon name="refresh-cw" size={16} color={theme.colors.text} />
-                          <Text style={styles.actionButtonText}>Test</Text>
+                          <Text style={styles.actionButtonText}>Probar</Text>
                         </>
                       )}
                     </TouchableOpacity>
@@ -194,14 +195,14 @@ export const RemoteServersScreen: React.FC = () => {
                       onPress={() => setEditingServer(server)}
                     >
                       <Icon name="edit-2" size={16} color={theme.colors.text} />
-                      <Text style={styles.actionButtonText}>Edit</Text>
+                      <Text style={styles.actionButtonText}>Editar</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.actionButton, styles.deleteButton]}
                       onPress={() => handleDeleteServer(server)}
                     >
                       <Icon name="trash-2" size={16} color={theme.colors.error} />
-                      <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Delete</Text>
+                      <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Eliminar</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -210,7 +211,7 @@ export const RemoteServersScreen: React.FC = () => {
 
             <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
               <Icon name="plus" size={20} color={theme.colors.background} />
-              <Text style={styles.addButtonText}>Add Another Server</Text>
+              <Text style={styles.addButtonText}>Añadir otro servidor</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.scanButton} onPress={handleScanNetwork} disabled={isScanning}>
               {isScanning ? (
@@ -218,16 +219,16 @@ export const RemoteServersScreen: React.FC = () => {
               ) : (
                 <Icon name="wifi" size={20} color={theme.colors.text} />
               )}
-              <Text style={styles.scanButtonText}>{isScanning ? 'Scanning...' : 'Scan Network'}</Text>
+              <Text style={styles.scanButtonText}>{isScanning ? 'Escaneando...' : 'Escanear red'}</Text>
             </TouchableOpacity>
           </>
         )}
 
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>About Remote Servers</Text>
+          <Text style={styles.infoTitle}>Sobre los servidores remotos</Text>
           <Text style={styles.infoText}>
-            Connect to LLM servers running on your local network, such as Ollama or LM Studio.{'\n\n'}
-            Make sure your server is running and accessible from your device. For security, only connect to servers on trusted networks.
+            Conéctate a servidores LLM que se ejecuten en tu red local, como Ollama o LM Studio.{'\n\n'}
+            Asegúrate de que tu servidor esté funcionando y sea accesible desde tu dispositivo. Por seguridad, solo conéctate a servidores en redes de confianza.
           </Text>
         </View>
       </ScrollView>

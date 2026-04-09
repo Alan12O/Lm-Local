@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Platform } from 'react-native';
+import { Platform, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import RNFS from 'react-native-fs';
 import { unzip } from 'react-native-zip-archive';
@@ -187,6 +187,19 @@ export function useModelsScreen() {
     [maybeShowNotifRationale, image],
   );
 
+  const handleOpenRepo = useCallback((modelId: string) => {
+    if (!modelId) return;
+
+    // Si es un modelo descargado (autor/repo/archivo), extraemos solo autor/repo
+    const parts = modelId.split('/');
+    const repoSlug = parts.length > 2 ? `${parts[0]}/${parts[1]}` : modelId;
+
+    const url = `https://huggingface.co/${repoSlug}`;
+    Linking.openURL(url).catch((err) => {
+      logger.error('[ModelsScreen] Failed to open repo URL:', err);
+    });
+  }, []);
+
   return {
     navigation,
     focusTrigger,
@@ -227,6 +240,7 @@ export function useModelsScreen() {
     handleRepairMmProj: text.handleRepairMmProj,
     handleCancelDownload: text.handleCancelDownload,
     handleDeleteModel: text.handleDeleteModel,
+    handleOpenRepo,
     downloadIds: text.downloadIds,
     clearFilters: text.clearFilters,
     toggleFilterDimension: text.toggleFilterDimension,

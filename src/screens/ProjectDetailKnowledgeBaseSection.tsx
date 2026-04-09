@@ -36,7 +36,7 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
 
   const loadKbDocs = useCallback(async () => {
     try { setKbDocs(await ragService.getDocumentsByProject(projectId)); }
-    catch (err: any) { setAlertState(showAlert('Error', err?.message || 'Failed to load documents')); }
+    catch (err: any) { setAlertState(showAlert('Error', err?.message || 'Error al cargar los documentos')); }
   }, [projectId, setAlertState]);
 
   useEffect(() => { loadKbDocs(); }, [loadKbDocs]);
@@ -58,7 +58,7 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
       }
     } catch (err: any) {
       if (err && !err.message?.includes('cancel')) {
-        setAlertState(showAlert('Error', err.message || 'Failed to index document'));
+        setAlertState(showAlert('Error', err.message || 'Error al indexar el documento'));
       }
     } finally {
       setIndexingFile(null);
@@ -67,22 +67,22 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
 
   const handleToggleDocument = async (docId: number, enabled: boolean) => {
     try { await ragService.toggleDocument(docId, enabled); await loadKbDocs(); }
-    catch (err: any) { setAlertState(showAlert('Error', err?.message || 'Failed to update document')); }
+    catch (err: any) { setAlertState(showAlert('Error', err?.message || 'Error al actualizar el documento')); }
   };
 
   const handleDeleteDocument = (doc: RagDocument) => {
     setAlertState(showAlert(
-      'Remove Document',
-      `Remove "${doc.name}" from the knowledge base?`,
+      'Eliminar documento',
+      `¿Eliminar "${doc.name}" de la base de conocimientos?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Remove',
+          text: 'Eliminar',
           style: 'destructive',
           onPress: () => {
             ragService.deleteDocument(doc.id)
               .then(() => loadKbDocs())
-              .catch((err: any) => setAlertState(showAlert('Error', err?.message || 'Failed to remove document')));
+              .catch((err: any) => setAlertState(showAlert('Error', err?.message || 'Error al eliminar el documento')));
           },
         },
       ]));
@@ -92,11 +92,11 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
     <View style={styles.sectionContent}>
       <TouchableOpacity style={styles.sectionHeader} onPress={onNavigateToKb} activeOpacity={0.7}>
         <View style={styles.sectionTitleRow}>
-          <Text style={styles.sectionTitle}>Knowledge Base</Text>
+          <Text style={styles.sectionTitle}>Base de conocimientos</Text>
           {kbDocs.length > 0 && <Text style={styles.sectionCount}>{kbDocs.length}</Text>}
         </View>
         <View style={styles.sectionActions}>
-          <Button title="Add" variant="primary" size="small" onPress={handleAddDocument}
+          <Button title="Añadir" variant="primary" size="small" onPress={handleAddDocument}
             icon={<Icon name="plus" size={16} color={colors.primary} />} />
           <Icon name="chevron-right" size={16} color={colors.textMuted} style={styles.navIcon} />
         </View>
@@ -105,14 +105,14 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
       {indexingFile && (
         <View style={styles.kbIndexing}>
           <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={styles.kbIndexingText} numberOfLines={1}>Indexing {indexingFile}...</Text>
+          <Text style={styles.kbIndexingText} numberOfLines={1}>Indexando {indexingFile}...</Text>
         </View>
       )}
 
       {kbDocs.length === 0 && !indexingFile ? (
         <View style={styles.emptyState}>
           <Icon name="file-text" size={24} color={colors.textMuted} />
-          <Text style={styles.emptyStateText}>No documents added</Text>
+          <Text style={styles.emptyStateText}>No hay documentos añadidos</Text>
         </View>
       ) : (
         <ScrollView style={styles.sectionList} nestedScrollEnabled>

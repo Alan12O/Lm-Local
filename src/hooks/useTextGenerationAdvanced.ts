@@ -3,9 +3,9 @@ import { useAppStore } from '../stores';
 import { CacheType } from '../types';
 
 export const CACHE_TYPE_DESCRIPTIONS: Record<CacheType, string> = {
-  f16: 'Full precision — best quality, highest memory usage',
-  q8_0: '8-bit quantized — good balance of quality and memory',
-  q4_0: '4-bit quantized — lowest memory, may reduce quality',
+  f16: 'Precisión completa — mejor calidad, mayor uso de memoria',
+  q8_0: 'Cuantización de 8 bits — buen equilibrio entre calidad y memoria',
+  q4_0: 'Cuantización de 4 bits — menor uso de memoria, puede reducir la calidad',
 };
 
 export const GPU_LAYERS_MAX = 99;

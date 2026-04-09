@@ -4,6 +4,7 @@ import { ThinkingIndicator } from '../../ThinkingIndicator';
 import { MarkdownText } from '../../MarkdownText';
 import { BlinkingCursor } from './BlinkingCursor';
 import { ThinkingBlock } from './ThinkingBlock';
+import { TextScalingProvider } from '../../../contexts/TextScalingContext';
 import type { ParsedContent } from '../types';
 
 interface MessageContentProps {
@@ -66,7 +67,7 @@ export function MessageContent({
               <Text
                 testID="message-text"
                 style={[styles.text, styles.userText]}
-                selectable
+                selectable={true}
               >
                 {parsedContent.response}
               </Text>
@@ -74,7 +75,9 @@ export function MessageContent({
           }
           return (
             <View testID="message-text">
-              <MarkdownText>{parsedContent.response}</MarkdownText>
+              <TextScalingProvider>
+                <MarkdownText selectable={true}>{parsedContent.response}</MarkdownText>
+              </TextScalingProvider>
               {isStreaming && <BlinkingCursor />}
             </View>
           );
@@ -88,7 +91,11 @@ export function MessageContent({
         }
         if (isStreaming) {
           return (
-            <Text testID="message-text" style={[styles.text, styles.assistantText]}>
+            <Text
+              testID="message-text"
+              style={[styles.text, styles.assistantText]}
+              selectable={true}
+            >
               <BlinkingCursor />
             </Text>
           );

@@ -170,16 +170,32 @@ export const useChatScreen = () => {
   }, [handleQueuedSend]);
 
   useEffect(() => {
-    const { conversationId, projectId } = route.params || {};
-    if (conversationId) {
+    const { conversationId, projectId, initialMessage, autoSend } = route.params || {};
+    
+    // 1. Handle conversation/project routing
+    if (conversationId && conversationId !== activeConversationId) {
       setActiveConversation(conversationId);
-    } else if (!activeConversationId && activeModelInfo.modelId) {
-      // Create or reuse an existing empty conversation
+    } else if (!conversationId && !activeConversationId && activeModelInfo.modelId) {
       const newId = createConversation(activeModelInfo.modelId, undefined, projectId, isIncognito);
-      // Sync navigation params to ensure consistency
       navigation.setParams({ conversationId: newId } as any);
     }
-  }, [route.params?.conversationId, route.params?.projectId, activeModelInfo.modelId, activeConversationId, setActiveConversation, createConversation, isIncognito, navigation]);
+
+    // 2. Handle automated messaging (e.g. from Math Laboratory)
+    if (initialMessage && autoSend && activeModelInfo.modelId) {
+      const targetId = conversationId || activeConversationId;
+      if (targetId) {
+        // Clear params immediately to prevent re-triggering
+        navigation.setParams({ initialMessage: undefined, autoSend: undefined } as any);
+        
+        // Execute the send action
+        handleSendFn(genDeps, { 
+          text: initialMessage, 
+          startGeneration, 
+          setDebugInfo 
+        });
+      }
+    }
+  }, [route.params, activeModelInfo.modelId, activeConversationId, setActiveConversation, createConversation, isIncognito, navigation, genDeps]);
 
 
   useEffect(() => {
@@ -286,7 +302,7 @@ export const useChatScreen = () => {
         const newId = createConversation(
           activeModelInfo.modelId as string, 
           undefined, 
-          activeProject?.id || undefined, 
+          activeConversation?.projectId || undefined, 
           val
         );
         
