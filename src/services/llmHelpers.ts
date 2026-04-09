@@ -95,8 +95,8 @@ export function buildModelParams(
       cache_type_v: cacheType,
       // Pinear hilos a cores de rendimiento en Snapdragon
       ...(cpuMask ? { cpu_mask: cpuMask } : {}),
-      // kv_unified=false mejora el rendimiento cuando n_seq_max=1 (chat normal)
-      kv_unified: false,
+      // Eliminar kv_unified: false; su uso dividía el caché KV y causaba corrupción 
+      // de memoria (texto basura) en Qwen/Llama con la NPU/GPU Adreno.
     },
     nThreads, nBatch, ctxLen, nGpuLayers,
   };
