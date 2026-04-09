@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
-import { useThemedStyles } from '../../theme';
+import { useTheme, useThemedStyles } from '../../theme';
 import { SPACING } from '../../constants';
 import { createStyles } from './styles';
 import { BackendFilter, ImageFilterDimension } from './types';
