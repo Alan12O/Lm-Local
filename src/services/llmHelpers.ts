@@ -23,7 +23,11 @@ export const DEFAULT_GPU_LAYERS = Platform.OS === 'ios' ? 99 : 1;
  * Evitar cores 0-3 reduce térmicos y mejora tokens/s.
  */
 const SNAPDRAGON_BIG_CORE_MASK = '4-7';
-export function getOptimalThreadCount(): number { return DEFAULT_THREADS; }
+export function getOptimalThreadCount(): number { 
+  // En Android (Snapdragon 8 Gen 3), usar exactamente 4 hilos permite pinear 
+  // al cluster de rendimiento (Core 7 + Cores 4-6). Usar mas causa overhead.
+  return Platform.OS === 'android' ? 4 : DEFAULT_THREADS; 
+}
 export function getOptimalBatchSize(): number {
   const ramGB = hardwareService.getTotalMemoryGB();
   if (ramGB > 0 && ramGB < 6) return 256;
@@ -72,10 +76,12 @@ export function buildModelParams(
   const useFlashAttn = settings.flashAttn ?? true;
   const gpuEnabled = settings.enableGpu !== false;
   const nGpuLayers = gpuEnabled ? (settings.gpuLayers ?? DEFAULT_GPU_LAYERS) : 0;
-  // KV cache cuantizado requiere flash_attn. En Android con GPU usamos f16 para compatibilidad segura.
+  // KV cache cuantizado requiere flash_attn. 
+  // Antes forzábamos f16 en Android por drivers inestables, pero en Snapdragon 8 Gen 3 
+  // con el backend Hexagon/HTP, q8_0 y q4_0 son estables y mucho más rápidos.
   const requestedCache = settings.cacheType || (useFlashAttn ? 'q8_0' : 'f16');
-  const needsF16 = !useFlashAttn || (Platform.OS === 'android' && nGpuLayers > 0);
-  const cacheType = needsF16 && requestedCache !== 'f16' ? 'f16' : requestedCache;
+  const needsF16 = !useFlashAttn; // Solo forzar f16 si Flash Attention está apagado.
+  const cacheType = (needsF16 && requestedCache !== 'f16') ? 'f16' : requestedCache;
 
   // En Android, pinear hilos a cores de rendimiento para mejorar throughput y reducir térmicos.
   const cpuMask = Platform.OS === 'android' ? SNAPDRAGON_BIG_CORE_MASK : undefined;
@@ -380,9 +386,10 @@ export function getMaxContextForDevice(totalMemoryBytes: number): number {
 const ANDROID_GPU_LAYER_CAPS: { maxGB: number; layers: number }[] = [
   { maxGB: 4, layers: 0 },
   { maxGB: 6, layers: 1 },
-  { maxGB: 8, layers: 8 },
+  { maxGB: 8, layers: 32 },
+  { maxGB: 16, layers: 99 }, // Permitir offload total en Snapdragon 8 Gen 3
 ];
-const ANDROID_GPU_LAYERS_FALLBACK = 16;
+const ANDROID_GPU_LAYERS_FALLBACK = 32;
 
 /** Capas GPU seguras según RAM del dispositivo. Skips GPU en ≤4 GB para evitar abort(). */
 export function getGpuLayersForDevice(totalMemoryBytes: number, requestedLayers: number): number {

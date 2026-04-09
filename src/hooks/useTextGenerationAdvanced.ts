@@ -20,16 +20,12 @@ export function useTextGenerationAdvanced() {
   const gpuLayersEffective = Math.min(settings?.gpuLayers ?? 1, GPU_LAYERS_MAX);
   const isGpuEnabled = settings?.enableGpu !== false;
   const isAndroid = Platform.OS === 'android';
-  const gpuForcesF16 = isAndroid && isGpuEnabled;
+  const gpuForcesF16 = false; // El backend de Hexagon en Snapdragon 8 Gen 3 soporta caché cuantizada
   const cacheDisabled = gpuForcesF16;
   const displayCacheType = cacheDisabled ? 'f16' : currentCacheType;
 
   const handleGpuToggle = (enableGpu: boolean) => {
-    if (enableGpu && isAndroid && isQuantizedCache) {
-      updateSettings({ enableGpu: true, cacheType: 'f16' });
-    } else {
-      updateSettings({ enableGpu: enableGpu });
-    }
+    updateSettings({ enableGpu: enableGpu });
   };
 
   const handleFlashAttnToggle = (flashAttn: boolean) => {
