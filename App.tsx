@@ -11,7 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppNavigator } from './src/navigation';
 import { useTheme } from './src/theme';
-import { hardwareService, modelManager, authService, ragService, remoteServerManager } from './src/services';
+import { hardwareService, modelManager, authService, ragService, remoteServerManager, activeModelService } from './src/services';
 import logger from './src/utils/logger';
 import { useAppStore, useAuthStore, useRemoteServerStore } from './src/stores';
 import { LockScreen } from './src/screens';
@@ -44,17 +44,39 @@ function App() {
     setLastBackgroundTime,
   } = useAuthStore();
 
-  // Handle app state changes for auto-lock
+  // Handle app state changes for auto-lock and model lifecycle
   useAppState({
     onBackground: useCallback(() => {
       if (authEnabled) {
         setLastBackgroundTime(Date.now());
         setLocked(true);
       }
+      
+      // Liberar el contexto GPU de memoria cuando pasamos a background (Android fix)
+      const currentModelId = useAppStore.getState().activeModelId;
+      if (currentModelId) {
+        logger.log('[App] App background: Evicting text model to prevent GPU context crash.');
+        // evictTextModel removes from memory without changing activeModelId in store
+        activeModelService.evictTextModel().catch((e: Error) => {
+          logger.error('[App] Failed to evict model in background:', e.message);
+        });
+      }
     }, [authEnabled, setLastBackgroundTime, setLocked]),
+    
     onForeground: useCallback(() => {
-      // Lock is already set when going to background
-      // Nothing additional needed here
+      // Restaurar el contexto del modelo al volver a active
+      const currentModelId = useAppStore.getState().activeModelId;
+      if (currentModelId && typeof currentModelId === 'string') {
+        const store = useAppStore.getState();
+        const activeModelInfo = activeModelService.getActiveModels();
+        // Solo restaurar si no está cargando y actualmente no está cargado "nativamente"
+        if (!activeModelInfo.text.isLoaded && !activeModelInfo.text.isLoading) {
+          logger.log('[App] App foreground: Restoring active text model context.');
+          activeModelService.loadTextModel(currentModelId).catch((e: Error) => {
+            logger.error('[App] Failed to restore model in foreground:', e.message);
+          });
+        }
+      }
     }, []),
   });
 

@@ -52,7 +52,7 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           onTouchStart={() => Keyboard.dismiss()}
-          maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 100 }}
+          maintainVisibleContentPosition={Platform.OS === 'ios' ? { minIndexForVisible: 0, autoscrollToTopThreshold: 100 } : undefined}
           removeClippedSubviews={Platform.OS !== 'android'}
         />
       )}
