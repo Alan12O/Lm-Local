@@ -172,9 +172,14 @@ class LocalDreamGeneratorService {
 
     try {
       const result = await DiffusionModule.generateImage(this.buildNativeParams(params, trimmedPrompt));
-      // Native side releases the CoreML pipeline after generation to free
-      // memory, so clear TS-side state so the next request triggers a reload.
-      this.loadedThreads = null;
+      // On iOS, CoreML releases the pipeline after generation → mark as
+      // needing reload.  On Android the LocalDream server stays alive between
+      // requests so we must NOT clear loadedThreads; doing so makes the next
+      // call think a reload is needed, which kills the running server and
+      // causes "Server did not return a complete event".
+      if (Platform.OS === 'ios') {
+        this.loadedThreads = null;
+      }
       return this.buildResult(params, result);
     } catch (error: any) {
       const msg = error?.message || '';

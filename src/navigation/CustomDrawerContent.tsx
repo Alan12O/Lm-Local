@@ -8,7 +8,7 @@ import type { ThemeColors, ThemeShadows } from '../theme';
 import { TYPOGRAPHY, SPACING } from '../constants';
 import { useChatStore, useAppStore } from '../stores';
 import { Conversation } from '../types';
-import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { triggerHaptic } from '../utils/haptics';
 
 export const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {

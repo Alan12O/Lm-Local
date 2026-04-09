@@ -835,7 +835,24 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
                 when (val result = parseSseStream(connection, body)) {
                     is SseParseResult.Complete -> safeResolve(promise, buildFinalResult(result.data))
                     is SseParseResult.Cancelled -> safeReject(promise, "CANCELLED", "Generation cancelled")
-                    is SseParseResult.NoResult -> safeReject(promise, "NO_RESULT", "Server did not return a complete event")
+                    is SseParseResult.NoResult -> {
+                        // The SSE stream ended without a "complete" event.
+                        // Check if the server process died during inference.
+                        val alive = serverProcess?.isAlive == true
+                        if (!alive) {
+                            val exitCode = try { serverProcess?.exitValue() } catch (_: Exception) { null }
+                            isServerReady = false
+                            Log.e(TAG, "Server died during generation (exit code: $exitCode)")
+                            safeReject(promise, "SERVER_CRASHED",
+                                "Server process died during generation (exit code: $exitCode). " +
+                                "The device may be low on memory. Reload the model and try again.")
+                        } else {
+                            Log.w(TAG, "SSE stream ended without complete event but server is still alive")
+                            safeReject(promise, "NO_RESULT",
+                                "Server did not return a complete event. " +
+                                "Try again or reduce the image resolution.")
+                        }
+                    }
                 }
             } catch (e: java.io.EOFException) {
                 handleEofException(e, promise)
