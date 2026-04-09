@@ -182,6 +182,7 @@ class DownloadManagerModule(reactContext: ReactApplicationContext) :
 
     private val allowedDownloadHosts = setOf(
         "huggingface.co",
+        "hf.co",
         "cdn-lfs.huggingface.co",
         "cas-bridge.xethub.hf.co",
     )
@@ -795,7 +796,7 @@ class DownloadManagerModule(reactContext: ReactApplicationContext) :
 
             val nextHost = try { URL(nextUrl).host } catch (_: Exception) { null }
             if (!isHostAllowed(nextHost)) {
-                android.util.Log.w("DownloadService", "Redirect to unauthorized host blocked: $nextHost")
+                android.util.Log.e("DownloadService", "CRITICAL: Redirect to unauthorized host blocked: $nextHost (Check allowedDownloadHosts in DownloadManagerModule.kt)")
                 return null
             }
             return nextUrl

@@ -404,6 +404,36 @@ export function getGpuLayersForDevice(totalMemoryBytes: number, requestedLayers:
   }
   return requestedLayers;
 }
+
+/**
+ * Verifica si la cuantización del modelo es óptima para el backend activo.
+ * En Android (Snapdragon 8 Gen 3), la NPU Hexagon no soporta de forma nativa/rápida
+ * los modelos IQ (Importance Quantization) o BF16, causando una caída de rendimiento.
+ */
+export function checkQuantizationPerformance(
+  modelPath: string,
+  gpuEnabled: boolean,
+): { optimized: boolean; reason?: string } {
+  if (Platform.OS !== 'android' || !gpuEnabled) return { optimized: true };
+
+  const fileName = modelPath.split('/').pop()?.toUpperCase() || '';
+
+  if (fileName.includes('-IQ') || fileName.includes('.IQ')) {
+    return {
+      optimized: false,
+      reason: 'Las cuantizaciones IQ (Importance Quantization) no están optimizadas para la NPU Hexagon. Obtendrás un rendimiento mucho mayor con modelos Q4_K_M o Q4_0.',
+    };
+  }
+
+  if (fileName.includes('BF16')) {
+    return {
+      optimized: false,
+      reason: 'Los modelos BF16 son extremadamente lentos en dispositivos móviles. Se recomienda usar Q4_K_M para aceleración NPU real.',
+    };
+  }
+
+  return { optimized: true };
+}
 export { validateModelFile, checkMemoryForModel, safeCompletion } from './llmSafetyChecks';
 // Stop tokens: modelos comunes + tokens de control específicos de Gemma 2/4
 export const STOP_TOKENS = [

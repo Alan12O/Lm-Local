@@ -174,7 +174,7 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
             bitmap.recycle()
         }
 
-        internal fun buildEnvironment(runtimeDir: File): Map<String, String> {
+        internal fun buildEnvironment(runtimeDir: File, nativeLibraryDir: String? = null): Map<String, String> {
             val env = mutableMapOf<String, String>()
 
             val systemLibPaths = mutableListOf(
@@ -183,6 +183,15 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
                 "/vendor/lib64",
                 "/vendor/lib64/egl",
             )
+
+            // In release builds the app's nativeLibraryDir must be explicitly
+            // included so the spawned subprocess can dlopen libMNN.so, libOpenCL.so
+            // and other shared libs that local-dream links against.
+            // In debug builds the system linker often resolves them anyway, which is
+            // why the issue only manifests in release APKs.
+            if (!nativeLibraryDir.isNullOrBlank() && !systemLibPaths.contains(nativeLibraryDir)) {
+                systemLibPaths.add(0, nativeLibraryDir)
+            }
 
             try {
                 val maliSymlink = File("/system/vendor/lib64/egl/libGLES_mali.so")
@@ -441,8 +450,11 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
         // Build command based on backend
         val command = buildCommand(executableFile, modelDir, runtimeDir, isCpu)
 
-        // Build environment
-        val env = buildEnvironment(runtimeDir)
+        // Build environment — include app's nativeLibraryDir so the subprocess
+        // can find libMNN.so / libOpenCL.so in release builds (they are stripped
+        // from LD_LIBRARY_PATH by default in non-debug APKs).
+        val appNativeDir = reactApplicationContext.applicationInfo.nativeLibraryDir
+        val env = buildEnvironment(runtimeDir, appNativeDir)
 
         // Log model directory contents for debugging
         val modelFiles = modelDir.listFiles()?.map { "${it.name} (${it.length()} bytes)" }?.joinToString(", ")

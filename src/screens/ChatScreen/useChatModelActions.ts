@@ -7,6 +7,7 @@ import {
 import { llmService, activeModelService, modelManager } from '../../services';
 import { DownloadedModel, RemoteModel, ONNXImageModel } from '../../types';
 import logger from '../../utils/logger';
+import { checkQuantizationPerformance } from '../../services/llmHelpers';
 
 type SetState<T> = Dispatch<SetStateAction<T>>;
 
@@ -64,6 +65,13 @@ async function doLoadTextModel(deps: ModelActionDeps): Promise<void> {
     await activeModelService.loadTextModel(activeModelId);
     const multimodalSupport = llmService.getMultimodalSupport();
     deps.setSupportsVision(multimodalSupport?.vision || false);
+
+    // Aviso de rendimiento (NPU Snapdragon 8 Gen 3)
+    const perfCheck = checkQuantizationPerformance(activeModel.filePath, true);
+    if (!perfCheck.optimized) {
+      deps.setAlertState(showAlert('Rendimiento Sub-óptimo', perfCheck.reason || ''));
+    }
+
     if (deps.modelLoadStartTimeRef.current && deps.settings.showGenerationDetails) {
       const loadTime = ((Date.now() - deps.modelLoadStartTimeRef.current) / 1000).toFixed(1);
       addSystemMsg(deps, `Modelo cargado: ${activeModel.name} (${loadTime}s)`);
@@ -115,6 +123,13 @@ export async function initiateModelLoad(
     await activeModelService.loadTextModel(activeModelId);
     const multimodalSupport = llmService.getMultimodalSupport();
     deps.setSupportsVision(multimodalSupport?.vision || false);
+
+    // Aviso de rendimiento (NPU Snapdragon 8 Gen 3)
+    const perfCheck = checkQuantizationPerformance(activeModel.filePath, true);
+    if (!perfCheck.optimized) {
+      deps.setAlertState(showAlert('Rendimiento Sub-óptimo', perfCheck.reason || ''));
+    }
+
     if (!alreadyLoading && deps.modelLoadStartTimeRef.current && deps.settings.showGenerationDetails) {
       const loadTime = ((Date.now() - deps.modelLoadStartTimeRef.current) / 1000).toFixed(1);
       addSystemMsg(deps, `Modelo cargado: ${activeModel.name} (${loadTime}s)`);
@@ -161,6 +176,13 @@ export async function proceedWithModelLoadFn(
     await activeModelService.loadTextModel(model.id);
     const multimodalSupport = llmService.getMultimodalSupport();
     deps.setSupportsVision(multimodalSupport?.vision || false);
+
+    // Aviso de rendimiento (NPU Snapdragon 8 Gen 3)
+    const perfCheck = checkQuantizationPerformance(model.filePath, true);
+    if (!perfCheck.optimized) {
+      deps.setAlertState(showAlert('Rendimiento Sub-óptimo', perfCheck.reason || ''));
+    }
+
     if (deps.modelLoadStartTimeRef.current && deps.settings.showGenerationDetails) {
       const loadTime = ((Date.now() - deps.modelLoadStartTimeRef.current) / 1000).toFixed(1);
       const convId = deps.activeConversationId || deps.createConversation(model.id);

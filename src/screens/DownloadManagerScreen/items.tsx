@@ -83,6 +83,9 @@ export function buildDownloadItems(data: DownloadItemsData): DownloadItem[] {
       const imageId = fullModelId.replace('image:', '');
       if (data.downloadedImageModels.some(m => m.id === imageId)) return;
     }
+    const isActiveDownload = data.activeDownloads.find(d => `${d.modelId}/${d.fileName}` === key);
+    const realStatus = isActiveDownload ? isActiveDownload.status : 'downloading';
+
     items.push({
       type: 'active',
       modelType: fullModelId.startsWith('image:') ? 'image' : 'text',
@@ -93,7 +96,7 @@ export function buildDownloadItems(data: DownloadItemsData): DownloadItem[] {
       fileSize: progress.totalBytes,
       bytesDownloaded: progress.bytesDownloaded,
       progress: progress.progress,
-      status: 'downloading',
+      status: realStatus,
       reason: progress.reason,
       speedBytesPerSec: progress.speedBytesPerSec,
       timeRemainingSec: progress.timeRemainingSec,

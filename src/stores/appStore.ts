@@ -130,7 +130,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   imageUseOpenCL: true,
   enhanceImagePrompts: false,
   modelLoadingStrategy: 'performance' as ModelLoadingStrategy,
-  enableGpu: Platform.OS === 'ios',
+  enableGpu: true,
   gpuLayers: 99,
   flashAttn: true,
   cacheType: 'q8_0' as CacheType,
