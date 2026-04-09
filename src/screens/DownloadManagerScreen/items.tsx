@@ -26,10 +26,12 @@ export type DownloadItem = {
   isVisionModel?: boolean;
   mmProjPath?: string;
   reason?: string;
+  speedBytesPerSec?: number;
+  timeRemainingSec?: number;
 };
 
 export interface DownloadItemsData {
-  downloadProgress: Record<string, { progress: number; bytesDownloaded: number; totalBytes: number; reason?: string }>;
+  downloadProgress: Record<string, { progress: number; bytesDownloaded: number; totalBytes: number; reason?: string; speedBytesPerSec?: number; timeRemainingSec?: number }>;
   activeDownloads: BackgroundDownloadInfo[];
   activeBackgroundDownloads: Record<number, { modelId: string; fileName: string; author: string; quantization: string; totalBytes: number } | null>;
   downloadedModels: DownloadedModel[];
@@ -93,6 +95,8 @@ export function buildDownloadItems(data: DownloadItemsData): DownloadItem[] {
       progress: progress.progress,
       status: 'downloading',
       reason: progress.reason,
+      speedBytesPerSec: progress.speedBytesPerSec,
+      timeRemainingSec: progress.timeRemainingSec,
     });
   });
 
@@ -198,7 +202,10 @@ export const ActiveDownloadCard: React.FC<ActiveDownloadCardProps> = ({ item, on
           <Text style={styles.quantText}>{item.quantization}</Text>
         </View>
         <Text style={styles.statusText}>
-          {getStatusText(item.status)}{item.reason ? ` · ${item.reason}` : ''}
+          {getStatusText(item.status)}
+          {item.reason ? ` · ${item.reason}` : ''}
+          {item.speedBytesPerSec !== undefined && item.status === 'downloading' ? ` · ${formatBytes(item.speedBytesPerSec)}/s` : ''}
+          {item.timeRemainingSec !== undefined && item.timeRemainingSec > 0 && item.status === 'downloading' ? ` · ~${Math.ceil(item.timeRemainingSec / 60)} min restantes` : ''}
         </Text>
       </View>
     </View>

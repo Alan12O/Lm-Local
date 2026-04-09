@@ -4,7 +4,16 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DeviceInfo, DownloadedModel, ModelRecommendation, ONNXImageModel, ImageGenerationMode, AutoDetectMethod, ModelLoadingStrategy, CacheType, GeneratedImage, PersistedDownloadInfo } from '../types';
 
-type DownloadProgressInfo = { progress: number; bytesDownloaded: number; totalBytes: number; reason?: string };
+type DownloadProgressInfo = { 
+  progress: number; 
+  bytesDownloaded: number; 
+  totalBytes: number; 
+  reason?: string;
+  speedBytesPerSec?: number;
+  timeRemainingSec?: number;
+  _lastUpdateTimeMs?: number;
+  _lastBytesDownloaded?: number;
+};
 
 type OnboardingChecklist = {
   downloadedModel: boolean; loadedModel: boolean; sentMessage: boolean;
@@ -215,10 +224,36 @@ export const useAppStore = create<AppState>()(
             const { [modelId]: _removed, ...rest } = state.downloadProgress;
             return { downloadProgress: rest };
           }
+          const now = Date.now();
+          const prev = state.downloadProgress[modelId];
+          let speedBytesPerSec = prev?.speedBytesPerSec;
+          let timeRemainingSec = prev?.timeRemainingSec;
+          
+          if (prev && prev._lastUpdateTimeMs && prev._lastBytesDownloaded !== undefined) {
+             const dt = (now - prev._lastUpdateTimeMs) / 1000;
+             if (dt >= 0.5) { 
+               const db = progress.bytesDownloaded - prev._lastBytesDownloaded;
+               const currentSpeed = Math.max(0, db / dt);
+               speedBytesPerSec = speedBytesPerSec ? (speedBytesPerSec * 0.7 + currentSpeed * 0.3) : currentSpeed;
+               if (speedBytesPerSec > 0 && progress.totalBytes > progress.bytesDownloaded) {
+                 timeRemainingSec = (progress.totalBytes - progress.bytesDownloaded) / speedBytesPerSec;
+               }
+             }
+          }
+
+          const shouldUpdateSpeed = !prev || (now - (prev._lastUpdateTimeMs || 0) >= 500);
+          const extendedProgress: DownloadProgressInfo = {
+            ...progress,
+            speedBytesPerSec,
+            timeRemainingSec,
+            _lastUpdateTimeMs: shouldUpdateSpeed ? now : prev._lastUpdateTimeMs,
+            _lastBytesDownloaded: shouldUpdateSpeed ? progress.bytesDownloaded : prev._lastBytesDownloaded,
+          };
+
           return {
             downloadProgress: {
               ...state.downloadProgress,
-              [modelId]: progress,
+              [modelId]: extendedProgress,
             },
           };
         }),
