@@ -318,7 +318,17 @@ class ImageGenerationService {
       this.updateState({ status: 'Preparando generación de imagen...' });
     }
 
-    if (settings.modelLoadingStrategy === 'memory' && llmService.isModelLoaded()) {
+    let forceEvict = settings.modelLoadingStrategy === 'memory';
+    if (!forceEvict && llmService.isModelLoaded() && activeImageModelId) {
+      const activeTextId = useAppStore.getState().activeModelId;
+      const memCheck = await activeModelService.checkMemoryForDualModel(activeTextId, activeImageModelId);
+      if (memCheck.severity === 'critical' || memCheck.severity === 'warning') {
+        logger.log(`[ImageGen] Dual memory check returned ${memCheck.severity}. Forcing text model eviction.`);
+        forceEvict = true;
+      }
+    }
+
+    if (forceEvict && llmService.isModelLoaded()) {
       logger.log('[ImageGen] Memory strategy: explicitly evicting text model to prevent OOM for image generation.');
       try {
         await activeModelService.evictTextModel();
