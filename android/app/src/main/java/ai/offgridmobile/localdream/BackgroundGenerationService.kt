@@ -221,7 +221,7 @@ class BackgroundGenerationService : Service() {
                 .build()
 
             val request = Request.Builder()
-                .url("http://localhost:8081/generate")
+                .url("http://localhost:8090/generate")
                 .post(jsonObject.toString().toRequestBody("application/json".toMediaTypeOrNull()))
                 .build()
 

@@ -122,7 +122,7 @@ class LocalDreamGeneratorService {
   }
 
   async getServerPort(): Promise<number> {
-    return 8081;
+    return 8090;
   }
 
   async isNpuSupported(): Promise<boolean> {

@@ -214,7 +214,7 @@ class BackendService : Service() {
                 "--tokenizer", File(modelsDir, "tokenizer.json").absolutePath,
                 "--backend", File(runtimeDir, "libQnnHtp.so").absolutePath,
                 "--system_library", File(runtimeDir, "libQnnSystem.so").absolutePath,
-                "--port", "8081",
+                "--port", "8090",
                 "--text_embedding_size", textEmbeddingSize.toString()
             )
             if (width != 512 || height != 512) {
@@ -259,7 +259,7 @@ class BackendService : Service() {
                     "--unet", File(modelsDir, "unet.mnn").absolutePath,
                     "--vae_decoder", File(modelsDir, "vae_decoder.mnn").absolutePath,
                     "--tokenizer", File(modelsDir, "tokenizer.json").absolutePath,
-                    "--port", "8081",
+                    "--port", "8090",
                     "--text_embedding_size", if (modelId != "sd21") "768" else "1024",
                     "--cpu"
                 )
