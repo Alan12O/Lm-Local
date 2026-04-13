@@ -1,6 +1,6 @@
 /**
- * Off Grid - On-Device AI Chat Application
- * Private AI assistant that runs entirely on your device
+  LM-Local la aplicacion para correr modelos de forma local
+  Provacidad total, no se requiere internet para funcionar
  */
 
 import 'react-native-gesture-handler';
@@ -12,6 +12,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { AppNavigator } from './src/navigation';
 import { useTheme } from './src/theme';
 import { hardwareService, modelManager, authService, ragService, remoteServerManager, activeModelService } from './src/services';
+import { localDreamGeneratorService } from './src/services/localDreamGenerator';
 import logger from './src/utils/logger';
 import { useAppStore, useAuthStore, useRemoteServerStore } from './src/stores';
 import { LockScreen } from './src/screens';
@@ -51,7 +52,7 @@ function App() {
         setLastBackgroundTime(Date.now());
         setLocked(true);
       }
-      
+
       // Liberar el contexto GPU de memoria cuando pasamos a background (Android fix)
       const currentModelId = useAppStore.getState().activeModelId;
       if (currentModelId) {
@@ -61,8 +62,17 @@ function App() {
           logger.error('[App] Failed to evict model in background:', e.message);
         });
       }
+
+      // Descargar el servidor de imágenes al pasar a background.
+      // Android mata el proceso hijo C++ cuando la app pasa a background,
+      // por lo que debemos hacer unloadModel() explícitamente para que
+      // localDreamGeneratorService limpie su estado interno (loadedThreads=null).
+      // Sin esto, al volver, JS cree que el servidor sigue vivo y no lo recarga.
+      localDreamGeneratorService.unloadModel().catch((e: Error) => {
+        logger.log('[App] Image model cleanup on background (expected):', e.message);
+      });
     }, [authEnabled, setLastBackgroundTime, setLocked]),
-    
+
     onForeground: useCallback(() => {
       // Autoreload disabled to prevent GPU context crashes on Android.
       // The user will be prompted to reload manually via the UI.

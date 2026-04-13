@@ -21,9 +21,9 @@ interface ProjectState {
 const DEFAULT_PROJECTS: Project[] = [
   {
     id: 'default-assistant',
-    name: 'General Assistant',
-    description: 'A helpful, concise AI assistant for everyday tasks',
-    systemPrompt: 'You are a helpful AI assistant running locally on the user\'s device. Be concise and helpful. Focus on providing accurate information and solving the user\'s problems efficiently.',
+    name: 'Asistente General',
+    description: 'Un asistente de IA útil y conciso para tareas cotidianas',
+    systemPrompt: 'Eres un asistente de IA útil que se ejecuta localmente en el dispositivo del usuario. Sé conciso y útil. Enfócate en proporcionar información precisa y resolver los problemas del usuario de manera eficiente.',
     icon: '#6366F1', // Indigo
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -31,8 +31,8 @@ const DEFAULT_PROJECTS: Project[] = [
   {
     id: 'spanish-learning',
     name: 'Spanish Learning',
-    description: 'Practice Spanish conversation and get corrections',
-    systemPrompt: `You are a patient Spanish tutor. Help the user practice their Spanish conversation skills.
+    description: 'Practica la conversación en español y obtén correcciones',
+    systemPrompt: `Eres un tutor de español paciente. Ayuda al usuario a practicar sus habilidades de conversación en español.
 
 Guidelines:
 - Respond in Spanish, but provide English translations in parentheses for difficult words

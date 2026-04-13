@@ -1,256 +1,154 @@
-import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
-import {
-  ImageGenerationParams,
-  ImageGenerationProgress,
-  GeneratedImage,
-} from '../types';
-import { generateRandomSeed } from '../utils/generateId';
-import logger from '../utils/logger';
+import { NativeModules, NativeEventEmitter } from 'react-native';
+import { ImageGenerationParams, ImageGenerationProgress, GeneratedImage } from '../types';
 
-const { LocalDreamModule, CoreMLDiffusionModule } = NativeModules;
+const { LocalDream } = NativeModules;
+const eventEmitter = LocalDream ? new NativeEventEmitter(LocalDream) : null;
 
-// Pick the right native module per platform
-const DiffusionModule = Platform.select({
-  ios: CoreMLDiffusionModule,
-  android: LocalDreamModule,
-  default: null,
-});
-
-type ProgressCallback = (progress: ImageGenerationProgress) => void;
-type PreviewCallback = (preview: { previewPath: string; step: number; totalSteps: number }) => void;
-
-/**
- * LocalDream-based image generator service.
- * Replaces ONNX Runtime with local-dream's subprocess HTTP server.
- *
- * The native module (LocalDreamModule) manages:
- * - Server process lifecycle (spawn/kill)
- * - HTTP POST + SSE parsing for image generation
- * - RGB→PNG conversion and file management
- *
- * Progress events are emitted via NativeEventEmitter from the native side.
- */
 class LocalDreamGeneratorService {
-  private loadedThreads: number | null = null;
-  private generating = false;
-  private eventEmitter: NativeEventEmitter | null = null;
-
-  private getEmitter(): NativeEventEmitter {
-    if (!this.eventEmitter) {
-      this.eventEmitter = new NativeEventEmitter(DiffusionModule);
-    }
-    return this.eventEmitter;
-  }
+  private progressSubscription: any = null;
+  private completeSubscription: any = null;
+  private errorSubscription: any = null;
+  private loadedPath: string | null = null;
+  private threads: number = 4;
 
   isAvailable(): boolean {
-    return DiffusionModule != null;
+    return !!LocalDream;
   }
 
   async isModelLoaded(): Promise<boolean> {
-    if (!this.isAvailable()) return false;
-    try {
-      return await DiffusionModule.isModelLoaded();
-    } catch {
-      return false;
-    }
+    return this.loadedPath !== null;
   }
 
   async getLoadedModelPath(): Promise<string | null> {
-    if (!this.isAvailable()) return null;
-    try {
-      return await DiffusionModule.getLoadedModelPath();
-    } catch {
-      return null;
-    }
+    return this.loadedPath;
   }
 
-  async loadModel(modelPath: string, threads?: number, opts: { backend?: 'mnn' | 'qnn' | 'auto'; cpuOnly?: boolean; attentionVariant?: 'split_einsum' | 'original' } = {}): Promise<boolean> {
-    if (!this.isAvailable()) {
-      throw new Error('LocalDream image generation is not available on this platform');
-    }
+  async loadModel(modelPath: string, threads?: number, opts: any = {}): Promise<boolean> {
+    if (!LocalDream) throw new Error('LocalDream NO DISPONIBLE');
+    
+    // Asumimos un modelo SD genérico para arrancar el backend
+    // onImageGenerationService y la UI asume modelo activo.
+    // pasamos la ruta del directorio del modelo al script nativo:
+    const useCpuClip = opts.useCpuClip ?? false;
+    const runOnCpu = opts.cpuOnly ?? opts.runOnCpu ?? false;
+    const modelId = "activo"; 
+    const textEmbeddingSize = 768; // o dinámico
 
-    const backend = opts.backend ?? 'auto';
-    const params: { modelPath: string; threads?: number; backend: string; cpuOnly?: boolean; attentionVariant?: string } = {
-      modelPath,
-      backend,
-    };
-    if (typeof threads === 'number') {
-      params.threads = threads;
-    }
-    if (opts.cpuOnly) {
-      params.cpuOnly = true;
-    }
-    if (opts.attentionVariant) {
-      params.attentionVariant = opts.attentionVariant;
-    }
-
-    const result = await DiffusionModule.loadModel(params);
-    this.loadedThreads = typeof threads === 'number' ? threads : this.loadedThreads;
-    return result;
+    await LocalDream.initializeModels(modelPath, useCpuClip, runOnCpu, modelId, textEmbeddingSize);
+    this.loadedPath = modelPath;
+    this.threads = threads ?? 4;
+    return true;
   }
 
   getLoadedThreads(): number | null {
-    return this.loadedThreads;
+    return this.threads;
   }
 
   async unloadModel(): Promise<boolean> {
-    if (!this.isAvailable()) return true;
-    try {
-      const result = await DiffusionModule.unloadModel();
-      this.loadedThreads = null;
-      return result;
-    } catch (e) {
-      logger.log('[LocalDream] unloadModel failed (bridge may be torn down):', e);
-      this.loadedThreads = null;
-      return false;
+    if (LocalDream) {
+        await LocalDream.stopBackend();
     }
+    this.loadedPath = null;
+    return true;
   }
 
-  private subscribeToProgress(onProgress?: ProgressCallback, onPreview?: PreviewCallback): any {
-    return this.getEmitter().addListener(
-      'LocalDreamProgress',
-      (event: { step: number; totalSteps: number; progress: number; previewPath?: string }) => {
-        onProgress?.({
-          step: event.step,
-          totalSteps: event.totalSteps,
-          progress: event.progress,
+  async generateImage(params: ImageGenerationParams & { previewInterval?: number, useOpenCL?: boolean }, onProgress?: (progress: ImageGenerationProgress) => void, onPreview?: (preview: { previewPath: string; step: number; totalSteps: number }) => void): Promise<GeneratedImage> {
+    if (!LocalDream) throw new Error('Native module LocalDream not found');
+
+    return new Promise((resolve, reject) => {
+      // Limpiar listeners viejos si existen
+      this.cancelGeneration().then(() => {
+        this.progressSubscription = eventEmitter?.addListener('onImageGenerationProgress', (event) => {
+          if (onProgress) {
+             const prog = event.progress;
+             const steps = params.steps || 20;
+             onProgress({
+               step: Math.floor(prog * steps),
+               totalSteps: steps,
+               progress: prog
+             });
+          }
         });
-        if (event.previewPath && onPreview) {
-          onPreview({ previewPath: event.previewPath, step: event.step, totalSteps: event.totalSteps });
-        }
-      },
-    );
+
+        this.completeSubscription = eventEmitter?.addListener('onImageGenerationComplete', (event) => {
+          this.clearListeners();
+          resolve({
+            id: `img_${Date.now()}`,
+            imagePath: event.imageUri.replace('file://', ''),
+            prompt: params.prompt,
+            negativePrompt: params.negativePrompt,
+            seed: parseInt(event.seed || '0'),
+            steps: params.steps || 20,
+            width: params.width || 512,
+            height: params.height || 512,
+            modelId: 'sd',
+            createdAt: new Date().toISOString()
+          });
+        });
+
+        this.errorSubscription = eventEmitter?.addListener('onImageGenerationError', (msg) => {
+          this.clearListeners();
+          reject(new Error(msg));
+        });
+
+        LocalDream.generateImage(
+          params.prompt,
+          params.negativePrompt || '',
+          params.steps || 20,
+          params.guidanceScale || 7.0,
+          params.width || 512,
+          params.height || 512,
+          params.seed || -1
+        ).catch((e: Error) => {
+          this.clearListeners();
+          reject(e);
+        });
+      });
+    });
   }
 
-  private buildNativeParams(params: ImageGenerationParams & { previewInterval?: number }, prompt: string) {
-    return {
-      prompt,
-      negativePrompt: params.negativePrompt || '',
-      steps: params.steps || 8,
-      guidanceScale: params.guidanceScale || 7.5,
-      seed: params.seed ?? generateRandomSeed(),
-      width: params.width || 512,
-      height: params.height || 512,
-      previewInterval: params.previewInterval ?? 2,
-      useOpenCL: params.useOpenCL ?? true,
-    };
-  }
-
-  private buildResult(params: ImageGenerationParams, result: any): GeneratedImage {
-    return {
-      id: result.id,
-      prompt: params.prompt,
-      negativePrompt: params.negativePrompt,
-      imagePath: result.imagePath,
-      width: result.width,
-      height: result.height,
-      steps: params.steps || 8,
-      seed: result.seed,
-      modelId: '',
-      createdAt: Date.now().toString(),
-    };
-  }
-
-  async generateImage(
-    params: ImageGenerationParams & { previewInterval?: number },
-    onProgress?: ProgressCallback,
-    onPreview?: PreviewCallback,
-  ): Promise<GeneratedImage> {
-    if (!this.isAvailable()) {
-      throw new Error('LocalDream image generation is not available on this platform');
-    }
-    if (this.generating) {
-      throw new Error('Image generation already in progress');
-    }
-    const trimmedPrompt = (params.prompt || '').trim();
-    if (!trimmedPrompt) {
-      throw new Error('Cannot generate image with an empty prompt');
-    }
-
-    this.generating = true;
-    const progressSubscription = this.subscribeToProgress(onProgress, onPreview);
-
-    try {
-      const result = await DiffusionModule.generateImage(this.buildNativeParams(params, trimmedPrompt));
-      // On iOS, CoreML releases the pipeline after generation → mark as
-      // needing reload.  On Android the LocalDream server stays alive between
-      // requests so we must NOT clear loadedThreads; doing so makes the next
-      // call think a reload is needed, which kills the running server and
-      // causes "Server did not return a complete event".
-      if (Platform.OS === 'ios') {
-        this.loadedThreads = null;
-      }
-      return this.buildResult(params, result);
-    } catch (error: any) {
-      const msg = error?.message || '';
-      if (msg.includes('ERR_NO_MODEL') || msg.includes('unloaded') || msg.includes('Pipeline failed') || msg.includes('complete event')) {
-        this.loadedThreads = null;
-      }
-      throw error;
-    } finally {
-      this.generating = false;
-      progressSubscription?.remove();
-    }
+  private clearListeners() {
+      this.progressSubscription?.remove();
+      this.completeSubscription?.remove();
+      this.errorSubscription?.remove();
   }
 
   async cancelGeneration(): Promise<boolean> {
-    if (!this.isAvailable()) return true;
-    this.generating = false;
-    return await DiffusionModule.cancelGeneration();
+    if (LocalDream) {
+      await LocalDream.stopGeneration();
+    }
+    this.clearListeners();
+    return true;
   }
 
-  async isGenerating(): Promise<boolean> {
-    return this.generating;
+  async getServerPort(): Promise<number> {
+    return 8081;
+  }
+
+  async isNpuSupported(): Promise<boolean> {
+    return true;
+  }
+
+  async getSoCModel(): Promise<string> {
+    return "snapdragon";
   }
 
   async getGeneratedImages(): Promise<GeneratedImage[]> {
-    if (!this.isAvailable()) return [];
-    try {
-      const images = await DiffusionModule.getGeneratedImages();
-      return images.map((img: any) => ({
-        id: img.id,
-        prompt: img.prompt || '',
-        imagePath: img.imagePath,
-        width: img.width || 512,
-        height: img.height || 512,
-        steps: img.steps || 20,
-        seed: img.seed || 0,
-        modelId: img.modelId || '',
-        createdAt: img.createdAt,
-      }));
-    } catch {
-      return [];
-    }
+    return [];
   }
 
   async deleteGeneratedImage(imageId: string): Promise<boolean> {
-    if (!this.isAvailable()) return false;
-    return await DiffusionModule.deleteGeneratedImage(imageId);
+    return true;
   }
-
+  
   async clearOpenCLCache(modelPath: string): Promise<number> {
-    if (Platform.OS !== 'android' || !this.isAvailable()) return 0;
-    return await DiffusionModule.clearOpenCLCache(modelPath);
+    return 0;
   }
-
+  
   async hasKernelCache(modelPath: string): Promise<boolean> {
-    if (Platform.OS !== 'android' || !this.isAvailable()) return true;
-    return await DiffusionModule.hasOpenCLCache(modelPath);
-  }
-
-  getConstants() {
-    if (!this.isAvailable()) {
-      return {
-        DEFAULT_STEPS: 20,
-        DEFAULT_GUIDANCE_SCALE: 7.5,
-        DEFAULT_WIDTH: 512,
-        DEFAULT_HEIGHT: 512,
-        SUPPORTED_WIDTHS: [128, 192, 256, 320, 384, 448, 512],
-        SUPPORTED_HEIGHTS: [128, 192, 256, 320, 384, 448, 512],
-      };
-    }
-    return DiffusionModule.getConstants();
+    return true;
   }
 }
 
 export const localDreamGeneratorService = new LocalDreamGeneratorService();
+export default localDreamGeneratorService;

@@ -59,7 +59,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
   const handleUnlock = useCallback(async () => {
     if (!passphrase.trim()) {
-      setAlertState(showAlert('Error', 'Please enter your passphrase'));
+      setAlertState(showAlert('Error', 'Porfavor ingresa tu contraseña'));
       return;
     }
 
@@ -83,8 +83,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         if (isLockedOut) {
           setAlertState(
             showAlert(
-              'Too Many Attempts',
-              'You have been locked out for 5 minutes due to too many failed attempts.'
+              'Demasiados intentos',
+              'Has sido bloqueado por 5 minutos debido a demasiados intentos fallidos.'
             )
           );
         } else {
@@ -129,9 +129,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
         {isLockedOut ? (
           <View style={styles.lockoutContainer}>
-            <Text style={styles.lockoutText}>Too many failed attempts</Text>
+            <Text style={styles.lockoutText}>Demasiados intentos fallidos</Text>
             <Text style={styles.lockoutTimer}>{formatTime(lockoutSeconds)}</Text>
-            <Text style={styles.lockoutHint}>Please wait before trying again</Text>
+            <Text style={styles.lockoutHint}>Porfavor espera antes de intentar de nuevo</Text>
           </View>
         ) : (
           <View style={styles.inputContainer}>

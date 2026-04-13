@@ -59,13 +59,15 @@ describe('Image Generation Flow Integration', () => {
     });
     mockActiveModelService.loadImageModel.mockResolvedValue();
 
-    // Default LLM service mocks (for prompt enhancement)
     mockLlmService.isModelLoaded.mockReturnValue(false);
     mockLlmService.isCurrentlyGenerating.mockReturnValue(false);
     mockLlmService.stopGeneration.mockResolvedValue();
 
+    mockActiveModelService.checkMemoryForDualModel.mockResolvedValue({ severity: 'none', totalRequiredGB: 1, availableGB: 4 });
+    mockActiveModelService.evictTextModel.mockResolvedValue();
+
     // Reset imageGenerationService state by canceling any in-progress generation
-    await imageGenerationService.cancelGeneration().catch(() => {});
+    await imageGenerationService.cancelGeneration().catch(() => { });
   });
 
   const setupImageModelState = () => {
@@ -304,7 +306,7 @@ describe('Image Generation Flow Integration', () => {
       });
 
       expect(result).toBeNull();
-      expect(imageGenerationService.getState().error).toContain('No image model');
+      expect(imageGenerationService.getState().error).toContain('No hay modelo de imagen');
     });
 
     it('should handle model load failure', async () => {
@@ -321,7 +323,7 @@ describe('Image Generation Flow Integration', () => {
       });
 
       expect(result).toBeNull();
-      expect(imageGenerationService.getState().error).toContain('Failed to load');
+      expect(imageGenerationService.getState().error).toContain('Error al cargar');
     });
   });
 
@@ -1472,7 +1474,7 @@ describe('Image Generation Flow Integration', () => {
 
       unsub();
       // When hasKernelCache throws, isFirstGpuRun=false, so regular status is used
-      expect(statusUpdates.some(s => s?.includes('Starting image generation'))).toBe(true);
+      expect(statusUpdates.some(s => s?.includes('Iniciando generación de imagen'))).toBe(true);
     });
 
     it('uses regular progress status when kernel cache exists (isFirstGpuRun=false)', async () => {
@@ -1504,7 +1506,7 @@ describe('Image Generation Flow Integration', () => {
       unsub();
 
       // Should include the "Generating image (5/20)..." status from else branch
-      expect(statusUpdates.some(s => s?.includes('Generating image'))).toBe(true);
+      expect(statusUpdates.some(s => s?.includes('Generando imagen'))).toBe(true);
     });
   });
 
@@ -1518,7 +1520,7 @@ describe('Image Generation Flow Integration', () => {
       const result = await (imageGenerationService as any)._ensureImageModelLoaded(null, fakeModel, 4);
 
       expect(result).toBe(false);
-      expect(imageGenerationService.getState().error).toBe('No image model selected');
+      expect(imageGenerationService.getState().error).toBe('No hay modelo de imagen seleccionado');
     });
   });
 });

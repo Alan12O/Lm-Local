@@ -251,7 +251,7 @@ class ActiveModelService {
       modelId,
       imageThreads,
       needsThreadReload,
-      cpuOnly: false,
+      cpuOnly: store.settings?.imageUseOpenCL === false,
       store,
       timeoutMs,
       loadedImageModelId: this.loadedImageModelId,

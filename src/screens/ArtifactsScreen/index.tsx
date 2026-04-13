@@ -52,7 +52,7 @@ export const ArtifactsScreen: React.FC = () => {
     {
       id: 'characters',
       title: 'Personajes',
-      description: 'Tus compañeros de IA personalizados.',
+      description: 'Expertos de IA personalizados.',
       icon: 'users',
       color: '#F472B6', // Pink
       onPress: () => {

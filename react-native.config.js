@@ -1,8 +1,5 @@
 module.exports = {
-  project: {
-    ios: {},
-    android: {},
-  },
+  project: {},
   /**
    * Enable Interop Layer for React Native 0.83+ New Architecture.
    * This allows legacy Bridge-based components like react-native-math-view

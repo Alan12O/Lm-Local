@@ -1,5 +1,5 @@
 import { LlamaContext, RNLlamaOAICompatibleMessage } from 'llama.rn';
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 import RNFS from 'react-native-fs';
 import { Message } from '../types';
 import { APP_CONFIG } from '../constants';
@@ -191,6 +191,9 @@ class LLMService {
     if (!this.context) throw new Error('No model loaded');
     if (this.isGenerating) throw new Error('Generation already in progress');
     this.isGenerating = true;
+    if (Platform.OS === 'android' && NativeModules.LocalDream) {
+      NativeModules.LocalDream.startTextNotification().catch(() => {});
+    }
     const ctx = this.context;
     const completionWork = (async () => {
       const managed = await this.manageContextWindow(messages);
@@ -268,7 +271,15 @@ class LLMService {
       return result.content;
     })();
     this.activeCompletionPromise = completionWork.then(() => { }, () => { });
-    try { return await completionWork; } finally { this.isGenerating = false; this.activeCompletionPromise = null; }
+    try { 
+      return await completionWork; 
+    } finally { 
+      this.isGenerating = false; 
+      this.activeCompletionPromise = null; 
+      if (Platform.OS === 'android' && NativeModules.LocalDream) {
+        NativeModules.LocalDream.stopTextNotification().catch(() => {});
+      }
+    }
   }
   async generateResponseWithTools(messages: Message[], options: { tools: any[]; onStream?: StreamCallback; onComplete?: CompleteCallback }): Promise<{ fullResponse: string; toolCalls: ToolCall[] }> {
     const work = generateWithToolsImpl({
@@ -286,7 +297,17 @@ class LLMService {
         ? ((onComplete) => (fullResponse: string) => onComplete({ content: fullResponse, reasoningContent: '' }))(options.onComplete) : undefined,
     });
     this.activeCompletionPromise = work.then(() => { }, () => { });
-    try { return await work; } finally { this.activeCompletionPromise = null; }
+    if (Platform.OS === 'android' && NativeModules.LocalDream) {
+      NativeModules.LocalDream.startTextNotification().catch(() => {});
+    }
+    try { 
+      return await work; 
+    } finally { 
+      this.activeCompletionPromise = null; 
+      if (Platform.OS === 'android' && NativeModules.LocalDream) {
+        NativeModules.LocalDream.stopTextNotification().catch(() => {});
+      }
+    }
   }
   /** No-op pass-through — lets llama.rn's native ctx_shift handle overflow for KV cache reuse. */
   private async manageContextWindow(messages: Message[], _extraReserve = 0): Promise<Message[]> {
@@ -297,6 +318,9 @@ class LLMService {
     if (!this.context) throw new Error('No model loaded');
     if (this.isGenerating) throw new Error('Generation already in progress');
     this.isGenerating = true;
+    if (Platform.OS === 'android' && NativeModules.LocalDream) {
+      NativeModules.LocalDream.startTextNotification().catch(() => {});
+    }
     const oaiMessages = this.convertToOAIMessages(messages);
     const { settings } = useAppStore.getState();
     let fullResponse = '';
@@ -306,7 +330,16 @@ class LLMService {
       (data) => { if (this.isGenerating && data.token) fullResponse += data.token; },
     ), 'generateWithMaxTokens');
     this.activeCompletionPromise = completionWork.then(() => { }, () => { });
-    try { await completionWork; return fullResponse.trim(); } finally { this.isGenerating = false; this.activeCompletionPromise = null; }
+    try { 
+      await completionWork; 
+      return fullResponse.trim(); 
+    } finally { 
+      this.isGenerating = false; 
+      this.activeCompletionPromise = null; 
+      if (Platform.OS === 'android' && NativeModules.LocalDream) {
+        NativeModules.LocalDream.stopTextNotification().catch(() => {});
+      }
+    }
   }
   async stopGeneration(): Promise<void> {
     if (this.context) { try { await this.context.stopCompletion(); } catch (e) { logger.log('[LLM] Stop error:', e); } }

@@ -4,10 +4,10 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DeviceInfo, DownloadedModel, ModelRecommendation, ONNXImageModel, ImageGenerationMode, AutoDetectMethod, ModelLoadingStrategy, CacheType, GeneratedImage, PersistedDownloadInfo } from '../types';
 
-type DownloadProgressInfo = { 
-  progress: number; 
-  bytesDownloaded: number; 
-  totalBytes: number; 
+type DownloadProgressInfo = {
+  progress: number;
+  bytesDownloaded: number;
+  totalBytes: number;
   reason?: string;
   speedBytesPerSec?: number;
   timeRemainingSec?: number;
@@ -111,7 +111,7 @@ const DEFAULT_CHECKLIST: OnboardingChecklist = {
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
-  systemPrompt: 'You are a helpful AI assistant running locally on the user\'s device. Be concise and helpful.',
+  systemPrompt: 'Eres un asistente de IA útil que se ejecuta localmente en el dispositivo del usuario. Sé conciso y útil. Responde en español.',
   temperature: 0.7,
   maxTokens: 1024,
   topP: 0.9,
@@ -137,7 +137,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   showGenerationDetails: false,
   enabledTools: ['web_search', 'calculator', 'get_current_datetime', 'get_device_info', 'read_url', 'search_knowledge_base'],
   thinkingEnabled: true,
-  thinkingLevel: 'normal',
+  thinkingLevel: 'reduced',
   toolsEnabled: true,
 };
 
@@ -228,17 +228,17 @@ export const useAppStore = create<AppState>()(
           const prev = state.downloadProgress[modelId];
           let speedBytesPerSec = prev?.speedBytesPerSec;
           let timeRemainingSec = prev?.timeRemainingSec;
-          
+
           if (prev && prev._lastUpdateTimeMs && prev._lastBytesDownloaded !== undefined) {
-             const dt = (now - prev._lastUpdateTimeMs) / 1000;
-             if (dt >= 0.5) { 
-               const db = progress.bytesDownloaded - prev._lastBytesDownloaded;
-               const currentSpeed = Math.max(0, db / dt);
-               speedBytesPerSec = speedBytesPerSec ? (speedBytesPerSec * 0.7 + currentSpeed * 0.3) : currentSpeed;
-               if (speedBytesPerSec > 0 && progress.totalBytes > progress.bytesDownloaded) {
-                 timeRemainingSec = (progress.totalBytes - progress.bytesDownloaded) / speedBytesPerSec;
-               }
-             }
+            const dt = (now - prev._lastUpdateTimeMs) / 1000;
+            if (dt >= 0.5) {
+              const db = progress.bytesDownloaded - prev._lastBytesDownloaded;
+              const currentSpeed = Math.max(0, db / dt);
+              speedBytesPerSec = speedBytesPerSec ? (speedBytesPerSec * 0.7 + currentSpeed * 0.3) : currentSpeed;
+              if (speedBytesPerSec > 0 && progress.totalBytes > progress.bytesDownloaded) {
+                timeRemainingSec = (progress.totalBytes - progress.bytesDownloaded) / speedBytesPerSec;
+              }
+            }
           }
 
           const shouldUpdateSpeed = !prev || (now - (prev._lastUpdateTimeMs || 0) >= 500);
