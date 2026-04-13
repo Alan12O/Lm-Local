@@ -14,7 +14,7 @@ import { Button } from '../components/Button';
 import { CustomAlert, showAlert, hideAlert, AlertState, initialAlertState } from '../components/CustomAlert';
 import { useTheme, useThemedStyles } from '../theme';
 import { createStyles } from './ProjectDetailScreen.styles';
-import { useChatStore, useCharacterStore, useAppStore } from '../stores';
+import { useChatStore, useCharacterStore, useAppStore, useRemoteServerStore } from '../stores';
 import { Conversation } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { KnowledgeBaseSection } from './ProjectDetailKnowledgeBaseSection';
@@ -35,8 +35,13 @@ export const CharacterDetailScreen: React.FC = () => {
   const { conversations, deleteConversation, setActiveConversation, createConversation, addMessage } = useChatStore();
   const { downloadedModels, activeModelId } = useAppStore();
 
+  const activeServerId = useRemoteServerStore((s) => s.activeServerId);
+  const activeRemoteTextModelId = useRemoteServerStore((s) => s.activeRemoteTextModelId);
+
   const character = getCharacter(characterId);
-  const hasModels = downloadedModels.length > 0;
+  const hasLocalModels = downloadedModels.length > 0;
+  const hasRemoteModel = !!(activeServerId && activeRemoteTextModelId);
+  const hasModels = hasLocalModels || hasRemoteModel;
 
   // Get chats for this character
   const characterChats = conversations
@@ -45,21 +50,39 @@ export const CharacterDetailScreen: React.FC = () => {
 
   const handleChatPress = (conversation: Conversation) => {
     setActiveConversation(conversation.id);
-    navigation.navigate('Chat', { conversationId: conversation.id });
+    navigation.navigate('Main', { 
+      screen: 'HomeTab', 
+      params: { conversationId: conversation.id } 
+    });
   };
 
   const handleNewChat = () => {
     if (!hasModels) {
-      setAlertState(showAlert('Sin Modelo', 'Por favor descarga un modelo en la pestaña de Modelos.'));
+      setAlertState(showAlert('Sin Modelo', 'Por favor descarga un modelo local o configura uno remoto en Ajustes.'));
       return;
     }
-    const modelId = activeModelId || downloadedModels[0]?.id;
+    
+    // Prioritize active model, then first local model, then remote
+    const modelId = activeModelId || (hasLocalModels ? downloadedModels[0].id : activeRemoteTextModelId);
+    
     if (modelId) {
       const newConversationId = createConversation(modelId, undefined, characterId);
+      
+      // Perform initial message injection immediately
       if (character?.firstMessage) {
-        addMessage(newConversationId, { role: 'assistant', content: character.firstMessage, isSystemInfo: true });
+        addMessage(newConversationId, { 
+          role: 'assistant', 
+          content: character.firstMessage, 
+          isSystemInfo: true 
+        });
       }
-      navigation.navigate('Chat', { conversationId: newConversationId, projectId: characterId });
+      
+      // Ensure state is synced before navigation
+      setActiveConversation(newConversationId);
+      navigation.navigate('Main', { 
+        screen: 'HomeTab', 
+        params: { conversationId: newConversationId, projectId: characterId } 
+      });
     }
   };
 

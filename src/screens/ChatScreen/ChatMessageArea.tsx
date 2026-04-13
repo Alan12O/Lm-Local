@@ -86,9 +86,9 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
       {chat.hasPendingSettings && !chat.isCompacting && !chat.activeModelInfo?.isRemote && (
         <Animated.View entering={FadeIn.duration(200)}>
           <AnimatedPressable style={styles.pendingSettingsBar} onPress={chat.handleReloadTextModel}>
-            <Icon name="alert-circle" size={16} color={colors.warning} />
+            <Icon name={chat.isModelStale ? 'power' : 'alert-circle'} size={16} color={colors.warning} />
             <Text style={styles.pendingSettingsText}>
-              Ajustes cambiados — toca para recargar el modelo
+              {chat.isModelStale ? 'Modelo en reposo — toca para despertar' : 'Ajustes cambiados — toca para recargar'}
             </Text>
             <Icon name="refresh-cw" size={14} color={colors.warning} />
           </AnimatedPressable>

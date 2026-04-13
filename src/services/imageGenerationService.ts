@@ -332,16 +332,54 @@ class ImageGenerationService {
       logger.log('[ImageGen] Memory strategy: explicitly evicting text model to prevent OOM for image generation.');
       try {
         await activeModelService.evictTextModel();
+        // Give the OS 1 second to actually reclaim the GPU context and memory
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (e) {
         logger.warn('[ImageGen] Failed to unload text model:', e);
       }
     }
 
-    const loaded = await this._ensureImageModelLoaded(activeImageModelId, activeImageModel, settings.imageThreads ?? 4);
-    if (!loaded) return null;
-    if (this.cancelRequested) { this.resetState(); return null; }
+    let retryCount = 0;
+    const MAX_AUTORETRIES = 1;
 
-    return this._runGenerationAndSave({ params, enhancedPrompt, activeImageModel, steps, guidanceScale, imageWidth, imageHeight, useOpenCL: settings.imageUseOpenCL ?? true });
+    const runWithRetry = async (): Promise<GeneratedImage | null> => {
+      try {
+        const loaded = await this._ensureImageModelLoaded(activeImageModelId, activeImageModel, settings.imageThreads ?? 4);
+        if (!loaded) return null;
+        if (this.cancelRequested) { this.resetState(); return null; }
+
+        return await this._runGenerationAndSave({ 
+          params, 
+          enhancedPrompt, 
+          activeImageModel, 
+          steps, 
+          guidanceScale, 
+          imageWidth, 
+          imageHeight, 
+          useOpenCL: settings.imageUseOpenCL ?? true 
+        });
+      } catch (e: any) {
+        const errorMsg = e?.message || '';
+        const isRetryable = errorMsg.includes('complete event') || 
+                           errorMsg.includes('SERVER_CRASHED') ||
+                           errorMsg.includes('CONNECTION_ERROR');
+
+        if (isRetryable && retryCount < MAX_AUTORETRIES) {
+          retryCount++;
+          logger.warn(`[ImageGen] Generation failed with retryable error. Retrying (${retryCount}/${MAX_AUTORETRIES})...`);
+          this.updateState({ status: 'Reintentando generación para estabilizar el pipeline...' });
+          // Wait a bit before retry to let the reset pipeline settle
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return runWithRetry();
+        }
+
+        logger.error('[ImageGen] Unexpected error in generateImage:', e);
+        this.updateState({ isGenerating: false, error: e?.message || 'Error inesperado' });
+        return null;
+      }
+    };
+
+    return await runWithRetry();
   }
 
   async cancelGeneration(): Promise<void> {

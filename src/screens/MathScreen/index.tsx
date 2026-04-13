@@ -50,10 +50,13 @@ export const MathScreen: React.FC = () => {
     const prompt = `Por favor, resuelve y explica paso a paso la siguiente fórmula matemática:\n\n$$\n${latex}\n$$\n\nProporciona una explicación detallada del razonamiento.`;
     
     // Navigate to Chat screen with the initial message and autoSend flag
-    navigation.navigate('Chat', { 
-      conversationId: undefined, 
-      initialMessage: prompt,
-      autoSend: true 
+    navigation.navigate('Main', { 
+      screen: 'HomeTab',
+      params: {
+        conversationId: undefined, 
+        initialMessage: prompt,
+        autoSend: true 
+      }
     });
   };
 

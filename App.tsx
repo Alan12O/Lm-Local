@@ -64,19 +64,9 @@ function App() {
     }, [authEnabled, setLastBackgroundTime, setLocked]),
     
     onForeground: useCallback(() => {
-      // Restaurar el contexto del modelo al volver a active
-      const currentModelId = useAppStore.getState().activeModelId;
-      if (currentModelId && typeof currentModelId === 'string') {
-        const store = useAppStore.getState();
-        const activeModelInfo = activeModelService.getActiveModels();
-        // Solo restaurar si no está cargando y actualmente no está cargado "nativamente"
-        if (!activeModelInfo.text.isLoaded && !activeModelInfo.text.isLoading) {
-          logger.log('[App] App foreground: Restoring active text model context.');
-          activeModelService.loadTextModel(currentModelId).catch((e: Error) => {
-            logger.error('[App] Failed to restore model in foreground:', e.message);
-          });
-        }
-      }
+      // Autoreload disabled to prevent GPU context crashes on Android.
+      // The user will be prompted to reload manually via the UI.
+      logger.log('[App] App foreground: Skipping auto-restore to ensure GPU stability.');
     }, []),
   });
 

@@ -220,13 +220,17 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
     }
 
     private var serverProcess: Process? = null
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var monitorJob: Job? = null
     private var currentModelPath: String? = null
     private var currentBackend: String? = null
     private var isServerReady = false
-    private val coroutineScope = CoroutineScope(Dispatchers.Default + Job())
-    private var monitorJob: Job? = null
     private val generationCancelled = AtomicBoolean(false)
     private var activeGenerationConnection: HttpURLConnection? = null
+
+    // Circular buffer for server logs (last 30 lines) for diagnostics
+    private val serverLogs = java.util.Collections.synchronizedList(mutableListOf<String>())
+    private val MAX_LOGS = 30
 
     override fun getName(): String = MODULE_NAME
 
@@ -516,7 +520,8 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
         val startTime = System.currentTimeMillis()
         while (System.currentTimeMillis() - startTime < timeoutMs) {
             // Bail early if the process has died
-            if (serverProcess?.isAlive != true) {
+            val proc = serverProcess
+            if (proc != null && !proc.isAlive) {
                 Log.w(TAG, "Server process died while waiting for it to become ready")
                 return false
             }
@@ -529,7 +534,11 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
                 conn.requestMethod = "GET"
                 val code = conn.responseCode
                 conn.disconnect()
-                if (code == 200) return true
+                if (code == 200) {
+                    // Give the system a bit of time to settle after the port opens
+                    delay(500)
+                    return true
+                }
             } catch (_: Exception) {
                 // Server not ready yet
             }
@@ -542,10 +551,15 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
         monitorJob?.cancel()
         monitorJob = coroutineScope.launch(Dispatchers.IO) {
             try {
+                serverLogs.clear()
                 serverProcess?.inputStream?.bufferedReader()?.use { reader ->
                     var line: String?
                     while (reader.readLine().also { line = it } != null) {
                         Log.i(TAG, "[server] $line")
+                        synchronized(serverLogs) {
+                            serverLogs.add(line ?: "")
+                            if (serverLogs.size > MAX_LOGS) serverLogs.removeAt(0)
+                        }
                     }
                 }
 
@@ -587,6 +601,7 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
         currentModelPath = null
         currentBackend = null
         isServerReady = false
+        // Don't clear logs here so they can be read after a crash
     }
 
     @ReactMethod
@@ -632,18 +647,27 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
      * Check if the server is alive and responsive before making a request.
      */
     private fun checkServerHealth(): Boolean {
+        if (serverProcess?.isAlive != true) return false
         return try {
             val url = URL("http://127.0.0.1:$SERVER_PORT/health")
             val conn = url.openConnection() as HttpURLConnection
-            conn.connectTimeout = 3000
-            conn.readTimeout = 3000
+            conn.connectTimeout = 2000
+            conn.readTimeout = 2000
             conn.requestMethod = "GET"
             val code = conn.responseCode
             conn.disconnect()
             code == 200
         } catch (e: Exception) {
             Log.w(TAG, "Health check failed: ${e.message}")
+            // If health check fails but process is alive, might be hanging.
             false
+        }
+    }
+    
+    private fun getServerDiagnostics(): String {
+        return synchronized(serverLogs) {
+            if (serverLogs.isEmpty()) "No server logs available."
+            else "Last ${serverLogs.size} lines of server output:\n" + serverLogs.joinToString("\n")
         }
     }
 
@@ -742,6 +766,11 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
         }
 
         if (generationCancelled.get()) return SseParseResult.Cancelled
+        if (completeData == null) {
+            Log.w(TAG, "SSE stream ended without complete event. Diagnostics:\n${getServerDiagnostics()}")
+            // Force reset on NO_RESULT to ensure next attempt starts fresh
+            stopServer()
+        }
         return if (completeData != null) SseParseResult.Complete(completeData!!) else SseParseResult.NoResult
     }
 
@@ -776,14 +805,14 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
         }
         val alive = serverProcess?.isAlive == true
         Log.e(TAG, "EOFException during generation. Server alive: $alive", e)
+        val diagnostics = getServerDiagnostics()
         if (!alive) {
             isServerReady = false
             safeReject(promise, "SERVER_CRASHED",
-                "Server process died during generation. Reload the model and try again.")
+                "Server process died during generation.\n$diagnostics")
         } else {
             safeReject(promise, "CONNECTION_ERROR",
-                "Connection to server was closed unexpectedly. " +
-                "The server may have crashed during inference. Try again.")
+                "Connection closed unexpectedly. Server is alive but may be hanging.\n$diagnostics")
         }
     }
 
@@ -839,18 +868,21 @@ class LocalDreamModule(reactContext: ReactApplicationContext) :
                         // The SSE stream ended without a "complete" event.
                         // Check if the server process died during inference.
                         val alive = serverProcess?.isAlive == true
+                        isServerReady = false // Reset state on incomplete stream
                         if (!alive) {
                             val exitCode = try { serverProcess?.exitValue() } catch (_: Exception) { null }
-                            isServerReady = false
                             Log.e(TAG, "Server died during generation (exit code: $exitCode)")
                             safeReject(promise, "SERVER_CRASHED",
                                 "Server process died during generation (exit code: $exitCode). " +
                                 "The device may be low on memory. Reload the model and try again.")
                         } else {
-                            Log.w(TAG, "SSE stream ended without complete event but server is still alive")
+                            Log.w(TAG, "SSE stream ended without complete event. Forcing server reset.")
+                            stopServer() // Force kill if it's hanging but alive
+                            isServerReady = false
+                            val diagnostics = getServerDiagnostics()
                             safeReject(promise, "NO_RESULT",
                                 "Server did not return a complete event. " +
-                                "Try again or reduce the image resolution.")
+                                "The pipeline has been reset. Try again.\n$diagnostics")
                         }
                     }
                 }

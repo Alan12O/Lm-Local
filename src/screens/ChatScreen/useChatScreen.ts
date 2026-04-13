@@ -58,6 +58,8 @@ export const useChatScreen = () => {
   const modelLoadStartTimeRef = useRef<number | null>(null);
   const startGenerationRef = useRef<(id: string, text: string) => Promise<void>>(null as any);
   const addMessageRef = useRef<typeof addMessage>(null as any);
+  // Guard: tracks last conversationId we routed to prevent re-triggering the routing effect
+  const lastRoutedConvRef = useRef<string | undefined>(undefined);
 
   const {
     activeModelId, downloadedModels, settings, activeImageModelId,
@@ -129,7 +131,19 @@ export const useChatScreen = () => {
   const isStreamingForThisConversation = streamingForConversationId === activeConversationId;
   const isCharacterMode = !!(activeConversation?.projectId && useCharacterStore.getState().getCharacter(activeConversation.projectId));
 
-  const genDeps = {
+  const modelDeps = useMemo(() => ({
+    activeModel, activeModelId: activeModelInfo.modelId, activeModelInfo, hasActiveModel, activeConversationId, isStreaming, settings,
+    clearStreamingMessage, createConversation, addMessage,
+    setIsModelLoading, setLoadingModel, setSupportsVision, setShowModelSelector,
+    setAlertState, modelLoadStartTimeRef,
+  }), [
+    activeModel, activeModelInfo, hasActiveModel, activeConversationId, isStreaming, settings,
+    clearStreamingMessage, createConversation, addMessage,
+    setIsModelLoading, setLoadingModel, setSupportsVision, setShowModelSelector,
+    setAlertState, modelLoadStartTimeRef,
+  ]);
+
+  const genDeps = useMemo(() => ({
     activeModelId: activeModelInfo.modelId, activeModel, activeModelInfo, hasActiveModel, activeConversationId, activeConversation, activeProject,
     activeImageModel, imageModelLoaded, isStreaming, isGeneratingImage, imageGenState, settings,
     downloadedModels, setAlertState, setIsClassifying, setAppImageGenerationStatus,
@@ -137,14 +151,14 @@ export const useChatScreen = () => {
     setActiveConversation, removeImagesByConversationId, generatingForConversationRef, navigation, setShowSettingsPanel, setShowModelSelector,
     ensureModelLoaded: async () => ensureModelLoadedFn(modelDeps),
     isCharacterMode,
-  };
-
-  const modelDeps = {
-    activeModel, activeModelId: activeModelInfo.modelId, activeModelInfo, hasActiveModel, activeConversationId, isStreaming, settings,
-    clearStreamingMessage, createConversation, addMessage,
-    setIsModelLoading, setLoadingModel, setSupportsVision, setShowModelSelector,
-    setAlertState, modelLoadStartTimeRef,
-  };
+  }), [
+    activeModelInfo, activeModel, hasActiveModel, activeConversationId, activeConversation, activeProject,
+    activeImageModel, imageModelLoaded, isStreaming, isGeneratingImage, imageGenState, settings,
+    downloadedModels, setAlertState, setIsClassifying, setAppImageGenerationStatus,
+    setAppIsGeneratingImage, addMessage, clearStreamingMessage, deleteConversation,
+    setActiveConversation, removeImagesByConversationId, generatingForConversationRef, navigation, setShowSettingsPanel, setShowModelSelector,
+    isCharacterMode, modelDeps
+  ]);
 
   useEffect(() => {
     const unsub1 = imageGenerationService.subscribe(state => setImageGenState(state));
@@ -170,32 +184,34 @@ export const useChatScreen = () => {
   }, [handleQueuedSend]);
 
   useEffect(() => {
-    const { conversationId, projectId, initialMessage, autoSend } = route.params || {};
-    
-    // 1. Handle conversation/project routing
+    const { conversationId, projectId } = route.params || {};
+
+    // Guard: skip if we already processed this exact conversationId to avoid loops
+    if (conversationId !== undefined && conversationId === lastRoutedConvRef.current) return;
+    lastRoutedConvRef.current = conversationId;
+
     if (conversationId && conversationId !== activeConversationId) {
       setActiveConversation(conversationId);
     } else if (!conversationId && !activeConversationId && activeModelInfo.modelId) {
       const newId = createConversation(activeModelInfo.modelId, undefined, projectId, isIncognito);
       navigation.setParams({ conversationId: newId } as any);
     }
+  // activeConversationId removed intentionally — the ref prevents re-processing the same id
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params?.conversationId, route.params?.projectId, activeModelInfo.modelId, isIncognito]);
 
-    // 2. Handle automated messaging (e.g. from Math Laboratory)
-    if (initialMessage && autoSend && activeModelInfo.modelId) {
-      const targetId = conversationId || activeConversationId;
-      if (targetId) {
-        // Clear params immediately to prevent re-triggering
-        navigation.setParams({ initialMessage: undefined, autoSend: undefined } as any);
-        
-        // Execute the send action
-        handleSendFn(genDeps, { 
-          text: initialMessage, 
-          startGeneration, 
-          setDebugInfo 
-        });
-      }
-    }
-  }, [route.params, activeModelInfo.modelId, activeConversationId, setActiveConversation, createConversation, isIncognito, navigation, genDeps]);
+  // Separate effect for auto-send (e.g. from Math Laboratory) — isolated to avoid routing loops
+  useEffect(() => {
+    const { initialMessage, autoSend, conversationId } = route.params || {};
+    if (!initialMessage || !autoSend) return;
+    const targetId = conversationId || activeConversationId;
+    if (!targetId || !activeModelInfo.modelId) return;
+    // Clear immediately to prevent re-triggering
+    navigation.setParams({ initialMessage: undefined, autoSend: undefined } as any);
+    handleSendFn(genDeps, { text: initialMessage, startGeneration, setDebugInfo });
+  // Only runs when initialMessage/autoSend arrive — genDeps excluded to keep this stable
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params?.initialMessage, route.params?.autoSend]);
 
 
   // Clear KV Cache en el mount removido para evitar el crasheo de SIGSEGV en OpenCL
@@ -244,7 +260,12 @@ export const useChatScreen = () => {
     useAppStore.getState().updateSettings({ toolsEnabled: enabled });
   };
   // Check if there are pending settings that require model reload
+  const isModelStale = useMemo(() => {
+    return !!activeModelInfo.modelId && !activeModelInfo.isRemote && !llmService.isModelLoaded() && !isModelLoading;
+  }, [activeModelInfo.modelId, activeModelInfo.isRemote, isModelLoading]);
+
   const hasPendingSettings = (() => {
+    if (isModelStale) return true;
     if (!loadedSettings) return false;
     return (
       settings.nThreads !== loadedSettings.nThreads ||
@@ -287,7 +308,8 @@ export const useChatScreen = () => {
     imageGenerationProgress: imageGenState.progress,
     imageGenerationStatus: imageGenState.status,
     imagePreviewPath: imageGenState.previewPath,
-    isStreaming, isThinking, isCompacting, hasPendingSettings, handleReloadTextModel, displayMessages, downloadedModels, projects, settings,
+    isStreaming, isThinking, isCompacting, hasPendingSettings, isModelStale,
+    handleReloadTextModel, displayMessages, downloadedModels, projects, settings,
     navigation, hardwareService,
     isIncognito: activeConversation?.isIncognito ?? isIncognito,
     showIncognitoToast,

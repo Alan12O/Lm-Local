@@ -114,18 +114,11 @@ const ToolCallMessage: React.FC<{ message: Message; styles: any; colors: any }> 
 
 const SystemInfoMessage: React.FC<{
   content: string; styles: ReturnType<typeof createStyles>;
-  alertState: AlertState; onCloseAlert: () => void;
-}> = ({ content, styles, alertState, onCloseAlert }) => (
-  <>
-    <View testID="system-info-message" style={styles.systemInfoContainer}>
-      <Text style={styles.systemInfoText} selectable={true}>{content}</Text>
-    </View>
-    <CustomAlert
-      visible={alertState.visible} title={alertState.title}
-      message={alertState.message} buttons={alertState.buttons}
-      onClose={onCloseAlert}
-    />
-  </>
+}> = ({ content, styles }) => (
+  <View testID="system-info-message" style={styles.systemInfoContainer}>
+    <Icon name="info" size={14} color="#8A8A8E" style={{ marginRight: 6 }} />
+    <Text style={styles.systemInfoText} selectable={true}>{content}</Text>
+  </View>
 );
 
 type MetaRowProps = {
@@ -246,8 +239,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
   if (!message) return null;
   if (message.isSystemInfo) {
-    return <SystemInfoMessage content={displayContent} styles={styles}
-      alertState={alertState} onCloseAlert={() => setAlertState(hideAlert())} />;
+    return <SystemInfoMessage content={displayContent} styles={styles} />;
   }
   if (message.role === 'tool') return <ToolResultMessage message={message} styles={styles} colors={colors} />;
   if (message.role === 'assistant' && message.toolCalls?.length) {
