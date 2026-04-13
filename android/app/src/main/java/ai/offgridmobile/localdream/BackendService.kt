@@ -81,7 +81,8 @@ class BackendService : Service() {
         val textEmbeddingSize = intent?.getIntExtra("textEmbeddingSize", 768) ?: 768
 
         if (modelsDirPath != null && modelId != null) {
-            val mDir = File(modelsDirPath)
+            var mDir = File(modelsDirPath)
+            mDir = findTrueModelDir(mDir)
             if (startBackend(mDir, width, height, useCpuClip, runOnCpu, modelId, textEmbeddingSize)) {
                 updateState(BackendState.Running)
             } else {
@@ -183,6 +184,26 @@ class BackendService : Service() {
             updateState(BackendState.Error("Prepare runtime dir failed: ${e.message}"))
             throw RuntimeException("Failed to prepare runtime directory", e)
         }
+    }
+
+    private fun findTrueModelDir(dir: File, depth: Int = 0): File {
+        if (!dir.exists() || !dir.isDirectory || depth > 3) return dir
+        if (File(dir, "tokenizer.json").exists()) return dir
+        
+        // Priorizar output_512 y carpetas qnn
+        val outputDir = File(dir, "output_512")
+        if (outputDir.exists() && outputDir.isDirectory) {
+            if (File(outputDir, "tokenizer.json").exists()) return outputDir
+            outputDir.listFiles()?.filter { it.isDirectory }?.forEach { subDir ->
+                if (File(subDir, "tokenizer.json").exists()) return subDir
+            }
+        }
+        
+        dir.listFiles()?.filter { it.isDirectory }?.forEach { subDir ->
+            val result = findTrueModelDir(subDir, depth + 1)
+            if (File(result, "tokenizer.json").exists()) return result
+        }
+        return dir
     }
 
     private fun startBackend(modelsDir: File, width: Int, height: Int, useCpuClip: Boolean, runOnCpu: Boolean, modelId: String, textEmbeddingSize: Int): Boolean {
