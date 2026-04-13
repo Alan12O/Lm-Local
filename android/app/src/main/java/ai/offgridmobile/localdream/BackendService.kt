@@ -272,7 +272,8 @@ class BackendService : Service() {
             val env = mutableMapOf<String, String>()
 
             val systemLibPaths = mutableListOf(
-                runtimeDir.absolutePath,
+                nativeDir,                   // libc++_shared.so y otras libs del APK
+                runtimeDir.absolutePath,     // QNN libs copiadas de assets
                 "/system/lib64",
                 "/vendor/lib64",
                 "/vendor/lib64/egl",
