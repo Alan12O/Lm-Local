@@ -104,6 +104,12 @@ Explore our detailed guides:
 
 ---
 
+## 📜 Credits & Acknowledgments
+
+This application is based on the original work of **Wednesday** and the **Off Grid** application. We are grateful for their contributions to the local AI ecosystem.
+
+---
+
 <div align="center">
 Built with ❤️ by the LM Local Community
 </div>
