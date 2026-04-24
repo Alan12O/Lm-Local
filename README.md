@@ -51,15 +51,17 @@ Most "local LLM" apps give you a text chatbot and call it a day. **LM Local** is
 ## 📦 Installation
 
 ### Download
-
-<div align="center">
-<table><tr>
-<td align="center"><a href="https://apps.apple.com/us/app/lm-local-local-ai/id6759299882"><img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" width="180" /></a></td>
-<td align="center"><a href="https://play.google.com/store/apps/details?id=ai.lmlocal"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" width="220" /></a></td>
-</tr></table>
-</div>
+Descarga desde la lista de releases activa
+nota: los paquetes de android estan firmados con una key de Alan12O
+nota: los paquetes de ios estan firmados con una key de Alan12O
+nota: Por el momento no hay un manera sencilla de distribuir la app en ios mas alla de las betas. Te recomiendo que uses el build directamente desde el codigo fuente.
 
 ### Build from source
+Existen diferentes maneras de instalar y utilizar esta app.
+La manera mas sencilla es usar el build desde el codigo fuente.
+Se cuenta con un script interno para facilitar el proceso: `./correr_compilacion.ps1`, el cual te preguntara que tipo de build quieres hacer y se encargara de instalar lo necesario (en la medida de lo posible).
+Para usar los scripts de forma local necesitarás tener instalado nodejs, JDK 17, Android SDK 35/36 y Xcode 15+
+Nota: para ios, ademas necesitas tener instalado cocoapods, por el momento no se ha incluido en el script de setup.
 
 ```bash
 git clone https://github.com/Alan12O/Lm-Local.git
@@ -111,5 +113,5 @@ This application is based on the original work of **Wednesday** and the **Off Gr
 ---
 
 <div align="center">
-Built with ❤️ by the LM Local Community
+Built by Alan12O based on Wednesday's work (from Off Grid).
 </div>
