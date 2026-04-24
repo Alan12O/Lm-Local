@@ -24,7 +24,7 @@ import androidx.core.app.NotificationCompat
 class DownloadForegroundService : Service() {
 
     companion object {
-        private const val CHANNEL_ID = "offgrid_download_channel"
+        private const val CHANNEL_ID = "lmlocal_download_channel"
         private const val NOTIFICATION_ID = 9001
         private const val EXTRA_TITLE = "title"
         private const val EXTRA_DOWNLOAD_ID = "download_id"

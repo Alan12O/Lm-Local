@@ -63,7 +63,7 @@ describe('Image Generation Flow Integration', () => {
     mockLlmService.isCurrentlyGenerating.mockReturnValue(false);
     mockLlmService.stopGeneration.mockResolvedValue();
 
-    mockActiveModelService.checkMemoryForDualModel.mockResolvedValue({ severity: 'none', totalRequiredGB: 1, availableGB: 4 });
+    mockActiveModelService.checkMemoryForDualModel.mockResolvedValue({ severity: 'safe', totalRequiredMemoryGB: 1, availableMemoryGB: 4, canLoad: true, message: '', currentlyLoadedMemoryGB: 0, requiredMemoryGB: 1, remainingAfterLoadGB: 3 });
     mockActiveModelService.evictTextModel.mockResolvedValue();
 
     // Reset imageGenerationService state by canceling any in-progress generation

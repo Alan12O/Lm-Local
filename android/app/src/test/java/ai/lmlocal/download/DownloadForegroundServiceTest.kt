@@ -37,7 +37,7 @@ class DownloadForegroundServiceTest {
         controller.create()
 
         val manager = context.getSystemService(NotificationManager::class.java)
-        val channel = manager.getNotificationChannel("offgrid_download_channel")
+        val channel = manager.getNotificationChannel("lmlocal_download_channel")
         assertNotNull("Notification channel should be created", channel)
         assertEquals("Model Downloads", channel.name)
         assertEquals(NotificationManager.IMPORTANCE_LOW, channel.importance)

@@ -86,17 +86,17 @@ jobs:
         run: |
           VERSION_CODE=$(date +%s)
           sed -i '' "s/MARKETING_VERSION = .*/MARKETING_VERSION = ${{ env.VERSION }};/" \
-            ios/OffgridMobile.xcodeproj/project.pbxproj
+            ios/LMLocal.xcodeproj/project.pbxproj
           sed -i '' "s/CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = $VERSION_CODE;/" \
-            ios/OffgridMobile.xcodeproj/project.pbxproj
+            ios/LMLocal.xcodeproj/project.pbxproj
 
       - name: Build archive
         run: |
           xcodebuild archive \
-            -workspace ios/OffgridMobile.xcworkspace \
-            -scheme OffgridMobile \
+            -workspace ios/LMLocal.xcworkspace \
+            -scheme LMLocal \
             -configuration Release \
-            -archivePath $RUNNER_TEMP/OffgridMobile.xcarchive \
+            -archivePath $RUNNER_TEMP/LMLocal.xcarchive \
             -destination "generic/platform=iOS" \
             CODE_SIGN_STYLE=Automatic \
             DEVELOPMENT_TEAM=84V6KCAC49 \
@@ -105,27 +105,27 @@ jobs:
       - name: Export IPA
         run: |
           xcodebuild -exportArchive \
-            -archivePath $RUNNER_TEMP/OffgridMobile.xcarchive \
+            -archivePath $RUNNER_TEMP/LMLocal.xcarchive \
             -exportOptionsPlist ios/ExportOptions.plist \
             -exportPath $RUNNER_TEMP/export
 
           # Rename IPA
-          mv $RUNNER_TEMP/export/OffgridMobile.ipa \
-             $RUNNER_TEMP/export/OffgridMobile-v${{ env.VERSION }}.ipa
+          mv $RUNNER_TEMP/export/LMLocal.ipa \
+             $RUNNER_TEMP/export/LMLocal-v${{ env.VERSION }}.ipa
 
       - name: Upload IPA to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload v${{ env.VERSION }} \
-            "$RUNNER_TEMP/export/OffgridMobile-v${{ env.VERSION }}.ipa" \
+            "$RUNNER_TEMP/export/LMLocal-v${{ env.VERSION }}.ipa" \
             --clobber
 
       - name: Update AltStore source JSON
         run: |
-          IPA_SIZE=$(stat -f%z "$RUNNER_TEMP/export/OffgridMobile-v${{ env.VERSION }}.ipa")
+          IPA_SIZE=$(stat -f%z "$RUNNER_TEMP/export/LMLocal-v${{ env.VERSION }}.ipa")
           TODAY=$(date +%Y-%m-%d)
-          DOWNLOAD_URL="https://github.com/alichherawalla/off-grid-mobile/releases/download/v${{ env.VERSION }}/OffgridMobile-v${{ env.VERSION }}.ipa"
+          DOWNLOAD_URL="https://github.com/alichherawalla/lm-local/releases/download/v${{ env.VERSION }}/LMLocal-v${{ env.VERSION }}.ipa"
 
           # Update altstore-source.json using node for reliable JSON manipulation
           node -e "

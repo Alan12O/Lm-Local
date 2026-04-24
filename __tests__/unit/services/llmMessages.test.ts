@@ -33,11 +33,10 @@ describe('formatLlamaMessages', () => {
 
     const result = formatLlamaMessages(messages, false);
 
-    expect(result).toContain('<|im_start|>system\nYou are helpful.<|im_end|>');
-    expect(result).toContain('<|im_start|>user\nHello<|im_end|>');
-    expect(result).toContain('<|im_start|>assistant\nHi there!<|im_end|>');
+    expect(result).toContain('<start_of_turn>user\nYou are helpful.\n\nHello<end_of_turn>');
+    expect(result).toContain('<start_of_turn>model\nHi there!<end_of_turn>');
     // Should end with the assistant start tag for generation
-    expect(result).toMatch(/<\|im_start\|>assistant\n$/);
+    expect(result).toMatch(/<start_of_turn>model\n$/);
   });
 
   it('filters out messages with isSystemInfo: true', () => {
@@ -93,7 +92,7 @@ describe('formatLlamaMessages', () => {
 
   it('returns only the assistant start tag for an empty message list', () => {
     const result = formatLlamaMessages([], false);
-    expect(result).toBe('<|im_start|>assistant\n');
+    expect(result).toBe('<start_of_turn>model\n');
   });
 
   it('filters out multiple isSystemInfo messages', () => {
@@ -125,10 +124,9 @@ describe('buildOAIMessages', () => {
 
     const result = buildOAIMessages(messages);
 
-    expect(result).toHaveLength(3);
-    expect(result[0]).toEqual({ role: 'system', content: 'System prompt' });
-    expect(result[1]).toEqual({ role: 'user', content: 'Hello' });
-    expect(result[2]).toEqual({ role: 'assistant', content: 'Hi' });
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({ role: 'user', content: 'System prompt\n\nHello' });
+    expect(result[1]).toEqual({ role: 'assistant', content: 'Hi' });
   });
 
   it('filters out messages with isSystemInfo: true', () => {
@@ -141,9 +139,10 @@ describe('buildOAIMessages', () => {
 
     const result = buildOAIMessages(messages);
 
-    expect(result).toHaveLength(3);
+    expect(result).toHaveLength(2);
     expect(result.map(m => m.content)).not.toContain('System info card');
-    expect(result[2]).toEqual({ role: 'assistant', content: 'Real reply' });
+    expect(result[0]).toEqual({ role: 'user', content: 'System prompt\n\nHello' });
+    expect(result[1]).toEqual({ role: 'assistant', content: 'Real reply' });
   });
 
   it('includes messages where isSystemInfo is undefined or false', () => {

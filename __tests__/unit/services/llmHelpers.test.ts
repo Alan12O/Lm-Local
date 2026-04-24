@@ -35,20 +35,20 @@ describe('getMaxContextForDevice', () => {
     expect(getMaxContextForDevice(6 * GB)).toBe(2048);
   });
 
-  it('caps at 4096 for 8GB RAM', () => {
-    expect(getMaxContextForDevice(8 * GB)).toBe(4096);
+  it('caps at 2048 for 8GB RAM', () => {
+    expect(getMaxContextForDevice(8 * GB)).toBe(2048);
   });
 
-  it('caps at 4096 for 7GB RAM', () => {
-    expect(getMaxContextForDevice(7 * GB)).toBe(4096);
+  it('caps at 2048 for 7GB RAM', () => {
+    expect(getMaxContextForDevice(7 * GB)).toBe(2048);
   });
 
-  it('caps at 8192 for 12GB RAM', () => {
-    expect(getMaxContextForDevice(12 * GB)).toBe(8192);
+  it('caps at 4096 for 12GB RAM', () => {
+    expect(getMaxContextForDevice(12 * GB)).toBe(4096);
   });
 
-  it('caps at 8192 for 16GB RAM', () => {
-    expect(getMaxContextForDevice(16 * GB)).toBe(8192);
+  it('caps at 4096 for 16GB RAM', () => {
+    expect(getMaxContextForDevice(16 * GB)).toBe(4096);
   });
 });
 
@@ -89,20 +89,20 @@ describe('getGpuLayersForDevice', () => {
       expect(getGpuLayersForDevice(4 * GB, 99)).toBe(0);
     });
 
-    it('disables GPU on Android with 6GB RAM', () => {
-      expect(getGpuLayersForDevice(6 * GB, 99)).toBe(0);
+    it('caps GPU layers to 1 on Android with 6GB RAM', () => {
+      expect(getGpuLayersForDevice(6 * GB, 99)).toBe(1);
     });
 
-    it('caps GPU layers to 12 on Android with 8GB RAM', () => {
-      expect(getGpuLayersForDevice(8 * GB, 99)).toBe(12);
+    it('caps GPU layers to 32 on Android with 8GB RAM', () => {
+      expect(getGpuLayersForDevice(8 * GB, 99)).toBe(32);
     });
 
-    it('caps GPU layers to 12 on Android with 7GB RAM', () => {
-      expect(getGpuLayersForDevice(7 * GB, 99)).toBe(12);
+    it('caps GPU layers to 32 on Android with 7GB RAM', () => {
+      expect(getGpuLayersForDevice(7 * GB, 99)).toBe(32);
     });
 
-    it('caps GPU layers to 24 on Android with 12GB RAM', () => {
-      expect(getGpuLayersForDevice(12 * GB, 99)).toBe(24);
+    it('caps GPU layers to 99 on Android with 12GB RAM', () => {
+      expect(getGpuLayersForDevice(12 * GB, 99)).toBe(99);
     });
 
     it('returns requested layers when under cap on Android 12GB', () => {

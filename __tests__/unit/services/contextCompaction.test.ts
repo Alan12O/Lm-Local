@@ -128,9 +128,9 @@ describe('compact', () => {
 
     const messages = [
       createMessage({ role: 'system', content: 'System' }),
-      createMessage({ id: 'old-1', role: 'user', content: 'old msg 1' }),
-      createMessage({ id: 'old-2', role: 'assistant', content: 'old reply 1' }),
-      createMessage({ id: 'old-3', role: 'user', content: 'old msg 2' }),
+      createMessage({ id: 'old-1', role: 'user', content: 'old msg 1'.repeat(100) }),
+      createMessage({ id: 'old-2', role: 'assistant', content: 'old reply 1'.repeat(100) }),
+      createMessage({ id: 'old-3', role: 'user', content: 'old msg 2'.repeat(100) }),
       createMessage({ role: 'assistant', content: 'recent reply' }),
       createMessage({ role: 'user', content: 'latest question' }),
     ];
@@ -151,8 +151,8 @@ describe('compact', () => {
 
     const messages = [
       createMessage({ role: 'system', content: 'System' }),
-      createMessage({ id: 'old-1', role: 'user', content: 'old msg' }),
-      createMessage({ id: 'old-2', role: 'assistant', content: 'old reply' }),
+      createMessage({ id: 'old-1', role: 'user', content: 'old msg'.repeat(100) }),
+      createMessage({ id: 'old-2', role: 'assistant', content: 'old reply'.repeat(100) }),
       createMessage({ role: 'user', content: 'latest' }),
     ];
 
@@ -167,8 +167,8 @@ describe('compact', () => {
 
     const messages = [
       createMessage({ role: 'system', content: 'System' }),
-      createMessage({ id: 'old-msg', role: 'user', content: 'old msg' }),
-      createMessage({ id: 'old-reply', role: 'assistant', content: 'old reply' }),
+      createMessage({ id: 'old-msg', role: 'user', content: 'old msg'.repeat(100) }),
+      createMessage({ id: 'old-reply', role: 'assistant', content: 'old reply'.repeat(100) }),
       createMessage({ role: 'user', content: 'latest' }),
     ];
 
@@ -186,8 +186,8 @@ describe('compact', () => {
 
     const messages = [
       createMessage({ role: 'system', content: 'System' }),
-      createMessage({ id: 'old-1', role: 'user', content: 'old msg' }),
-      createMessage({ id: 'old-2', role: 'assistant', content: 'old reply' }),
+      createMessage({ id: 'old-1', role: 'user', content: 'old msg'.repeat(100) }),
+      createMessage({ id: 'old-2', role: 'assistant', content: 'old reply'.repeat(100) }),
       createMessage({ role: 'user', content: 'latest' }),
     ];
 

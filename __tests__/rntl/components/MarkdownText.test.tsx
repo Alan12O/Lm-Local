@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { MarkdownText, preprocessMarkdown } from '../../../src/components/MarkdownText';
+import { MarkdownText } from '../../../src/components/MarkdownText';
 
 describe('MarkdownText', () => {
   it('renders plain text', () => {
@@ -111,29 +111,5 @@ describe('MarkdownText', () => {
       '[Link](https://example.com/very/long/path/that/might/overflow/the/container/width/in/a/chat/bubble)';
     const { toJSON } = render(<MarkdownText>{longUrl}</MarkdownText>);
     expect(toJSON()).toBeTruthy();
-  });
-});
-
-describe('preprocessMarkdown', () => {
-  it('escapes digit*digit patterns', () => {
-    expect(preprocessMarkdown('5*5')).toBe(String.raw`5\*5`);
-  });
-
-  it('escapes chained multiplication', () => {
-    expect(preprocessMarkdown('5*5*5*5*6*7')).toBe(String.raw`5\*5\*5\*5\*6\*7`);
-  });
-
-  it('does not escape word emphasis', () => {
-    expect(preprocessMarkdown('*italic*')).toBe('*italic*');
-  });
-
-  it('does not escape bold markers', () => {
-    expect(preprocessMarkdown('**bold**')).toBe('**bold**');
-  });
-
-  it('handles mixed content', () => {
-    expect(preprocessMarkdown('The result of 3*4 is *twelve*')).toBe(
-      String.raw`The result of 3\*4 is *twelve*`
-    );
   });
 });

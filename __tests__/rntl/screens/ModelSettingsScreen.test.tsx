@@ -535,6 +535,9 @@ describe('ModelSettingsScreen', () => {
       if (ctxSlider) {
         fireEvent(ctxSlider, 'slidingComplete', 4096);
         expect(useAppStore.getState().settings.contextLength).toBe(4096);
+        expect(useAppStore.getState().settings.thinkingEnabled).toBe(true);
+        expect(useAppStore.getState().settings.thinkingLevel).toBe('reduced');
+        expect(useAppStore.getState().settings.toolsEnabled).toBe(true);
       }
     });
   });
@@ -828,6 +831,7 @@ describe('ModelSettingsScreen', () => {
           enabledTools: undefined as any,
           thinkingEnabled: undefined as any,
           toolsEnabled: undefined as any,
+          thinkingLevel: undefined as any,
         },
       });
 

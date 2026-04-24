@@ -26,9 +26,9 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     color: colors.textMuted,
     fontWeight: '600' as const,
   },
-  tabActiveBg: colors.background,
-  tabActiveText: colors.text,
-  tabInactiveText: colors.textMuted,
+  tabActiveBg: { backgroundColor: colors.background },
+  tabActiveText: { color: colors.text },
+  tabInactiveText: { color: colors.textMuted },
 
   loadingBanner: {
     flexDirection: 'row' as const,

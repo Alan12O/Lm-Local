@@ -87,10 +87,10 @@ jobs:
       - name: Run iOS tests
         run: |
           cd ios && xcodebuild test \
-            -workspace OffgridMobile.xcworkspace \
-            -scheme OffgridMobile \
+            -workspace LMLocal.xcworkspace \
+            -scheme LMLocal \
             -destination 'platform=iOS Simulator,name=iPhone 16' \
-            -only-testing:OffgridMobileTests \
+            -only-testing:LMLocalTests \
             2>&1 | (xcpretty 2>/dev/null || cat)
 
       - name: Upload coverage to Codecov

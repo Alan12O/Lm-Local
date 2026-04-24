@@ -1,7 +1,7 @@
 param (
     [string]$SourceImage = "C:\Users\alan.LOQ_2\.gemini\antigravity\brain\3c951aa6-2193-43f6-bf8a-edb526a9b387\media__1775573430629.jpg",
     [string]$AndroidResPath = "C:\Users\alan.LOQ_2\IA-local\android\app\src\main\res",
-    [string]$IosAssetPath = "C:\Users\alan.LOQ_2\IA-local\ios\OffgridMobile\Images.xcassets\AppIcon.appiconset",
+    [string]$IosAssetPath = "C:\Users\alan.LOQ_2\IA-local\ios\LMLocal\Images.xcassets\AppIcon.appiconset",
     [string]$AppAssetPath = "C:\Users\alan.LOQ_2\IA-local\src\assets"
 )
 

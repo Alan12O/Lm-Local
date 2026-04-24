@@ -90,17 +90,17 @@ export const ModelSelectorModal: React.FC<ModelSelectorModalProps> = ({
     position: 'absolute',
     height: '100%',
     width: '50%',
-    left: interpolate(tabProgress.value, [0, 1], [0, 50]) + '%',
-    backgroundColor: styles.tabActiveBg,
+    left: `${interpolate(tabProgress.value, [0, 1], [0, 50])}%` as any,
+    backgroundColor: styles.tabActiveBg.backgroundColor,
     borderRadius: 12,
   }));
 
   const textTextStyle = useAnimatedStyle(() => ({
-    color: interpolate(tabProgress.value, [0, 1], [1, 0]) > 0.5 ? styles.tabActiveText : styles.tabInactiveText,
+    color: interpolate(tabProgress.value, [0, 1], [1, 0]) > 0.5 ? styles.tabActiveText.color : styles.tabInactiveText.color,
   }));
 
   const imageTextStyle = useAnimatedStyle(() => ({
-    color: tabProgress.value > 0.5 ? styles.tabActiveText : styles.tabInactiveText,
+    color: tabProgress.value > 0.5 ? styles.tabActiveText.color : styles.tabInactiveText.color,
   }));
 
   // Group remote models by server for TextTab — exclude servers known to be offline
