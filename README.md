@@ -4,7 +4,7 @@
 
 # LM Local
 
-### The Swiss Army Knife of On-Device AI
+### Aplicación para correr modelos locales de texto e imágenes fácilmente, optimizada para dispositivos móviles
 
 **Chat. Generate images. Use tools. See. Listen. All on your phone or Mac. All offline. Zero data leaves your device.**
 
