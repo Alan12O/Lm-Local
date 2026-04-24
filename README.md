@@ -1,117 +1,115 @@
 <div align="center">
 
-<img src="src/assets/logo.png" alt="LM Local Logo" width="120" />
+<img src="src/assets/logo.png" alt="Logo de LM Local" width="120" />
 
 # LM Local
 
 ### Aplicación para correr modelos locales de texto e imágenes fácilmente, optimizada para dispositivos móviles
 
-**Chat. Generate images. Use tools. See. Listen. All on your phone or Mac. All offline. Zero data leaves your device.**
+**Chatea. Genera imágenes. Usa herramientas. Mira. Escucha. Todo en tu teléfono o Mac. Todo sin conexión. Ningún dato sale de tu dispositivo.**
 
 [![CI](https://github.com/Alan12O/Lm-Local/actions/workflows/ci.yml/badge.svg)](https://github.com/Alan12O/Lm-Local/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Alan12O/Lm-Local/graph/badge.svg)](https://codecov.io/gh/Alan12O/Lm-Local)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Licencia: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 </div>
 
 ---
 
-## 🚀 Not just another chat app
+## 🚀 Mucho más que una aplicación de chat
 
-Most "local LLM" apps give you a text chatbot and call it a day. **LM Local** is a **complete offline AI suite** — text generation, image generation, vision AI, voice transcription, tool calling, and document analysis, all running natively on your phone's or Mac's hardware.
+La mayoría de las aplicaciones de "LLM local" solo ofrecen un chatbot de texto. **LM Local** es una **suite de IA completa y offline**: generación de texto, generación de imágenes, IA de visión, transcripción de voz, llamado de herramientas y análisis de documentos, todo ejecutándose de forma nativa en el hardware de tu teléfono o Mac.
 
 ---
 
-## ✨ Key Features
+## ✨ Características Principales
 
 <div align="center">
 <table>
   <tr>
-    <td align="center"><b>💬 Text Generation</b><br/>Llama 3.2, Qwen 3, Phi-4<br/>Streaming & Thinking Mode</td>
-    <td align="center"><b>🎨 Image Generation</b><br/>Stable Diffusion NPU-Accelerated<br/>Real-time previews</td>
-    <td align="center"><b>👁️ Vision AI</b><br/>Analyze images & documents<br/>SmolVLM & Qwen3-VL</td>
+    <td align="center"><b>💬 Generación de Texto</b><br/>Llama 3.2, Qwen 3, Phi-4<br/>Streaming y Modo Pensamiento</td>
+    <td align="center"><b>🎨 Generación de Imágenes</b><br/>Stable Diffusion acelerado por NPU<br/>Vistas previas en tiempo real</td>
+    <td align="center"><b>👁️ IA de Visión</b><br/>Analiza imágenes y documentos<br/>SmolVLM y Qwen3-VL</td>
   </tr>
   <tr>
-    <td align="center"><b>🛠️ Tool Calling</b><br/>Web Search, Calculator<br/>Knowledge Base Integration</td>
-    <td align="center"><b>📚 Local RAG</b><br/>On-device vector search<br/>PDF & Doc analysis</td>
-    <td align="center"><b>🎙️ Voice Input</b><br/>Whisper STT<br/>Zero-latency transcription</td>
+    <td align="center"><b>🛠️ Llamado de Herramientas</b><br/>Búsqueda web, Calculadora<br/>Integración con Base de Conocimientos</td>
+    <td align="center"><b>📚 RAG Local</b><br/>Búsqueda vectorial en el dispositivo<br/>Análisis de PDF y documentos</td>
+    <td align="center"><b>🎙️ Entrada de Voz</b><br/>Whisper STT<br/>Transcripción con latencia cero</td>
   </tr>
 </table>
 </div>
 
-### 🧠 Advanced Capabilities
+### 🧠 Capacidades Avanzadas
 
-- **Project Knowledge Base** — Upload PDFs and text documents. They are chunked, embedded on-device with MiniLM, and retrieved via cosine similarity using a local SQLite vector store.
-- **Remote LLM Support** — Seamlessly connect to Ollama, LM Studio, or any OpenAI-compatible API on your local network with automatic discovery.
-- **Hardware Acceleration** — Forcibly stable NPU utilization on Snapdragon (8 Gen 2/3) and Core ML on Apple Silicon.
-- **Privacy First** — No trackers, no analytics, no cloud. Your data is yours.
+- **Base de Conocimientos del Proyecto**: Sube archivos PDF y documentos de texto. Se fragmentan y se generan incrustaciones (embeddings) en el dispositivo con MiniLM, recuperándose mediante similitud de coseno usando un almacén vectorial local en SQLite.
+- **Soporte para LLM Remotos**: Conéctate sin problemas a Ollama, LM Studio o cualquier API compatible con OpenAI en tu red local con descubrimiento automático.
+- **Aceleración de Hardware**: Utilización estable de NPU en Snapdragon (8 Gen 2/3) y Core ML en Apple Silicon.
+- **Privacidad Ante Todo**: Sin rastreadores, sin analíticas, sin la nube. Tus datos te pertenecen.
 
 ---
 
-## 📦 Installation
+## 📦 Instalación
 
-### Download
-Descarga desde la lista de releases activa
-nota: los paquetes de android estan firmados con una key de Alan12O
-nota: los paquetes de ios estan firmados con una key de Alan12O
-nota: Por el momento no hay un manera sencilla de distribuir la app en ios mas alla de las betas. Te recomiendo que uses el build directamente desde el codigo fuente.
+### Descarga
+Descarga desde la lista de releases activa.
+Nota: Los paquetes de Android están firmados con una clave de **Alan12O**.
+Nota: Los paquetes de iOS están firmados con una clave de **Alan12O**.
+Nota: Por el momento no hay una manera sencilla de distribuir la app en iOS más allá de las betas. Te recomendamos que hagas el *build* directamente desde el código fuente.
 
-### Build from source
+### Build desde el código fuente
 Existen diferentes maneras de instalar y utilizar esta app.
-La manera mas sencilla es usar el build desde el codigo fuente.
-Se cuenta con un script interno para facilitar el proceso: `./correr_compilacion.ps1`, el cual te preguntara que tipo de build quieres hacer y se encargara de instalar lo necesario (en la medida de lo posible).
-Para usar los scripts de forma local necesitarás tener instalado nodejs, JDK 17, Android SDK 35/36 y Xcode 15+
-Nota: para ios, ademas necesitas tener instalado cocoapods, por el momento no se ha incluido en el script de setup.
+La manera más sencilla es usar el build desde el código fuente.
+Se cuenta con un script interno para facilitar el proceso: `./correr_compilacion.ps1`, el cual te preguntará qué tipo de build quieres hacer y se encargará de instalar lo necesario (en la medida de lo posible).
+Para usar los scripts de forma local necesitarás tener instalado Node.js 20+, JDK 17, Android SDK 35/36 y Xcode 15+.
+Nota: para iOS, además necesitas tener instalado CocoaPods; por el momento no se ha incluido en el script de configuración automática.
 
 ```bash
 git clone https://github.com/Alan12O/Lm-Local.git
 cd Lm-Local
 npm install
 
-# Build Android
+# Build para Android
 npm run android
 
-# Build iOS
+# Build para iOS
 cd ios && pod install && cd ..
 npm run ios
 ```
 
-> **Requirements:** Node.js 20+, JDK 17, Android SDK 35/36, Xcode 15+.
-
 ---
 
-## 🛠️ Testing & Quality
+## 🛠️ Pruebas y Calidad
 
-We maintain strict quality gates via **Husky** and **GitHub Actions**. Every PR is validated against:
+Mantenemos estrictos controles de calidad mediante **Husky** y **GitHub Actions**. Cada PR se valida contra:
 
-- **Unit Tests** (`Jest`): Logic, stores, and service layers.
-- **Native Tests** (`JUnit`/`XCTest`): Hardware-specific modules (NPU, PDF, File System).
-- **E2E Flows** (`Maestro`): Critical user paths.
+- **Pruebas Unitarias** (`Jest`): Lógica, estados y capas de servicio.
+- **Pruebas Nativas** (`JUnit`/`XCTest`): Módulos específicos de hardware (NPU, PDF, Sistema de archivos).
+- **Flujos E2E** (`Maestro`): Rutas críticas de usuario.
 
 ```bash
-npm test              # Run all unit/native tests
-npm run test:e2e      # Run Maestro E2E flows
+npm test              # Ejecuta todas las pruebas unitarias/nativas
+npm run test:e2e      # Ejecuta los flujos E2E de Maestro
 ```
 
 ---
 
-## 📖 Documentation
+## 📖 Documentación
 
-Explore our detailed guides:
+Explora nuestras guías detalladas:
 
-- 🏛️ **[Architecture](docs/ARCHITECTURE.md)**: System design and performance tuning.
-- 🗺️ **[Codebase Guide](docs/standards/CODEBASE_GUIDE.md)**: Deep dive into the source code.
-- 🎨 **[Design System](docs/design/DESIGN_PHILOSOPHY_SYSTEM.md)**: Brutalist aesthetics and theme engine.
-- ⚖️ **[Privacy Policy](docs/PRIVACY_POLICY.md)**: Our commitment to your data.
+- 🏛️ **[Arquitectura](docs/ARCHITECTURE.md)**: Diseño del sistema y optimización de rendimiento.
+- 🗺️ **[Guía del Código](docs/standards/CODEBASE_GUIDE.md)**: Análisis profundo del código fuente.
+- 🎨 **[Sistema de Diseño](docs/design/DESIGN_PHILOSOPHY_SYSTEM.md)**: Estética brutalista y motor de temas.
+- ⚖️ **[Política de Privacidad](docs/PRIVACY_POLICY.md)**: Nuestro compromiso con tus datos.
 
 ---
 
-## 📜 Credits & Acknowledgments
+## 📜 Créditos y Agradecimientos
 
-This application is based on the original work of **Wednesday** and the **Off Grid** application. We are grateful for their contributions to the local AI ecosystem.
+Esta aplicación está basada en el trabajo original de **Wednesday** y la aplicación **Off Grid**. Estamos agradecidos por sus contribuciones al ecosistema de IA local.
 
 ---
 
 <div align="center">
-Built by Alan12O based on Wednesday's work (from Off Grid).
+Desarrollado por Alan12O basado en el trabajo de Wednesday (Off Grid).
 </div>
