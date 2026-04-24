@@ -16,8 +16,8 @@ const TEXT_EXTENSIONS = ['.txt', '.md', '.csv', '.json', '.xml', '.html', '.log'
 // PDF extension handled separately via native module
 const PDF_EXTENSION = '.pdf';
 
-// Max file size we'll read (5MB)
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+// Max file size we'll read (50MB)
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 // Persistent directory for attached documents
 const ATTACHMENTS_DIR = `${RNFS.DocumentDirectoryPath}/attachments`;

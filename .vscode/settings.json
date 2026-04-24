@@ -1,8 +1,0 @@
-{
-    "sonarlint.connectedMode.project": {
-        "connectionId": "alichherawalla",
-        "projectKey": "alichherawalla_off-grid-mobile"
-    },
-    "java.configuration.updateBuildConfiguration": "interactive",
-    "java.compile.nullAnalysis.mode": "automatic"
-}

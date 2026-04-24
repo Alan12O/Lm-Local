@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -57,7 +58,7 @@ export const MathScreen: React.FC = () => {
         initialMessage: prompt,
         autoSend: true 
       }
-    });
+    } as any);
   };
 
   return (

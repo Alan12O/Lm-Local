@@ -314,7 +314,7 @@ class LLMService {
     return messages;
   }
   /** Generate a completion with a hard token cap (used for summarization, not user-facing). */
-  async generateWithMaxTokens(messages: Message[], maxTokens: number): Promise<string> {
+  async generateWithMaxTokens(messages: Message[], maxTokens: number, onStream?: (token: string) => void): Promise<string> {
     if (!this.context) throw new Error('No model loaded');
     if (this.isGenerating) throw new Error('Generation already in progress');
     this.isGenerating = true;
@@ -327,7 +327,12 @@ class LLMService {
     const ctx = this.context;
     const completionWork = safeCompletion(ctx, () => ctx.completion(
       { messages: oaiMessages, ...buildCompletionParams(settings, { disableCtxShift: this.shouldDisableCtxShift() }), n_predict: maxTokens },
-      (data) => { if (this.isGenerating && data.token) fullResponse += data.token; },
+      (data) => { 
+        if (this.isGenerating && data.token) {
+          fullResponse += data.token; 
+          onStream?.(data.token);
+        }
+      },
     ), 'generateWithMaxTokens');
     this.activeCompletionPromise = completionWork.then(() => { }, () => { });
     try { 

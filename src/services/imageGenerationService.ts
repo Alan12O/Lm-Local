@@ -325,6 +325,15 @@ class ImageGenerationService {
     }
 
     let forceEvict = settings.modelLoadingStrategy === 'memory';
+    
+    // Qualcomm DSP (NPU) strict memory isolation rule to prevent Error 6031 (DMA abort)
+    const idAndName = `${activeImageModel.id ?? ''} ${activeImageModel.name ?? ''}`.toLowerCase();
+    const isQnnModel = activeImageModel.backend === 'qnn' || idAndName.includes('qnn') || idAndName.includes('npu') || idAndName.includes('snapdragon');
+    if (isQnnModel) {
+      logger.log('[ImageGen] QNN NPU model detected. Forcing text model eviction to prevent DMA / Memory Crash.');
+      forceEvict = true;
+    }
+
     if (!forceEvict && llmService.isModelLoaded() && activeImageModelId) {
       const activeTextId = useAppStore.getState().activeModelId;
       const memCheck = await activeModelService.checkMemoryForDualModel(activeTextId, activeImageModelId);

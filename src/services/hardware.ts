@@ -1,8 +1,8 @@
 import { Platform, NativeModules } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
-// Access NativeModules.LocalDreamModule dynamically (not destructured)
+// Access NativeModules.LocalDream dynamically (not destructured)
 // so it can be mocked in tests after module import.
-const getLocalDreamModule = () => NativeModules.LocalDreamModule;
+const getLocalDreamModule = () => NativeModules.LocalDream;
 import {
   DeviceInfo as DeviceInfoType,
   ModelRecommendation,
@@ -222,12 +222,14 @@ class HardwareService {
     else if (hw.includes('mt') || hw.includes('mediatek')) vendor = 'mediatek';
     else if (hw.includes('exynos') || hw.includes('samsungexynos'))
       vendor = 'exynos';
-    const qnnVariant =
-      vendor === 'qualcomm' ? await this.getQnnVariantFromSoC() : undefined;
+    const rawSoCModel = vendor === 'qualcomm' ? await this.fetchSoCModel() : undefined;
+    const qnnVariant = rawSoCModel ? this.classifySmNumber(rawSoCModel) : undefined;
+    
     this.cachedSoCInfo = {
       vendor,
       hasNPU: vendor === 'qualcomm' && !!qnnVariant,
       qnnVariant,
+      rawSoCModel,
     };
     return this.cachedSoCInfo;
   }
@@ -259,6 +261,28 @@ class HardwareService {
     if (FLAGSHIP_8GEN2.has(num)) return '8gen2';
     if (FLAGSHIP_8GEN1.has(num)) return '8gen1';
     return 'min';
+  }
+
+  getHumanReadableSoC(rawModel: string | undefined): string {
+    if (!rawModel) return 'Desconocido';
+    
+    // Qualcomm Snapdragon SM mappings
+    const qualcommMap: Record<string, string> = {
+      'SM8150': 'Snapdragon 855',
+      'SM8250': 'Snapdragon 865',
+      'SM8350': 'Snapdragon 888',
+      'SM8450': 'Snapdragon 8 Gen 1',
+      'SM8475': 'Snapdragon 8+ Gen 1',
+      'SM8550': 'Snapdragon 8 Gen 2',
+      'SM8635': 'Snapdragon 8s Gen 3',
+      'SM8650': 'Snapdragon 8 Gen 3',
+      'SM8750': 'Snapdragon 8 Gen 4 / Elite',
+      'SM7475': 'Snapdragon 7+ Gen 2',
+      'SM7675': 'Snapdragon 7+ Gen 3',
+    };
+    
+    const cleanModel = rawModel.split('-')[0].toUpperCase().trim();
+    return qualcommMap[cleanModel] ? `${qualcommMap[cleanModel]} (${cleanModel})` : rawModel;
   }
   private getIosImageRec(chip: SoCInfo['appleChip'], ramGB: number): ImageModelRecommendation {
     const coreml = 'coreml';
@@ -295,7 +319,7 @@ class HardwareService {
       rec = {
         recommendedBackend: 'mnn',
         bannerText:
-          'GPU models recommended \u2014 your Snapdragon doesn\u2019t support NPU acceleration',
+          `GPU recommended \u2014 Unrecognized Snapdragon (${socInfo.rawSoCModel || 'Unknown'})`,
         compatibleBackends: ['mnn'],
       };
     } else {

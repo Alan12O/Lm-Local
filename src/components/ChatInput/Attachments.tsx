@@ -4,7 +4,7 @@ let _attachmentIdSeq = 0;
 const nextAttachmentId = () => `${Date.now()}-${(++_attachmentIdSeq).toString(36)}`;
 import { View, Text, Image, ScrollView, TouchableOpacity } from 'react-native';
 import { launchImageLibrary, launchCamera, Asset } from 'react-native-image-picker';
-import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
+import { pick, types, isErrorWithCode, errorCodes, keepLocalCopy } from '@react-native-documents/picker';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../../theme';
 import { MediaAttachment } from '../../types';
@@ -92,7 +92,18 @@ export function useAttachments(setAlertState: (state: AlertState) => void) {
         ));
         return;
       }
-      const attachment = await documentService.processDocumentFromPath(file.uri, fileName);
+      
+      const copyResult = await keepLocalCopy({
+        files: [{ uri: file.uri, fileName }],
+        destination: 'cachesDirectory',
+      });
+      const copiedFile = copyResult[0];
+      if (copiedFile.status === 'error') {
+        throw new Error(copiedFile.copyError || 'Failed to keep local copy');
+      }
+
+      const uriToProcess = copiedFile.localUri;
+      const attachment = await documentService.processDocumentFromPath(uriToProcess, fileName);
       if (attachment) setAttachments(prev => [...prev, attachment]);
     } catch (pickError: any) {
       if (isErrorWithCode(pickError) && pickError.code === errorCodes.OPERATION_CANCELED) return;

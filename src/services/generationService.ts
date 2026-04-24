@@ -54,6 +54,7 @@ class GenerationService {
   private totalReasoningLength: number = 0;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private isParsingThinking: boolean = false;
+  private hasNativeReasoning: boolean = false;
   private tagBuffer: string = '';
 
   /** Get the current provider (local or remote) */
@@ -392,6 +393,7 @@ class GenerationService {
     this.reasoningBuffer = '';
     this.totalReasoningLength = 0;
     this.isParsingThinking = false;
+    this.hasNativeReasoning = false;
     this.tagBuffer = '';
     this.remoteTimeToFirstToken = undefined;
     this.updateState({

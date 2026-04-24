@@ -1,7 +1,7 @@
 /**
  * Jest Setup File
  *
- * Configures global mocks and test utilities for the Off Grid test suite.
+ * Configures global mocks and test utilities for the LM Local test suite.
  * This file runs after the test framework is installed in the environment.
  */
 

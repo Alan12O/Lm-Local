@@ -1,6 +1,6 @@
 import type { ThemeColors, ThemeShadows } from '../../theme';
 import { TYPOGRAPHY, SPACING } from '../../constants';
-import { StyleSheet } from 'react-native';
+
 
 export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   flex1: { flex: 1 },
@@ -87,6 +87,9 @@ export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
     marginTop: 2,
     lineHeight: 18,
   },
+  sliderSection: {
+    marginBottom: SPACING.lg,
+  },
   sliderHeader: {
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
@@ -141,10 +144,68 @@ export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
     marginTop: SPACING.md,
     gap: 8,
   },
+  strategyButtons: {
+    flexDirection: 'row' as const,
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  warningText: {
+    ...TYPOGRAPHY.meta,
+    color: colors.error,
+    marginTop: SPACING.xs,
+  },
+  toggleNote: {
+    ...TYPOGRAPHY.bodySmall,
+    color: colors.textSecondary,
+    marginBottom: SPACING.md,
+    lineHeight: 18,
+    paddingHorizontal: SPACING.sm,
+  },
+  buttonRow: {
+    flexDirection: 'row' as const,
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
+  systemPromptContainer: {
+    paddingBottom: SPACING.lg,
+  },
+  clearCacheRow: {
+    marginTop: SPACING.sm,
+  },
+  clearCacheText: {
+    ...TYPOGRAPHY.label,
+    color: colors.error,
+  },
+  settingSection: {
+    marginTop: SPACING.lg,
+  },
+  settingLabel: {
+    ...TYPOGRAPHY.body,
+    fontWeight: '600' as const,
+    color: colors.text,
+  },
+  settingDesc: {
+    ...TYPOGRAPHY.bodySmall,
+    color: colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 18,
+    marginBottom: SPACING.sm,
+  },
   advancedToggleText: {
     ...TYPOGRAPHY.label,
     fontSize: 11,
     color: colors.textMuted,
+  },
+  levelSelectorContainer: {
+    marginTop: SPACING.md,
+    paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
+  levelLabel: {
+    ...TYPOGRAPHY.bodySmall,
+    color: colors.textSecondary,
+    marginBottom: SPACING.sm,
   },
   levelSelector: {
     flexDirection: 'row' as const,

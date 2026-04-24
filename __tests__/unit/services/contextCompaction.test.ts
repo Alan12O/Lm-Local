@@ -27,6 +27,10 @@ jest.mock('../../../src/stores/chatStore', () => ({
   useChatStore: {
     getState: jest.fn().mockReturnValue({
       updateCompactionState: jest.fn(),
+      startStreaming: jest.fn(),
+      appendToStreamingMessage: jest.fn(),
+      clearStreamingMessage: jest.fn(),
+      addMessage: jest.fn(),
     }),
   },
 }));
@@ -61,6 +65,10 @@ beforeEach(() => {
   mockedUpdateCompactionState.mockClear();
   (useChatStore.getState as jest.Mock).mockReturnValue({
     updateCompactionState: mockedUpdateCompactionState,
+    startStreaming: jest.fn(),
+    appendToStreamingMessage: jest.fn(),
+    clearStreamingMessage: jest.fn(),
+    addMessage: jest.fn(),
   });
 });
 

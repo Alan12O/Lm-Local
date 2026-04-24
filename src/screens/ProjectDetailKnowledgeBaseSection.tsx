@@ -1,9 +1,11 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Switch, ActivityIndicator, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import { pick } from '@react-native-documents/picker';
+import { pick, keepLocalCopy } from '@react-native-documents/picker';
 import { Button } from '../components/Button';
 import { showAlert, AlertState } from '../components/CustomAlert';
+import { WriteTextModal } from '../components/WriteTextModal';
 import { ragService } from '../services/rag';
 import type { RagDocument } from '../services/rag';
 
@@ -33,6 +35,8 @@ export interface KBSectionProps {
 export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colors, styles, setAlertState, onNavigateToKb, onDocumentPress }) => {
   const [kbDocs, setKbDocs] = useState<RagDocument[]>([]);
   const [indexingFile, setIndexingFile] = useState<string | null>(null);
+  const [indexingProgress, setIndexingProgress] = useState<string>('');
+  const [showWriteText, setShowWriteText] = useState(false);
 
   const loadKbDocs = useCallback(async () => {
     try { setKbDocs(await ragService.getDocumentsByProject(projectId)); }
@@ -41,7 +45,7 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
 
   useEffect(() => { loadKbDocs(); }, [loadKbDocs]);
 
-  const handleAddDocument = async () => {
+  const handleAddDocument = useCallback(async () => {
     try {
       const files = await pick({ mode: 'import', allowMultiSelection: true });
       if (!files?.length) return;
@@ -51,17 +55,64 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
         const fileName = file.name || 'document';
         setIndexingFile(files.length > 1 ? `${fileName} (${i + 1}/${files.length})` : fileName);
 
-        const pathForDb = decodeFilePath(file.uri);
+        const copyResult = await keepLocalCopy({
+          files: [{ uri: file.uri, fileName }],
+          destination: 'cachesDirectory',
+        });
+        const copiedFile = copyResult[0];
+        if (copiedFile.status === 'error') {
+          throw new Error(copiedFile.copyError || 'Failed to keep local copy');
+        }
 
-        await ragService.indexDocument({ projectId, filePath: pathForDb, fileName, fileSize: file.size || 0 });
+        const uriToProcess = copiedFile.localUri;
+        const pathForDb = decodeFilePath(uriToProcess);
+
+        await ragService.indexDocument({ 
+          projectId, 
+          filePath: pathForDb, 
+          fileName, 
+          fileSize: file.size || 0,
+          onProgress: (progress) => setIndexingProgress(progress.message)
+        });
         await loadKbDocs();
       }
     } catch (err: any) {
       if (err && !err.message?.includes('cancel')) {
         setAlertState(showAlert('Error', err.message || 'Error al indexar el documento'));
       }
+      setIndexingFile(null);
+      setIndexingProgress('');
+    }
+  }, [projectId, loadKbDocs, setAlertState]);
+
+  const handleAddMenu = useCallback(() => {
+    setAlertState(showAlert(
+      'Añadir fuente',
+      '¿De dónde quieres obtener la información?',
+      [
+        { text: 'Escribir o Pegar Texto', onPress: () => setShowWriteText(true) },
+        { text: 'Subir un Documento', onPress: handleAddDocument },
+        { text: 'Cancelar', style: 'cancel' },
+      ]
+    ));
+  }, [setAlertState, handleAddDocument]);
+
+  const handleSaveText = async (filePath: string, fileName: string) => {
+    try {
+      setIndexingFile(fileName);
+      await ragService.indexDocument({
+        projectId,
+        filePath,
+        fileName,
+        fileSize: 1024,
+        onProgress: (progress) => setIndexingProgress(progress.message),
+      });
+      await loadKbDocs();
+    } catch (error: any) {
+      setAlertState(showAlert('Error', error.message || 'Error al indexar el texto'));
     } finally {
       setIndexingFile(null);
+      setIndexingProgress('');
     }
   };
 
@@ -96,7 +147,7 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
           {kbDocs.length > 0 && <Text style={styles.sectionCount}>{kbDocs.length}</Text>}
         </View>
         <View style={styles.sectionActions}>
-          <Button title="Añadir" variant="primary" size="small" onPress={handleAddDocument}
+          <Button title="Añadir" variant="primary" size="small" onPress={handleAddMenu}
             icon={<Icon name="plus" size={16} color={colors.primary} />} />
           <Icon name="chevron-right" size={16} color={colors.textMuted} style={styles.navIcon} />
         </View>
@@ -105,7 +156,14 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
       {indexingFile && (
         <View style={styles.kbIndexing}>
           <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={styles.kbIndexingText} numberOfLines={1}>Indexando {indexingFile}...</Text>
+          <View style={{ flex: 1, marginLeft: 8 }}>
+            <Text style={styles.kbIndexingText} numberOfLines={1}>Indexando {indexingFile}...</Text>
+            {indexingProgress ? (
+              <Text style={{ color: colors.textMuted, fontSize: 12 }} numberOfLines={1}>
+                {indexingProgress}
+              </Text>
+            ) : null}
+          </View>
         </View>
       )}
 
@@ -131,6 +189,12 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
           ))}
         </ScrollView>
       )}
+
+      <WriteTextModal 
+        visible={showWriteText} 
+        onClose={() => setShowWriteText(false)} 
+        onSave={handleSaveText}
+      />
     </View>
   );
 };

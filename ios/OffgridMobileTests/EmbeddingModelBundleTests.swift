@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import OffgridMobile
+@testable import LmLocal
 
 // MARK: - Embedding Model Bundle Tests
 

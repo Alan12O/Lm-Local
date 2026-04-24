@@ -53,7 +53,7 @@ export const CharacterDetailScreen: React.FC = () => {
     navigation.navigate('Main', { 
       screen: 'HomeTab', 
       params: { conversationId: conversation.id } 
-    });
+    } as any);
   };
 
   const handleNewChat = () => {
@@ -82,7 +82,7 @@ export const CharacterDetailScreen: React.FC = () => {
       navigation.navigate('Main', { 
         screen: 'HomeTab', 
         params: { conversationId: newConversationId, projectId: characterId } 
-      });
+      } as any);
     }
   };
 

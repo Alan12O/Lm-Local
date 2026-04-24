@@ -9,7 +9,7 @@ import { createOpenAIProvider, OpenAICompatibleProvider } from './providers/open
 import { providerRegistry } from './providers/registry';
 import logger from '../utils/logger';
 
-const KEYCHAIN_SERVICE = 'ai.offgridmobile.servers';
+const KEYCHAIN_SERVICE = 'ai.lmlocal.servers';
 
 // ---------------------------------------------------------------------------
 // Keychain helpers

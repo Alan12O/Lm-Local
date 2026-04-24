@@ -42,7 +42,7 @@ class RagService {
 
     onProgress?.({ stage: 'extracting', message: `Extracting text from ${fileName}...` });
     // Extract full document text for RAG — don't truncate based on context window
-    const RAG_MAX_CHARS = 500_000;
+    const RAG_MAX_CHARS = 5_000_000;
     const attachment = await documentService.processDocumentFromPath(filePath, fileName, RAG_MAX_CHARS);
     if (!attachment?.textContent) {
       throw new Error('Could not extract text from document');
@@ -56,20 +56,32 @@ class RagService {
 
     onProgress?.({ stage: 'indexing', message: 'Indexing chunks...' });
     const docId = ragDatabase.insertDocument({ projectId, name: fileName, path: filePath, size: fileSize });
-    const rowIds = ragDatabase.insertChunks(docId, chunks);
 
-    onProgress?.({ stage: 'embedding', message: 'Generating embeddings...' });
     try {
       await embeddingService.load();
-      const texts = chunks.map(c => c.content);
-      const embeddings = await embeddingService.embedBatch(texts);
-      const entries = rowIds.map((rowId, i) => ({
-        chunkRowid: rowId,
-        docId,
-        embedding: embeddings[i],
-      }));
-      ragDatabase.insertEmbeddingsBatch(entries);
-      logger.log(`[RAG] Generated ${embeddings.length} embeddings for ${fileName}`);
+      const BATCH_SIZE = 25; // Smaller batches to avoid memory/timeout crashes with large documents
+      
+      for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+        const batchChunks = chunks.slice(i, i + BATCH_SIZE);
+        
+        onProgress?.({ stage: 'indexing', message: `Indexing chunks... (${Math.min(i + BATCH_SIZE, chunks.length)}/${chunks.length})` });
+        const rowIds = ragDatabase.insertChunks(docId, batchChunks);
+        
+        onProgress?.({ stage: 'embedding', message: `Generating embeddings... (${Math.min(i + BATCH_SIZE, chunks.length)}/${chunks.length})` });
+        const texts = batchChunks.map(c => c.content);
+        const embeddings = await embeddingService.embedBatch(texts);
+        
+        const entries = rowIds.map((rowId, idx) => ({
+          chunkRowid: rowId,
+          docId,
+          embedding: embeddings[idx],
+        }));
+        ragDatabase.insertEmbeddingsBatch(entries);
+        
+        // Yield to JS event loop to prevent ANR
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      logger.log(`[RAG] Generated embeddings for ${fileName}`);
     } catch (err) {
       logger.error('[RAG] Embedding generation failed (non-fatal):', err);
     }
@@ -92,16 +104,24 @@ class RagService {
 
       try {
         await embeddingService.load();
-        const texts = chunks.map(c => c.content);
-        const embeddings = await embeddingService.embedBatch(texts);
-        const entries = chunks.map((chunk, i) => ({
-          chunkRowid: chunk.id,
-          docId: doc.id,
-          embedding: embeddings[i],
-        }));
-        ragDatabase.insertEmbeddingsBatch(entries);
-        total += embeddings.length;
-        logger.log(`[RAG] Backfilled ${embeddings.length} embeddings for ${doc.name}`);
+        const BATCH_SIZE = 25;
+        
+        for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+          const batchChunks = chunks.slice(i, i + BATCH_SIZE);
+          const texts = batchChunks.map(c => c.content);
+          const embeddings = await embeddingService.embedBatch(texts);
+          
+          const entries = batchChunks.map((chunk, idx) => ({
+            chunkRowid: chunk.id,
+            docId: doc.id,
+            embedding: embeddings[idx],
+          }));
+          ragDatabase.insertEmbeddingsBatch(entries);
+          total += embeddings.length;
+          
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        logger.log(`[RAG] Backfilled embeddings for ${doc.name}`);
       } catch (err) {
         logger.error(`[RAG] Backfill failed for ${doc.name}:`, err);
       }

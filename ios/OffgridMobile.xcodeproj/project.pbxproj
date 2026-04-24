@@ -18,12 +18,12 @@
 		0A7B3D062F3A0B1200CC5FA1 /* all-MiniLM-L6-v2-Q8_0.gguf in Resources */ = {isa = PBXBuildFile; fileRef = 0A7B3D052F3A0B1200CC5FA1 /* all-MiniLM-L6-v2-Q8_0.gguf */; };
 		0A7B3D072F3A0B1200CC5FA1 /* EmbeddingModelBundleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7B3D082F3A0B1200CC5FA1 /* EmbeddingModelBundleTests.swift */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		553E18B7CCC207C0885499E4 /* libPods-OffgridMobileTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D1B1541769AADA563D6CC44E /* libPods-OffgridMobileTests.a */; };
+		553E18B7CCC207C0885499E4 /* libPods-LmLocalTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D1B1541769AADA563D6CC44E /* libPods-LmLocalTests.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		80EE15520A374D84DFA0E523 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
-		A084C602C3B4A415DC74D43F /* libPods-OffgridMobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A3BA1A946E10FA48AA4C0EB /* libPods-OffgridMobile.a */; };
-		AABB000100000000000001AA /* OffgridMobileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB000200000000000002AA /* OffgridMobileTests.swift */; };
+		A084C602C3B4A415DC74D43F /* libPods-LmLocal.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A3BA1A946E10FA48AA4C0EB /* libPods-LmLocal.a */; };
+		AABB000100000000000001AA /* LmLocalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB000200000000000002AA /* LmLocalTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,7 +32,7 @@
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 13B07F861A680F5B00A75B9A;
-			remoteInfo = OffgridMobile;
+			remoteInfo = LmLocal;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -46,20 +46,20 @@
 		0A7B3D022F3A0B1200CC5FA1 /* PDFExtractorModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExtractorModule.swift; sourceTree = "<group>"; };
 		0A7B3D052F3A0B1200CC5FA1 /* all-MiniLM-L6-v2-Q8_0.gguf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "all-MiniLM-L6-v2-Q8_0.gguf"; sourceTree = "<group>"; };
 		0A7B3D082F3A0B1200CC5FA1 /* EmbeddingModelBundleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddingModelBundleTests.swift; sourceTree = "<group>"; };
-		13B07F961A680F5B00A75B9A /* OffgridMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OffgridMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = OffgridMobile/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = OffgridMobile/Info.plist; sourceTree = "<group>"; };
-		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = OffgridMobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		2BD3167161334CCC189096E3 /* Pods-OffgridMobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OffgridMobile.debug.xcconfig"; path = "Target Support Files/Pods-OffgridMobile/Pods-OffgridMobile.debug.xcconfig"; sourceTree = "<group>"; };
-		37BD4C6C3858A907C678B5B4 /* Pods-OffgridMobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OffgridMobile.release.xcconfig"; path = "Target Support Files/Pods-OffgridMobile/Pods-OffgridMobile.release.xcconfig"; sourceTree = "<group>"; };
-		3A3BA1A946E10FA48AA4C0EB /* libPods-OffgridMobile.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OffgridMobile.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = OffgridMobile/AppDelegate.swift; sourceTree = "<group>"; };
-		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = OffgridMobile/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		AABB000200000000000002AA /* OffgridMobileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OffgridMobileTests.swift; sourceTree = "<group>"; };
-		AABB000400000000000004AA /* OffgridMobileTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffgridMobileTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B9DE36A1FFE10AF8CD81DBD2 /* Pods-OffgridMobileTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OffgridMobileTests.release.xcconfig"; path = "Target Support Files/Pods-OffgridMobileTests/Pods-OffgridMobileTests.release.xcconfig"; sourceTree = "<group>"; };
-		D0917E571600B3FFEDA59EF7 /* Pods-OffgridMobileTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OffgridMobileTests.debug.xcconfig"; path = "Target Support Files/Pods-OffgridMobileTests/Pods-OffgridMobileTests.debug.xcconfig"; sourceTree = "<group>"; };
-		D1B1541769AADA563D6CC44E /* libPods-OffgridMobileTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OffgridMobileTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07F961A680F5B00A75B9A /* LmLocal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LmLocal.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = LmLocal/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = LmLocal/Info.plist; sourceTree = "<group>"; };
+		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = LmLocal/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		2BD3167161334CCC189096E3 /* Pods-LmLocal.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LmLocal.debug.xcconfig"; path = "Target Support Files/Pods-LmLocal/Pods-LmLocal.debug.xcconfig"; sourceTree = "<group>"; };
+		37BD4C6C3858A907C678B5B4 /* Pods-LmLocal.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LmLocal.release.xcconfig"; path = "Target Support Files/Pods-LmLocal/Pods-LmLocal.release.xcconfig"; sourceTree = "<group>"; };
+		3A3BA1A946E10FA48AA4C0EB /* libPods-LmLocal.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-LmLocal.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = LmLocal/AppDelegate.swift; sourceTree = "<group>"; };
+		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = LmLocal/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		AABB000200000000000002AA /* LmLocalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LmLocalTests.swift; sourceTree = "<group>"; };
+		AABB000400000000000004AA /* LmLocalTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LmLocalTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B9DE36A1FFE10AF8CD81DBD2 /* Pods-LmLocalTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LmLocalTests.release.xcconfig"; path = "Target Support Files/Pods-LmLocalTests/Pods-LmLocalTests.release.xcconfig"; sourceTree = "<group>"; };
+		D0917E571600B3FFEDA59EF7 /* Pods-LmLocalTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LmLocalTests.debug.xcconfig"; path = "Target Support Files/Pods-LmLocalTests/Pods-LmLocalTests.debug.xcconfig"; sourceTree = "<group>"; };
+		D1B1541769AADA563D6CC44E /* libPods-LmLocalTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-LmLocalTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -69,7 +69,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				04B9D63D2F38E6C400F1A435 /* StableDiffusion in Frameworks */,
-				A084C602C3B4A415DC74D43F /* libPods-OffgridMobile.a in Frameworks */,
+				A084C602C3B4A415DC74D43F /* libPods-LmLocal.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,14 +77,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				553E18B7CCC207C0885499E4 /* libPods-OffgridMobileTests.a in Frameworks */,
+				553E18B7CCC207C0885499E4 /* libPods-LmLocalTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		13B07FAE1A68108700A75B9A /* OffgridMobile */ = {
+		13B07FAE1A68108700A75B9A /* LmLocal */ = {
 			isa = PBXGroup;
 			children = (
 				049521632F390D4500AA4EB4 /* CoreMLDiffusionModule.m */,
@@ -101,15 +101,15 @@
 				04B9D63E2F38E71E00F1A435 /* Images.xcassets */,
 				0A7B3D052F3A0B1200CC5FA1 /* all-MiniLM-L6-v2-Q8_0.gguf */,
 			);
-			name = OffgridMobile;
+			name = LmLocal;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				3A3BA1A946E10FA48AA4C0EB /* libPods-OffgridMobile.a */,
-				D1B1541769AADA563D6CC44E /* libPods-OffgridMobileTests.a */,
+				3A3BA1A946E10FA48AA4C0EB /* libPods-LmLocal.a */,
+				D1B1541769AADA563D6CC44E /* libPods-LmLocalTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -124,8 +124,8 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* OffgridMobile */,
-				AABB000500000000000005AA /* OffgridMobileTests */,
+				13B07FAE1A68108700A75B9A /* LmLocal */,
+				AABB000500000000000005AA /* LmLocalTests */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
@@ -139,28 +139,28 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* OffgridMobile.app */,
-				AABB000400000000000004AA /* OffgridMobileTests.xctest */,
+				13B07F961A680F5B00A75B9A /* LmLocal.app */,
+				AABB000400000000000004AA /* LmLocalTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		AABB000500000000000005AA /* OffgridMobileTests */ = {
+		AABB000500000000000005AA /* LmLocalTests */ = {
 			isa = PBXGroup;
 			children = (
-				AABB000200000000000002AA /* OffgridMobileTests.swift */,
+				AABB000200000000000002AA /* LmLocalTests.swift */,
 				0A7B3D082F3A0B1200CC5FA1 /* EmbeddingModelBundleTests.swift */,
 			);
-			path = OffgridMobileTests;
+			path = LmLocalTests;
 			sourceTree = "<group>";
 		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				2BD3167161334CCC189096E3 /* Pods-OffgridMobile.debug.xcconfig */,
-				37BD4C6C3858A907C678B5B4 /* Pods-OffgridMobile.release.xcconfig */,
-				D0917E571600B3FFEDA59EF7 /* Pods-OffgridMobileTests.debug.xcconfig */,
-				B9DE36A1FFE10AF8CD81DBD2 /* Pods-OffgridMobileTests.release.xcconfig */,
+				2BD3167161334CCC189096E3 /* Pods-LmLocal.debug.xcconfig */,
+				37BD4C6C3858A907C678B5B4 /* Pods-LmLocal.release.xcconfig */,
+				D0917E571600B3FFEDA59EF7 /* Pods-LmLocalTests.debug.xcconfig */,
+				B9DE36A1FFE10AF8CD81DBD2 /* Pods-LmLocalTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -168,9 +168,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		00E356ED1AD99517003FC87E /* OffgridMobileTests */ = {
+		00E356ED1AD99517003FC87E /* LmLocalTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AABB00010000000000001003 /* Build configuration list for PBXNativeTarget "OffgridMobileTests" */;
+			buildConfigurationList = AABB00010000000000001003 /* Build configuration list for PBXNativeTarget "LmLocalTests" */;
 			buildPhases = (
 				61A28276E96052FBB39B62C5 /* [CP] Check Pods Manifest.lock */,
 				AABB000700000000000007AA /* Sources */,
@@ -182,14 +182,14 @@
 			dependencies = (
 				AABB00010000000000001005 /* PBXTargetDependency */,
 			);
-			name = OffgridMobileTests;
-			productName = OffgridMobileTests;
-			productReference = AABB000400000000000004AA /* OffgridMobileTests.xctest */;
+			name = LmLocalTests;
+			productName = LmLocalTests;
+			productReference = AABB000400000000000004AA /* LmLocalTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		13B07F861A680F5B00A75B9A /* OffgridMobile */ = {
+		13B07F861A680F5B00A75B9A /* LmLocal */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "OffgridMobile" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "LmLocal" */;
 			buildPhases = (
 				21682FCE928FD9ACF8CB4BC3 /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
@@ -203,9 +203,9 @@
 			);
 			dependencies = (
 			);
-			name = OffgridMobile;
-			productName = OffgridMobile;
-			productReference = 13B07F961A680F5B00A75B9A /* OffgridMobile.app */;
+			name = LmLocal;
+			productName = LmLocal;
+			productReference = 13B07F961A680F5B00A75B9A /* LmLocal.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -224,7 +224,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "OffgridMobile" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "LmLocal" */;
 			compatibilityVersion = "Xcode 12.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -240,8 +240,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* OffgridMobile */,
-				00E356ED1AD99517003FC87E /* OffgridMobileTests */,
+				13B07F861A680F5B00A75B9A /* LmLocal */,
+				00E356ED1AD99517003FC87E /* LmLocalTests */,
 			);
 		};
 /* End PBXProject section */
@@ -300,7 +300,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-OffgridMobile-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-LmLocal-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -313,15 +313,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OffgridMobile/Pods-OffgridMobile-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-LmLocal/Pods-LmLocal-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OffgridMobile/Pods-OffgridMobile-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-LmLocal/Pods-LmLocal-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OffgridMobile/Pods-OffgridMobile-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-LmLocal/Pods-LmLocal-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		61A28276E96052FBB39B62C5 /* [CP] Check Pods Manifest.lock */ = {
@@ -339,7 +339,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-OffgridMobileTests-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-LmLocalTests-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -352,15 +352,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OffgridMobile/Pods-OffgridMobile-resources-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-LmLocal/Pods-LmLocal-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OffgridMobile/Pods-OffgridMobile-resources-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-LmLocal/Pods-LmLocal-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OffgridMobile/Pods-OffgridMobile-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-LmLocal/Pods-LmLocal-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -384,7 +384,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AABB000100000000000001AA /* OffgridMobileTests.swift in Sources */,
+				AABB000100000000000001AA /* LmLocalTests.swift in Sources */,
 				0A7B3D072F3A0B1200CC5FA1 /* EmbeddingModelBundleTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -394,7 +394,7 @@
 /* Begin PBXTargetDependency section */
 		AABB00010000000000001005 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 13B07F861A680F5B00A75B9A /* OffgridMobile */;
+			target = 13B07F861A680F5B00A75B9A /* LmLocal */;
 			targetProxy = AABB00010000000000001004 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -402,15 +402,15 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2BD3167161334CCC189096E3 /* Pods-OffgridMobile.debug.xcconfig */;
+			baseConfigurationReference = 2BD3167161334CCC189096E3 /* Pods-LmLocal.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1775123351;
 				DEVELOPMENT_TEAM = 84V6KCAC49;
 				ENABLE_BITCODE = NO;
-				INFOPLIST_FILE = OffgridMobile/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Off Grid - Local AI";
+				INFOPLIST_FILE = LmLocal/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "LM Local - Local AI";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -423,9 +423,9 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ai.offgridmobile;
-				PRODUCT_NAME = OffgridMobile;
-				SWIFT_OBJC_BRIDGING_HEADER = "OffgridMobile/OffgridMobile-Bridging-Header.h";
+				PRODUCT_BUNDLE_IDENTIFIER = ai.lmlocal;
+				PRODUCT_NAME = LmLocal;
+				SWIFT_OBJC_BRIDGING_HEADER = "LmLocal/LmLocal-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -434,14 +434,14 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 37BD4C6C3858A907C678B5B4 /* Pods-OffgridMobile.release.xcconfig */;
+			baseConfigurationReference = 37BD4C6C3858A907C678B5B4 /* Pods-LmLocal.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1775123351;
 				DEVELOPMENT_TEAM = 84V6KCAC49;
-				INFOPLIST_FILE = OffgridMobile/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Off Grid - Local AI";
+				INFOPLIST_FILE = LmLocal/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "LM Local - Local AI";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -454,9 +454,9 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ai.offgridmobile;
-				PRODUCT_NAME = OffgridMobile;
-				SWIFT_OBJC_BRIDGING_HEADER = "OffgridMobile/OffgridMobile-Bridging-Header.h";
+				PRODUCT_BUNDLE_IDENTIFIER = ai.lmlocal;
+				PRODUCT_NAME = LmLocal;
+				SWIFT_OBJC_BRIDGING_HEADER = "LmLocal/LmLocal-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -610,12 +610,12 @@
 		};
 		AABB00010000000000001001 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D0917E571600B3FFEDA59EF7 /* Pods-OffgridMobileTests.debug.xcconfig */;
+			baseConfigurationReference = D0917E571600B3FFEDA59EF7 /* Pods-LmLocalTests.debug.xcconfig */;
 			buildSettings = {
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/OffgridMobile.app/OffgridMobile";
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/LmLocal.app/LmLocal";
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ai.offgridmobile.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.lmlocal.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUNDLE_LOADER)";
@@ -624,12 +624,12 @@
 		};
 		AABB00010000000000001002 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B9DE36A1FFE10AF8CD81DBD2 /* Pods-OffgridMobileTests.release.xcconfig */;
+			baseConfigurationReference = B9DE36A1FFE10AF8CD81DBD2 /* Pods-LmLocalTests.release.xcconfig */;
 			buildSettings = {
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/OffgridMobile.app/OffgridMobile";
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/LmLocal.app/LmLocal";
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ai.offgridmobile.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.lmlocal.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUNDLE_LOADER)";
@@ -639,7 +639,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "OffgridMobile" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "LmLocal" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -648,7 +648,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "OffgridMobile" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "LmLocal" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
@@ -657,7 +657,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AABB00010000000000001003 /* Build configuration list for PBXNativeTarget "OffgridMobileTests" */ = {
+		AABB00010000000000001003 /* Build configuration list for PBXNativeTarget "LmLocalTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AABB00010000000000001001 /* Debug */,

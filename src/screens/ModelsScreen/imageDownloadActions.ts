@@ -124,6 +124,7 @@ export async function downloadHuggingFaceModel(
       id: modelInfo.id, name: modelInfo.name, description: modelInfo.description,
       modelPath: modelDir, downloadedAt: new Date().toISOString(),
       size: modelInfo.size, style: modelInfo.style, backend: modelInfo.backend,
+      defaultPrompt: modelInfo.defaultPrompt, defaultNegativePrompt: modelInfo.defaultNegativePrompt
     };
     await registerAndNotify(deps, { imageModel, modelName: modelInfo.name });
   } catch (error: any) {
@@ -233,6 +234,7 @@ export async function proceedWithDownload(
         id: modelInfo.id, name: modelInfo.name, description: modelInfo.description,
         modelPath: resolvedModelDir, downloadedAt: new Date().toISOString(), size: modelInfo.size, style: modelInfo.style,
         backend: modelInfo.backend, attentionVariant: modelInfo.attentionVariant,
+        defaultPrompt: modelInfo.defaultPrompt, defaultNegativePrompt: modelInfo.defaultNegativePrompt
       };
       await registerAndNotify(deps, { imageModel, modelName: modelInfo.name, downloadId: downloadInfo.downloadId });
     });

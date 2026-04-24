@@ -13,7 +13,7 @@ export interface ImageModelDescriptor {
   downloadUrl: string;
   size: number;
   style: string;
-  backend: 'mnn' | 'qnn' | 'coreml';
+  backend: 'mnn' | 'qnn' | 'coreml' | 'upscaler';
   variant?: string;
   huggingFaceRepo?: string;
   huggingFaceFiles?: { path: string; size: number }[];
@@ -23,6 +23,8 @@ export interface ImageModelDescriptor {
   repo?: string;
   /** Core ML attention variant: 'original' uses CPU/GPU (lower peak memory) */
   attentionVariant?: 'split_einsum' | 'original';
+  defaultPrompt?: string;
+  defaultNegativePrompt?: string;
 }
 
 export type CredibilityFilter = 'all' | ModelSource;

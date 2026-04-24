@@ -1,7 +1,7 @@
 import XCTest
 import PDFKit
 
-@testable import OffgridMobile
+@testable import LmLocal
 
 // MARK: - Test Constants
 
@@ -469,8 +469,8 @@ final class DownloadManagerModuleTests: XCTestCase {
   override func setUp() {
     super.setUp()
     // Clear persisted download state keys so tests start clean.
-    UserDefaults.standard.removeObject(forKey: "ai.offgridmobile.activeDownloads")
-    UserDefaults.standard.removeObject(forKey: "ai.offgridmobile.downloadmanager.state.v1")
+    UserDefaults.standard.removeObject(forKey: "ai.lmlocal.activeDownloads")
+    UserDefaults.standard.removeObject(forKey: "ai.lmlocal.downloadmanager.state.v1")
     module = DownloadManagerModule()
   }
 

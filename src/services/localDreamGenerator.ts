@@ -26,18 +26,34 @@ class LocalDreamGeneratorService {
   async loadModel(modelPath: string, threads?: number, opts: any = {}): Promise<boolean> {
     if (!LocalDream) throw new Error('LocalDream NO DISPONIBLE');
     
-    // Asumimos un modelo SD genérico para arrancar el backend
-    // onImageGenerationService y la UI asume modelo activo.
-    // pasamos la ruta del directorio del modelo al script nativo:
-    const useCpuClip = opts.useCpuClip ?? false;
+    const useCpuClip = opts.useCpuClip ?? true; // All xororz catalog variants expect clip.mnn.
     const runOnCpu = opts.cpuOnly ?? opts.runOnCpu ?? false;
     const modelId = "activo"; 
-    const textEmbeddingSize = 768; // o dinámico
+    const textEmbeddingSize = 768;
 
-    await LocalDream.initializeModels(modelPath, useCpuClip, runOnCpu, modelId, textEmbeddingSize);
-    this.loadedPath = modelPath;
-    this.threads = threads ?? 4;
-    return true;
+    console.log(`[LocalDream] 🚀 loadModel: path=${modelPath}, useCpuClip=${useCpuClip}, runOnCpu=${runOnCpu}`);
+
+    // Note: We unload even if this.loadedPath is null, because the app
+    // might have restarted after a background exit (where JS state is lost
+    // but the native backend service is still running).
+    console.log(`[LocalDream] ♻️ Unloading previous model (if any) before loading new one...`);
+    await this.unloadModel();
+
+    console.log(`[LocalDream] ⏳ Waiting for backend server to be ready (this may take 30-90s on first load)...`);
+
+    try {
+      // initializeModels now waits for the backend HTTP server to be ready
+      // via health check polling (up to 90 seconds) before resolving
+      await LocalDream.initializeModels(modelPath, useCpuClip, runOnCpu, modelId, textEmbeddingSize);
+      console.log(`[LocalDream] ✅ Backend ready! Model loaded successfully.`);
+      this.loadedPath = modelPath;
+      this.threads = threads ?? 4;
+      return true;
+    } catch (error: any) {
+      console.error(`[LocalDream] ❌ Failed to load model: ${error?.message || error}`);
+      this.loadedPath = null;
+      throw error;
+    }
   }
 
   getLoadedThreads(): number | null {
@@ -52,14 +68,27 @@ class LocalDreamGeneratorService {
     return true;
   }
 
-  async generateImage(params: ImageGenerationParams & { previewInterval?: number, useOpenCL?: boolean }, onProgress?: (progress: ImageGenerationProgress) => void, onPreview?: (preview: { previewPath: string; step: number; totalSteps: number }) => void): Promise<GeneratedImage> {
+  async generateImage(params: ImageGenerationParams & { previewInterval?: number, useOpenCL?: boolean }, onProgress?: (progress: ImageGenerationProgress) => void, _onPreview?: (preview: { previewPath: string; step: number; totalSteps: number }) => void): Promise<GeneratedImage> {
     if (!LocalDream) throw new Error('Native module LocalDream not found');
 
+    const GENERATION_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes max
+
     return new Promise((resolve, reject) => {
-      // Limpiar listeners viejos si existen
+      let settled = false;
+      const settle = () => { settled = true; this.clearListeners(); };
+
+      // Timeout protection — if no response in 10 minutes, something is very wrong
+      const timeoutId = setTimeout(() => {
+        if (!settled) {
+          settle();
+          reject(new Error('La generación de imagen excedió el tiempo máximo (10 min). El backend puede haber fallado.'));
+        }
+      }, GENERATION_TIMEOUT_MS);
+
+      // Clear old listeners before starting
       this.cancelGeneration().then(() => {
         this.progressSubscription = eventEmitter?.addListener('onImageGenerationProgress', (event) => {
-          if (onProgress) {
+          if (onProgress && !settled) {
              const prog = event.progress;
              const steps = params.steps || 20;
              onProgress({
@@ -71,13 +100,16 @@ class LocalDreamGeneratorService {
         });
 
         this.completeSubscription = eventEmitter?.addListener('onImageGenerationComplete', (event) => {
-          this.clearListeners();
+          if (settled) return;
+          clearTimeout(timeoutId);
+          settle();
+          console.log(`[LocalDream] ✅ Image generation complete: ${event.imageUri}`);
           resolve({
             id: `img_${Date.now()}`,
             imagePath: event.imageUri.replace('file://', ''),
             prompt: params.prompt,
             negativePrompt: params.negativePrompt,
-            seed: parseInt(event.seed || '0'),
+            seed: parseInt(event.seed || '0', 10),
             steps: params.steps || 20,
             width: params.width || 512,
             height: params.height || 512,
@@ -87,9 +119,23 @@ class LocalDreamGeneratorService {
         });
 
         this.errorSubscription = eventEmitter?.addListener('onImageGenerationError', (msg) => {
-          this.clearListeners();
-          reject(new Error(msg));
+          if (settled) return;
+          clearTimeout(timeoutId);
+          settle();
+          const errStr = typeof msg === 'string' ? msg : msg?.message || 'Error desconocido en generación';
+          console.error(`[LocalDream] ❌ Generation error event: ${errStr}`);
+          
+          // Auto-healing: If the NPU crashes or times out, the native state is corrupted.
+          // By forcefully unloading, the next generation attempt will safely reboot the backend.
+          if (errStr.includes("exec failed") || errStr.includes("QNN UNET") || errStr.includes("timeout")) {
+              console.warn(`[LocalDream] ⚠️ CRITICAL NPU FAILURE DETECTED: Forcing model unload to recover state.`);
+              this.unloadModel().catch(() => {});
+          }
+
+          reject(new Error(errStr));
         });
+
+        console.log(`[LocalDream] 🎨 Starting generation: prompt="${(params.prompt || '').substring(0, 50)}...", steps=${params.steps || 20}, ${params.width || 512}x${params.height || 512}`);
 
         LocalDream.generateImage(
           params.prompt,
@@ -100,11 +146,33 @@ class LocalDreamGeneratorService {
           params.height || 512,
           params.seed || -1
         ).catch((e: Error) => {
-          this.clearListeners();
+          if (settled) return;
+          clearTimeout(timeoutId);
+          settle();
+          console.error(`[LocalDream] ❌ generateImage native call rejected: ${e.message}`);
+          
+          if (e.message.includes("exec failed") || e.message.includes("QNN UNET") || e.message.includes("Socket")) {
+             this.unloadModel().catch(() => {});
+          }
+
           reject(e);
         });
       });
     });
+  }
+
+  async upscaleImage(imageUri: string, upscalerFilePath: string): Promise<string> {
+    if (!LocalDream) throw new Error('LocalDream NO DISPONIBLE');
+    
+    console.log(`[LocalDream] ✨ upscaleImage requested: img=${imageUri}, upscaler=${upscalerFilePath}`);
+    
+    try {
+      const response = await LocalDream.upscaleImage(imageUri, upscalerFilePath);
+      return response.imageUri;
+    } catch (error: any) {
+      console.error(`[LocalDream] ❌ upscaleImage failed: ${error?.message || error}`);
+      throw error;
+    }
   }
 
   private clearListeners() {
@@ -137,16 +205,26 @@ class LocalDreamGeneratorService {
     return [];
   }
 
-  async deleteGeneratedImage(imageId: string): Promise<boolean> {
+  async deleteGeneratedImage(_imageId: string): Promise<boolean> {
     return true;
   }
   
-  async clearOpenCLCache(modelPath: string): Promise<number> {
+  async clearOpenCLCache(_modelPath: string): Promise<number> {
     return 0;
   }
   
-  async hasKernelCache(modelPath: string): Promise<boolean> {
+  async hasKernelCache(_modelPath: string): Promise<boolean> {
     return true;
+  }
+
+  async restartBackend(): Promise<boolean> {
+    try {
+      console.log('[LocalDream] Manual backend restart requested');
+      return await NativeModules.LocalDream.restartBackend();
+    } catch (e) {
+      console.error('[LocalDream] Failed to restart backend:', e);
+      return false;
+    }
   }
 }
 

@@ -1,8 +1,8 @@
-# OffgridMobile Design Philosophy & System
+# LmLocal Design Philosophy & System
 
 ## Core Philosophy
 
-OffgridMobile follows a **brutalist, minimal design system** inspired by terminal aesthetics and focused on functionality over decoration. The interface emphasizes clarity, efficiency, and respect for the user's attention.
+LmLocal follows a **brutalist, minimal design system** inspired by terminal aesthetics and focused on functionality over decoration. The interface emphasizes clarity, efficiency, and respect for the user's attention.
 
 ---
 

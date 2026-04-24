@@ -1,3 +1,5 @@
+/* eslint-disable react-native/no-inline-styles */
+/* eslint-disable react-native/no-color-literals */
 import React from 'react';
 import {
   View,
@@ -9,7 +11,6 @@ import {
   ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { DrawerActions } from '@react-navigation/native';
 import { AttachStep } from 'react-native-spotlight-tour';
 import { ModelSelectorModal } from '../../components';
@@ -113,10 +114,13 @@ export const ChatHeader: React.FC<{
   navigation: any;
   setShowModelSelector: (v: boolean) => void;
   setShowSettingsPanel: (v: boolean) => void;
+  activeProject?: any;
+  setShowProjectSelector: (v: boolean) => void;
   isRemote?: boolean;
   isIncognito?: boolean;
   setIsIncognito?: (v: boolean) => void;
-}> = ({ styles, colors, activeConversation, activeModel, activeModelName, activeImageModel, navigation, setShowModelSelector, setShowSettingsPanel, isRemote, isIncognito, setIsIncognito }) => (
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+}> = ({ styles, colors, activeConversation: _ac, activeModel, activeModelName, activeImageModel, activeProject: _ap, setShowProjectSelector: _ssp, navigation, setShowModelSelector, setShowSettingsPanel, isRemote, isIncognito, setIsIncognito }) => (
   <View style={[styles.header, isIncognito && { backgroundColor: '#1A1A1A', borderBottomColor: '#333' }]}>
     <View style={styles.headerRow}>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>

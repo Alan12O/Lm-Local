@@ -40,7 +40,7 @@ describe('AuthService', () => {
         'passphrase_hash',
         expect.any(String),
         expect.objectContaining({
-          service: 'ai.offgridmobile.auth',
+          service: 'ai.lmlocal.auth',
         }),
       );
     });
@@ -76,7 +76,7 @@ describe('AuthService', () => {
       (Keychain.getGenericPassword as jest.Mock).mockResolvedValue({
         username: 'passphrase_hash',
         password: storedHash,
-        service: 'ai.offgridmobile.auth',
+        service: 'ai.lmlocal.auth',
       });
 
       const result = await authService.verifyPassphrase('correctPassphrase');
@@ -98,7 +98,7 @@ describe('AuthService', () => {
       (Keychain.getGenericPassword as jest.Mock).mockResolvedValue({
         username: 'passphrase_hash',
         password: storedHash,
-        service: 'ai.offgridmobile.auth',
+        service: 'ai.lmlocal.auth',
       });
 
       const result = await authService.verifyPassphrase('wrongPassphrase');
@@ -133,14 +133,14 @@ describe('AuthService', () => {
       (Keychain.getGenericPassword as jest.Mock).mockResolvedValue({
         username: 'passphrase_hash',
         password: 'somehash',
-        service: 'ai.offgridmobile.auth',
+        service: 'ai.lmlocal.auth',
       });
 
       const result = await authService.hasPassphrase();
 
       expect(result).toBe(true);
       expect(Keychain.getGenericPassword).toHaveBeenCalledWith({
-        service: 'ai.offgridmobile.auth',
+        service: 'ai.lmlocal.auth',
       });
     });
 
@@ -174,7 +174,7 @@ describe('AuthService', () => {
 
       expect(result).toBe(true);
       expect(Keychain.resetGenericPassword).toHaveBeenCalledWith({
-        service: 'ai.offgridmobile.auth',
+        service: 'ai.lmlocal.auth',
       });
     });
 
@@ -209,7 +209,7 @@ describe('AuthService', () => {
       (Keychain.getGenericPassword as jest.Mock).mockResolvedValue({
         username: 'passphrase_hash',
         password: storedHash,
-        service: 'ai.offgridmobile.auth',
+        service: 'ai.lmlocal.auth',
       });
 
       const result = await authService.changePassphrase('oldPass', 'newPass');
@@ -233,7 +233,7 @@ describe('AuthService', () => {
       (Keychain.getGenericPassword as jest.Mock).mockResolvedValue({
         username: 'passphrase_hash',
         password: storedHash,
-        service: 'ai.offgridmobile.auth',
+        service: 'ai.lmlocal.auth',
       });
 
       const result = await authService.changePassphrase(

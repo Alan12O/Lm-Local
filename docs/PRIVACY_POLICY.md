@@ -1,10 +1,10 @@
-# Privacy Policy for Off Grid
+# Privacy Policy for LM Local
 
 **Last updated: February 16, 2026**
 
 ## Overview
 
-Off Grid is designed with privacy as its core principle. The app runs entirely on your device and does not collect, store, or transmit any personal data.
+LM Local is designed with privacy as its core principle. The app runs entirely on your device and does not collect, store, or transmit any personal data.
 
 ## Data Collection
 
@@ -27,11 +27,11 @@ The app downloads AI models from HuggingFace. These downloads are direct from Hu
 
 ## Third Party Services
 
-Off Grid does not integrate with any third-party analytics, advertising, or tracking services.
+LM Local does not integrate with any third-party analytics, advertising, or tracking services.
 
 ## Contact
 
-If you have questions, open an issue at: https://github.com/alichherawalla/off-grid-mobile/issues
+If you have questions, open an issue at: https://github.com/alichherawalla/lm-local-mobile/issues
 
 ## Changes
 

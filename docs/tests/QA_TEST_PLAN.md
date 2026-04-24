@@ -1,4 +1,4 @@
-# Off Grid Mobile — QA Test Plan
+# LM Local Mobile — QA Test Plan
 
 > Every flow in the app. Written so a manual QA tester can follow step-by-step.
 
@@ -1205,8 +1205,8 @@
 
 | Platform | Save Location |
 |---|---|
-| iOS | Documents/OffgridMobile_Images |
-| Android | ExternalStorage/Pictures/OffgridMobile |
+| iOS | Documents/LmLocal_Images |
+| Android | ExternalStorage/Pictures/LmLocal |
 
 | # | Step | Expected |
 |---|------|----------|
@@ -1441,7 +1441,7 @@
 | Image gen backend | Core ML (ANE) always | MNN (GPU/CPU) or QNN (NPU) |
 | OpenCL toggle | Hidden | Visible |
 | Background downloads | Active app only | Native Download Manager (API 33+) |
-| Image save path | Documents/OffgridMobile_Images | Pictures/OffgridMobile |
+| Image save path | Documents/LmLocal_Images | Pictures/LmLocal |
 | Storage permission | Not needed | WRITE_EXTERNAL_STORAGE |
 | Notification permission | Not needed | POST_NOTIFICATIONS (API 33+) |
 | FlatList clipping | removeClippedSubviews=true | removeClippedSubviews=false (avoids Android rendering bugs) |

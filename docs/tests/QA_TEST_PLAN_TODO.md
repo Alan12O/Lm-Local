@@ -41,9 +41,9 @@ Last validated: 2026-03-14
 - `initializeProviders()` is called at app startup (App.tsx) but doesn't update `serverHealth`
 
 ### 8. Section 19.5 — iOS Gallery save path
-- Test plan says: saves to `Documents/OffgridMobile_Images`
+- Test plan says: saves to `Documents/LmLocal_Images`
 - Actual code (Gallery): opens native iOS Share sheet via `Share.share({ url: ... })`
-- `Documents/OffgridMobile_Images` path is only used by ChatScreen's `saveImageToGallery`, not Gallery
+- `Documents/LmLocal_Images` path is only used by ChatScreen's `saveImageToGallery`, not Gallery
 - Timestamp format is ISO 8601 not `YYYY-MM-DD_HHmmss`
 
 ### 9. Section 23.1 — RAM tier boundaries

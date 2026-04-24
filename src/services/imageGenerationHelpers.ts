@@ -39,7 +39,13 @@ export function buildImageGenMeta(
   model: ActiveImageModel,
   opts: { steps: number; guidanceScale: number; result: GeneratedImage; useOpenCL: boolean },
 ): GenerationMeta {
-  const backend = model.backend ?? 'mnn';
+  // Detect the real backend by checking all available signals.
+  // The persisted `backend` field may be missing or wrong for models
+  // downloaded before the backend detection was implemented correctly.
+  const idAndName = `${model.id ?? ''} ${model.name ?? ''}`.toLowerCase();
+  const isQnnModel = model.backend === 'qnn' || idAndName.includes('qnn') || idAndName.includes('npu') || idAndName.includes('snapdragon');
+  const backend = isQnnModel ? 'qnn' : (model.backend ?? 'mnn');
+  
   const isGpu = Platform.OS === 'ios' || backend === 'qnn' || (backend === 'mnn' && opts.useOpenCL);
   const gpuBackend = Platform.OS === 'ios' ? 'Core ML (ANE)' : backend === 'qnn' ? 'QNN (NPU)' : isGpu ? 'MNN (GPU)' : 'MNN (CPU)';
   return {

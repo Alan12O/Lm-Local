@@ -279,7 +279,7 @@ describe('HomeScreen', () => {
 
     it('shows app title', () => {
       const { getByText } = renderHomeScreen();
-      expect(getByText('Off Grid')).toBeTruthy();
+      expect(getByText('LM Local')).toBeTruthy();
     });
 
     it('shows Text and Image model card labels', () => {

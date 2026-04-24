@@ -1,8 +1,8 @@
-# OffgridMobile Visual Hierarchy Standard
+# LmLocal Visual Hierarchy Standard
 
 ## Purpose
 
-This document defines the canonical visual hierarchy for ALL screens in OffgridMobile. Use these 5 text categories to maintain consistent information architecture across the entire app.
+This document defines the canonical visual hierarchy for ALL screens in LmLocal. Use these 5 text categories to maintain consistent information architecture across the entire app.
 
 ---
 
@@ -26,7 +26,7 @@ This document defines the canonical visual hierarchy for ALL screens in OffgridM
 **Examples**:
 - "Models"
 - "Conversations"
-- "Off Grid"
+- "LM Local"
 - "Download Your First Model"
 
 **Do NOT use for**:
@@ -272,4 +272,4 @@ When creating or auditing a screen:
 ---
 
 **Last Updated**: February 2026
-**Authority**: This document is the single source of truth for typography in OffgridMobile.
+**Authority**: This document is the single source of truth for typography in LmLocal.

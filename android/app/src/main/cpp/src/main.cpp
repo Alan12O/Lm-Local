@@ -1,3 +1,5 @@
+#include <csignal>
+#include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <functional>
@@ -126,6 +128,19 @@ bool clip_skip_2 = false;
 // QNN function pointers and backend path for dynamic model loading
 QnnFunctionPointers g_qnnSystemFuncs;
 std::string g_backendPathCmd;
+
+// Graceful shutdown handling
+std::atomic<bool> g_keepRunning(true);
+httplib::Server *g_svrPtr = nullptr;
+
+void signalHandler(int signum) {
+  std::cout << "\n[LocalDream] Signal (" << signum
+            << ") received. Stopping server and cleaning up NPU resources...\n";
+  g_keepRunning = false;
+  if (g_svrPtr) {
+    g_svrPtr->stop();
+  }
+}
 
 // Global function to create QNN models dynamically
 std::unique_ptr<QnnModel> createQnnModel(const std::string &modelPath,
@@ -2261,6 +2276,10 @@ GenerationResult generateImage(
 
 // --- Main Function ---
 int main(int argc, char **argv) {
+  // Register signals for graceful shutdown
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, signalHandler);
+
   using namespace qnn::tools;
   if (!qnn::log::initializeLogging()) {
     std::cerr << "ERROR: Init logging failed!\n";
@@ -2750,9 +2769,11 @@ int main(int argc, char **argv) {
 
   std::cout << "Server listening on " << listen_address << ":" << port
             << std::endl;
+  g_svrPtr = &svr;
   svr.listen(listen_address.c_str(), port);
 
   // --- Cleanup ---
+  std::cout << "[LocalDream] Cleaning up resources...\n";
   if (clipSession) clipInterpreter->releaseSession(clipSession);
   clipSession = nullptr;
   if (unetSession) unetInterpreter->releaseSession(unetSession);
@@ -2760,6 +2781,28 @@ int main(int argc, char **argv) {
   if (safetyCheckerSession)
     safetyCheckerInterpreter->releaseSession(safetyCheckerSession);
   safetyCheckerSession = nullptr;
+
+  if (clipApp) {
+    clipApp->freeContext();
+    clipApp->freeDevice();
+  }
+  if (unetApp) {
+    unetApp->freeContext();
+    unetApp->freeDevice();
+  }
+  if (vaeDecoderApp) {
+    vaeDecoderApp->freeContext();
+    vaeDecoderApp->freeDevice();
+  }
+  if (vaeEncoderApp) {
+    vaeEncoderApp->freeContext();
+    vaeEncoderApp->freeDevice();
+  }
+  if (upscalerApp) {
+    upscalerApp->freeContext();
+    upscalerApp->freeDevice();
+  }
+
   delete clipInterpreter;
   delete unetInterpreter;
   delete vaeDecoderInterpreter;
@@ -2771,5 +2814,6 @@ int main(int argc, char **argv) {
   vaeEncoderApp.reset();
   upscalerApp.reset();
 
+  std::cout << "[LocalDream] Backend shutdown complete.\n";
   return EXIT_SUCCESS;
 }

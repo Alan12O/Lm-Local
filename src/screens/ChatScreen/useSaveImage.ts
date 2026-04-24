@@ -24,8 +24,8 @@ export async function saveImageToGallery(
     }
     const sourcePath = viewerImageUri.replace('file://', '');
     const picturesDir = Platform.OS === 'android'
-      ? `${RNFS.ExternalStorageDirectoryPath}/Pictures/OffgridMobile`
-      : `${RNFS.DocumentDirectoryPath}/OffgridMobile_Images`;
+      ? `${RNFS.ExternalStorageDirectoryPath}/Pictures/LmLocal`
+      : `${RNFS.DocumentDirectoryPath}/LmLocal_Images`;
     if (!(await RNFS.exists(picturesDir))) {
       await RNFS.mkdir(picturesDir);
     }
@@ -35,7 +35,7 @@ export async function saveImageToGallery(
     setAlertState(showAlert(
       'Imagen guardada',
       Platform.OS === 'android'
-        ? `Guardado en Pictures/OffgridMobile/${fileName}`
+        ? `Guardado en Pictures/LmLocal/${fileName}`
         : `Guardado en ${fileName}`,
     ));
   } catch (error: any) {

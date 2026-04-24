@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { TYPOGRAPHY, SPACING } from '../../constants';
 import type { ThemeColors, ThemeShadows } from '../../theme';
 import { createImageModelsStyles } from './imageStyles';
@@ -80,10 +81,10 @@ const createBaseStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
     fontWeight: '600' as const,
   },
   // Colores específicos solicitados para la animación
-  tabActiveBg: '#333333',
-  tabInactiveBorder: '#666666',
-  tabActiveText: '#FFFFFF',
-  tabInactiveText: colors.textMuted,
+  tabActiveBg: '#333333' as any,
+  tabInactiveBorder: '#666666' as any,
+  tabActiveText: '#FFFFFF' as any,
+  tabInactiveText: colors.textMuted as any,
 
   imageTabContent: { flex: 1 },
   searchContainer: {
@@ -150,6 +151,17 @@ const createBaseStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   },
   importProgressText: { ...TYPOGRAPHY.bodySmall, color: colors.text, flex: 1, fontWeight: '600' as const },
   importProgressPercent: { ...TYPOGRAPHY.meta, color: colors.textMuted, textAlign: 'center' as const },
+  progressBar: {
+    width: '100%' as const,
+    height: 6,
+    backgroundColor: `${colors.primary}20`,
+    borderRadius: 3,
+    overflow: 'hidden' as const,
+  },
+  progressFill: {
+    height: '100%' as const,
+    backgroundColor: colors.primary,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center' as const,

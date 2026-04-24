@@ -97,8 +97,7 @@ export function useModelsScreen() {
     if (activeTab === 'image' && image.availableHFModels.length === 0 && !image.hfModelsLoading) {
       image.loadHFModels();
     }
-   
-  }, [activeTab]);
+  }, [activeTab, image]);
 
   const setActiveTab = (tab: ModelTab) => {
     setActiveTabState(tab);
@@ -196,7 +195,7 @@ export function useModelsScreen() {
 
     const url = `https://huggingface.co/${repoSlug}`;
     Linking.openURL(url).catch((err) => {
-      logger.error('[ModelsScreen] Failed to open repo URL:', err);
+      console.error('[ModelsScreen] Failed to open repo URL:', err);
     });
   }, []);
 

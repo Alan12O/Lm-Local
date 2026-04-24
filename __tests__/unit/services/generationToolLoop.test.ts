@@ -820,13 +820,13 @@ describe('parseToolCallsFromText', () => {
   it.each([
     {
       desc: 'closed tag with single param',
-      text: '<tool_call><function=web_search><parameter=query>Off Grid Mobile AI</tool_call>',
-      name: 'web_search', args: { query: 'Off Grid Mobile AI' }, clean: '',
+      text: '<tool_call><function=web_search><parameter=query>LM Local Mobile AI</tool_call>',
+      name: 'web_search', args: { query: 'LM Local Mobile AI' }, clean: '',
     },
     {
       desc: 'unclosed tag (EOS)',
-      text: 'Let me search for that.\n<tool_call>\n<function=web_search>\n<parameter=query>\nOff Grid Mobile AI',
-      name: 'web_search', args: { query: 'Off Grid Mobile AI' }, clean: 'Let me search for that.',
+      text: 'Let me search for that.\n<tool_call>\n<function=web_search>\n<parameter=query>\nLM Local Mobile AI',
+      name: 'web_search', args: { query: 'LM Local Mobile AI' }, clean: 'Let me search for that.',
     },
     {
       desc: 'single parameter (read_url)',

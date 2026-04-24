@@ -1,7 +1,7 @@
 import * as Keychain from 'react-native-keychain';
 import logger from '../utils/logger';
 
-const SERVICE_NAME = 'ai.offgridmobile.auth';
+const SERVICE_NAME = 'ai.lmlocal.auth';
 const PASSPHRASE_KEY = 'passphrase_hash';
 
 class AuthService {

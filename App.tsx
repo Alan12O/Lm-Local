@@ -5,7 +5,7 @@
 
 import 'react-native-gesture-handler';
 import React, { useEffect, useState, useCallback } from 'react';
-import { StatusBar, ActivityIndicator, View, StyleSheet, LogBox } from 'react-native';
+import { StatusBar, ActivityIndicator, View, StyleSheet, LogBox, PermissionsAndroid, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
@@ -68,9 +68,17 @@ function App() {
       // por lo que debemos hacer unloadModel() explícitamente para que
       // localDreamGeneratorService limpie su estado interno (loadedThreads=null).
       // Sin esto, al volver, JS cree que el servidor sigue vivo y no lo recarga.
-      localDreamGeneratorService.unloadModel().catch((e: Error) => {
-        logger.log('[App] Image model cleanup on background (expected):', e.message);
-      });
+      // IMPORTANT: We must await this to ensure the DSP/FastRPC handles are fully
+      // released before the OS freezes our process. Fire-and-forget causes the
+      // Hexagon DSP to be left in a corrupted state (DMA abort on next use).
+      (async () => {
+        try {
+          await localDreamGeneratorService.unloadModel();
+          logger.log('[App] Image backend fully stopped before background.');
+        } catch (e: any) {
+          logger.log('[App] Image model cleanup on background (expected):', e.message);
+        }
+      })();
     }, [authEnabled, setLastBackgroundTime, setLocked]),
 
     onForeground: useCallback(() => {
@@ -97,6 +105,14 @@ function App() {
     try {
       // Ensure persisted download metadata is loaded before restore logic reads it.
       await ensureAppStoreHydrated();
+
+      if (Platform.OS === 'android' && Platform.Version >= 33) {
+        try {
+          await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+        } catch (err) {
+          logger.error('[App] Failed to request POST_NOTIFICATIONS:', err);
+        }
+      }
 
       // Phase 1: Quick initialization - get app ready to show UI
       // Initialize hardware detection

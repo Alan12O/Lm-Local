@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, FlatList, TextInput, ActivityIndicator, RefreshControl, TouchableOpacity, InteractionManager, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { AttachStep, useSpotlightTour } from 'react-native-spotlight-tour';
-import { Card, ModelCard, Button } from '../../components';
+import { Card, ModelCard } from '../../components';
 import { AnimatedEntry } from '../../components/AnimatedEntry';
 import { CustomAlert, hideAlert } from '../../components/CustomAlert';
 import { consumePendingSpotlight, peekPendingSpotlight, setPendingSpotlight } from '../../components/onboarding/spotlightState';
@@ -58,7 +58,7 @@ interface DetailProps {
   handleDeleteModel: (modelId: string) => void;
   handleOpenRepo: (modelId: string) => void;
   downloadIds: Record<string, number>;
-  styles: ReturnType<typeof createStyles>;
+  styles: any;
   colors: ReturnType<typeof useTheme>['colors'];
 }
 
@@ -80,7 +80,7 @@ const ModelDetailView: React.FC<DetailProps> = ({
       const task = InteractionManager.runAfterInteractions(() => goTo(pending));
       return () => task.cancel();
     }
-  }, []);
+  }, [goTo]);
 
   const getFileCardState = (item: ModelFile) => {
     const downloadKey = `${selectedModel.id}/${item.name}`;

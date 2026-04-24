@@ -81,9 +81,9 @@ class DownloadManagerModule: RCTEventEmitter {
   var taskToDownloadId: [Int: Int64] = [:] // URLSessionTask.taskIdentifier -> downloadId
   var nextDownloadId: Int64 = 1
   var pollingTimer: Timer?
-  let queue = DispatchQueue(label: "ai.offgridmobile.downloadmanager", attributes: .concurrent)
+  let queue = DispatchQueue(label: "ai.lmlocal.downloadmanager", attributes: .concurrent)
   var hasListeners = false
-  private let storageKey = "ai.offgridmobile.downloadmanager.state.v1"
+  private let storageKey = "ai.lmlocal.downloadmanager.state.v1"
 
   // MARK: - Backup Exclusion
 
@@ -143,7 +143,7 @@ class DownloadManagerModule: RCTEventEmitter {
     if DownloadManagerModule.sharedSession == nil {
       NSLog("[DownloadManager] Creating NEW background URLSession")
       let config = URLSessionConfiguration.background(
-        withIdentifier: "ai.offgridmobile.backgrounddownload"
+        withIdentifier: "ai.lmlocal.backgrounddownload"
       )
       config.isDiscretionary = false
       config.sessionSendsLaunchEvents = true

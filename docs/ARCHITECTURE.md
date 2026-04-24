@@ -1,6 +1,6 @@
 # Architecture & Technical Reference
 
-> This document contains the full technical documentation for Off Grid. For a quick overview, see the [README](../README.md).
+> This document contains the full technical documentation for LM Local. For a quick overview, see the [README](../README.md).
 
 ---
 
@@ -702,7 +702,7 @@ UI components read from stores, services write to stores. Unidirectional data fl
 
 Native Android DownloadManager handles model downloads:
 
-**Implementation** (`android/app/src/main/java/ai/offgridmobile/download/DownloadManagerModule.kt`):
+**Implementation** (`android/app/src/main/java/ai/LmLocal/download/DownloadManagerModule.kt`):
 ```kotlin
 class DownloadManagerModule(reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
@@ -834,7 +834,7 @@ Prevents OOM crashes by blocking loads that would exceed safe RAM limits.
 
 ### Brutalist Design Philosophy
 
-Off Grid uses a terminal-inspired brutalist design system with full light/dark theme support. The system emphasizes information density and functional minimalism with a monochromatic palette and emerald accent.
+LM Local uses a terminal-inspired brutalist design system with full light/dark theme support. The system emphasizes information density and functional minimalism with a monochromatic palette and emerald accent.
 
 ### Theme System
 
@@ -1140,7 +1140,7 @@ All data stored in app's private storage, inaccessible to other apps (Android sa
 ## Project Structure
 
 ```
-OffgridMobile/
+LmLocal/
 ├── src/
 │   ├── components/          # Reusable UI components
 │   │   ├── AnimatedEntry.tsx       # Staggered fade+slide entrance animation
@@ -1241,7 +1241,7 @@ OffgridMobile/
 │       ├── index.ts               # All interfaces and types
 │       └── whisper.rn.d.ts        # Whisper native module types
 ├── android/                 # Android native code
-│   └── app/src/main/java/ai/offgridmobile/
+│   └── app/src/main/java/ai/LmLocal/
 │       ├── MainActivity.kt        # Main activity
 │       ├── MainApplication.kt     # Application entry point
 │       ├── download/              # Background download manager
@@ -1256,7 +1256,7 @@ OffgridMobile/
 │           ├── PdfExtractorModule.kt
 │           └── PdfExtractorPackage.kt
 ├── ios/                     # iOS native code
-│   └── OffgridMobile/
+│   └── LmLocal/
 │       ├── AppDelegate.swift      # Application delegate
 │       ├── CoreMLDiffusion/       # Core ML image generation
 │       │   ├── CoreMLDiffusionModule.swift
@@ -1296,8 +1296,8 @@ OffgridMobile/
 
 ```bash
 # Clone repository
-git clone https://github.com/alichherawalla/off-grid-mobile.git
-cd off-grid-mobile
+git clone https://github.com/alichherawalla/lm-local-mobile.git
+cd lm-local-mobile
 
 # Install JavaScript dependencies
 npm install
@@ -1322,7 +1322,7 @@ npm run android
 npm run ios
 
 # Or use Xcode
-# Open ios/OffgridMobile.xcworkspace
+# Open ios/LmLocal.xcworkspace
 # Select target device → Build & Run
 ```
 

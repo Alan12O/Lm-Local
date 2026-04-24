@@ -92,6 +92,7 @@ export interface SoCInfo {
   hasNPU: boolean;
   qnnVariant?: '8gen2' | '8gen1' | 'min';
   appleChip?: 'A14' | 'A15' | 'A16' | 'A17Pro' | 'A18';
+  rawSoCModel?: string;
 }
 
 export interface ImageModelRecommendation {
@@ -268,8 +269,10 @@ export interface ONNXImageModel {
   downloadedAt: string;
   size: number;
   style?: string;
-  backend?: 'mnn' | 'qnn' | 'coreml';
+  backend?: 'mnn' | 'qnn' | 'coreml' | 'upscaler';
   attentionVariant?: 'split_einsum' | 'original';
+  defaultPrompt?: string;
+  defaultNegativePrompt?: string;
 }
 
 // Image generation state for UI

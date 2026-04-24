@@ -7,9 +7,8 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, CompositeNavigationProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import Icon from 'react-native-vector-icons/Feather';
 import { AttachStep } from 'react-native-spotlight-tour';
@@ -23,12 +22,9 @@ import type { ThemeColors, ThemeShadows } from '../theme';
 import { TYPOGRAPHY, SPACING } from '../constants';
 import { useProjectStore, useChatStore } from '../stores';
 import { Project } from '../types';
-import { RootStackParamList, MainTabParamList } from '../navigation/types';
+import { RootStackParamList } from '../navigation/types';
 
-type NavigationProp = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList, 'ProjectsTab'>,
-  NativeStackNavigationProp<RootStackParamList>
->;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Projects'>;
 
 export const ProjectsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();

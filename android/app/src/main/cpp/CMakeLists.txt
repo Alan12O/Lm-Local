@@ -5,7 +5,20 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # QNN SDK PATH
-set(QNN_SDK_ROOT /data/qairt/2.39.0.250926)
+# QNN SDK PATH (Prefer environment variable QNN_SDK_ROOT)
+if(NOT DEFINED QNN_SDK_ROOT)
+    if(DEFINED ENV{QNN_SDK_ROOT})
+        set(QNN_SDK_ROOT $ENV{QNN_SDK_ROOT})
+    else()
+        # Fallback to a common relative path if it exists locally
+        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/qnn-sdk")
+            set(QNN_SDK_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/qnn-sdk")
+        else()
+            message(WARNING "QNN_SDK_ROOT not defined. Native NPU features may fail to compile.")
+            set(QNN_SDK_ROOT "$ENV{QNN_SDK_ROOT}") # Keeping the old one as last resort
+        endif()
+    endif()
+endif()
 
 file(COPY ${QNN_SDK_ROOT}/examples/QNN/SampleApp/SampleApp/
     DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/SampleApp)

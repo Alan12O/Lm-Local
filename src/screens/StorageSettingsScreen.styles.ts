@@ -33,7 +33,7 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
   section: {
     marginBottom: 24,
   },
-  sectionTitle: {
+  sectionLabel: {
     ...TYPOGRAPHY.label,
     fontSize: 12,
     letterSpacing: 1.2,

@@ -156,7 +156,7 @@ describe('SettingsScreen', () => {
   it('renders about section text', () => {
     const { getByText } = render(<SettingsScreen />);
     expect(getByText('Version')).toBeTruthy();
-    expect(getByText(/Off Grid brings AI/)).toBeTruthy();
+    expect(getByText(/LM Local brings AI/)).toBeTruthy();
   });
 
   it('renders Reset Onboarding button in __DEV__ mode', () => {

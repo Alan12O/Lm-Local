@@ -23,6 +23,11 @@ export const DeviceInfoScreen: React.FC = () => {
 
   const totalRamGB = hardwareService.getTotalMemoryGB();
   const deviceTier = hardwareService.getDeviceTier();
+  const [socInfo, setSocInfo] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    hardwareService.getSoCInfo().then(setSocInfo);
+  }, []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -53,6 +58,10 @@ export const DeviceInfoScreen: React.FC = () => {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>RAM Total</Text>
               <Text style={styles.infoValue}>{totalRamGB.toFixed(1)} GB</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Chip NPU</Text>
+              <Text style={styles.infoValue}>{hardwareService.getHumanReadableSoC(socInfo?.rawSoCModel)}</Text>
             </View>
             <View style={[styles.infoRow, styles.lastRow]}>
               <Text style={styles.infoLabel}>Nivel</Text>

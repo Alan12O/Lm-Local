@@ -1,6 +1,6 @@
-# OffgridMobile — Comprehensive Codebase & Product Flows Guide
+# LmLocal — Comprehensive Codebase & Product Flows Guide
 
-This document provides an in-depth reference for the OffgridMobile application: its architecture, every major subsystem, data models, native integrations, and detailed product flows.
+This document provides an in-depth reference for the LmLocal application: its architecture, every major subsystem, data models, native integrations, and detailed product flows.
 
 ---
 
@@ -25,7 +25,7 @@ This document provides an in-depth reference for the OffgridMobile application: 
 
 ## 1. Product Overview
 
-OffgridMobile is a **privacy-first, on-device AI assistant** built with React Native. It runs large language models (LLMs), Stable Diffusion image generators, and Whisper speech-to-text models entirely on the user's phone — no server, no internet required after initial model download.
+LmLocal is a **privacy-first, on-device AI assistant** built with React Native. It runs large language models (LLMs), Stable Diffusion image generators, and Whisper speech-to-text models entirely on the user's phone — no server, no internet required after initial model download.
 
 **Core capabilities:**
 - Text chat with streaming LLM inference (llama.cpp via `llama.rn`)
@@ -101,9 +101,9 @@ OffgridMobile is a **privacy-first, on-device AI assistant** built with React Na
 ## 3. Directory Structure
 
 ```
-OffgridMobile/
+LmLocal/
 ├── App.tsx                              # Root component: init, auth gate, navigation
-├── app.json                             # RN app config (name: "OffgridMobile", displayName: "Off Grid")
+├── app.json                             # RN app config (name: "LmLocal", displayName: "LM Local")
 ├── package.json                         # Dependencies & scripts
 ├── tsconfig.json                        # TypeScript config
 │
@@ -359,7 +359,7 @@ OffgridMobile/
 │       └── messageContent.ts           # Strip LLM control tokens from output
 │
 ├── android/                             # Android native code
-│   └── app/src/main/java/ai/offgridmobile/
+│   └── app/src/main/java/ai/LmLocal/
 │       ├── MainActivity.kt              # Main activity
 │       ├── MainApplication.kt           # Application entry point
 │       ├── localdream/
@@ -381,9 +381,9 @@ OffgridMobile/
 │   ├── DownloadManagerModule.m          # ObjC bridge (root level)
 │   ├── PDFExtractorModule.swift         # Native PDF text extraction (root level)
 │   ├── PDFExtractorModule.m             # ObjC bridge (root level)
-│   └── OffgridMobile/
+│   └── LmLocal/
 │       ├── AppDelegate.swift            # Application delegate
-│       ├── OffgridMobile-Bridging-Header.h # Swift/ObjC bridging header
+│       ├── LmLocal-Bridging-Header.h # Swift/ObjC bridging header
 │       ├── CoreMLDiffusion/
 │       │   └── CoreMLDiffusionModule.m  # ObjC bridge (subdirectory)
 │       ├── Download/
@@ -932,7 +932,7 @@ A provider abstraction that allows `generationService` to route text generation 
 Singleton that owns the lifecycle of remote server configurations and their providers.
 
 - **Add/update/remove** servers, creating/destroying the corresponding `OpenAICompatibleProvider`
-- **API key storage**: keys stored via `react-native-keychain` under service name `ai.offgridmobile.servers`; never written to `AsyncStorage` or the Zustand store
+- **API key storage**: keys stored via `react-native-keychain` under service name `ai.lmlocal.servers`; never written to `AsyncStorage` or the Zustand store
 - **Model discovery**: calls `/v1/models` and maps results to `RemoteModel` with capability heuristics
 - **Connection testing**: `testConnectionByEndpoint()` — pings health endpoints in order (Ollama, generic OpenAI)
 - **Active model selection**: `setActiveRemoteTextModel(serverId, modelId)` loads the model on the provider and updates `remoteServerStore`
@@ -1116,7 +1116,7 @@ This section expands on every testable flow, grouped by feature area. Each flow 
 **Slides content:**
 | Slide | Title | Message |
 |-------|-------|---------|
-| 1 | Welcome to Off Grid | Run AI models directly on your device. No internet required, complete privacy. |
+| 1 | Welcome to LM Local | Run AI models directly on your device. No internet required, complete privacy. |
 | 2 | Your Privacy Matters | All conversations stay on your device. No data is sent to any server. |
 | 3 | Works Offline | Once you download a model, it works without internet. |
 | 4 | Choose Your Model | Smaller models are faster, larger models are smarter. We'll help you pick. |
@@ -1718,7 +1718,7 @@ Auto-selection: If QNN model downloaded and device supports QNN → use QNN. Oth
 
 **Steps:**
 1. Copy image to device-accessible location:
-   - Android: `Pictures/OffgridMobile/` or `Documents/OffgridMobile_Images/`
+   - Android: `Pictures/LmLocal/` or `Documents/LmLocal_Images/`
    - iOS: Camera Roll (via photo library API)
 2. Show success confirmation
 
@@ -2027,7 +2027,7 @@ React Native Testing Library tests:
 
 ### E2E Tests (Maestro, `.maestro/`)
 
-**Configuration:** App ID `ai.offgridmobile`, 30-second default timeout, screenshots on failure.
+**Configuration:** App ID `ai.lmlocal`, 30-second default timeout, screenshots on failure.
 
 #### E2E Flows by Priority (16 flows across 4 tiers)
 
@@ -2233,7 +2233,7 @@ Documents/
 │   ├── ggml-tiny.en.bin
 │   └── ...
 │
-└── OffgridMobile_Images/               # User-saved generated images
+└── LmLocal_Images/               # User-saved generated images
     └── ...
 
 Caches/

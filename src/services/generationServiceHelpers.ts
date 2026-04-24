@@ -73,7 +73,8 @@ function processStreamDelta(svc: any, chunk: { content?: string; reasoningConten
   if (chunk.reasoningContent) {
     svc.reasoningBuffer += chunk.reasoningContent;
     svc.totalReasoningLength += chunk.reasoningContent.length;
-    // Si todavía no estamos en modo "parsingThinking", lo activamos ya que estamos recibiendo razonamiento
+    // Marcar que estamos recibiendo razonamiento nativo (NO tags <think>)
+    svc.hasNativeReasoning = true;
     if (!svc.isParsingThinking) {
       svc.isParsingThinking = true;
     }
@@ -86,21 +87,32 @@ function processStreamDelta(svc: any, chunk: { content?: string; reasoningConten
         : undefined;
     }
 
-    // Si ya estamos recibiendo razonamiento nativo y llega contenido (normalmente vacío o whitespace),
-    // pero para modelos que NO soportan razonamiento nativo, necesitamos parsear las etiquetas <think>.
+    // Si recibimos reasoning nativo previamente y ahora llega contenido real,
+    // desactivamos isParsingThinking para que el contenido vaya a la respuesta.
+    // Gemma 4, DeepSeek-R1 etc. envían reasoning_content PRIMERO y luego content.
+    if (svc.hasNativeReasoning && svc.isParsingThinking) {
+      svc.isParsingThinking = false;
+    }
     
     let textToProcess = svc.tagBuffer + chunk.content;
     svc.tagBuffer = '';
 
-    const THINK_START = '<think>';
-    const THINK_END = '</think>';
+    const START_TAGS = ['<think>', '<|channel|>analysis<|message|>'];
+    const END_TAGS = ['</think>', '<|channel|>final<|message|>'];
 
     while (textToProcess.length > 0) {
       if (!svc.isParsingThinking) {
-        // Búsqueda optimizada: primero exacto (minúsculas), luego case-insensitive solo si es necesario
-        let startIndex = textToProcess.indexOf(THINK_START);
-        if (startIndex === -1) {
-          startIndex = textToProcess.toLowerCase().indexOf(THINK_START);
+        let startIndex = -1;
+        let matchedTagLength = 0;
+        const textLower = textToProcess.toLowerCase();
+        
+        for (const tag of START_TAGS) {
+          let idx = textToProcess.indexOf(tag);
+          if (idx === -1) idx = textLower.indexOf(tag);
+          if (idx !== -1 && (startIndex === -1 || idx < startIndex)) {
+            startIndex = idx;
+            matchedTagLength = tag.length;
+          }
         }
 
         if (startIndex !== -1) {
@@ -110,17 +122,18 @@ function processStreamDelta(svc: any, chunk: { content?: string; reasoningConten
             svc.tokenBuffer += prefix;
           }
           svc.isParsingThinking = true;
-          textToProcess = textToProcess.slice(startIndex + THINK_START.length);
+          textToProcess = textToProcess.slice(startIndex + matchedTagLength);
         } else {
-          // No se encontró <think>. Verificar si hay una etiqueta parcial al final
+          // No se encontró tag. Verificar si hay una etiqueta parcial al final
           const lastChar = textToProcess[textToProcess.length - 1];
-          // Solo comprobamos si termina en algo que parece el inicio de una etiqueta
           if (lastChar === '<' || textToProcess.includes('<')) {
              let partialIdx = -1;
-             for (let i = 1; i < THINK_START.length; i++) {
-               if (textToProcess.endsWith(THINK_START.slice(0, i))) {
-                 partialIdx = textToProcess.length - i;
-                 break;
+             for (const tag of START_TAGS) {
+               for (let i = 1; i < tag.length; i++) {
+                 if (textLower.endsWith(tag.slice(0, i))) {
+                   const pIdx = textToProcess.length - i;
+                   if (partialIdx === -1 || pIdx < partialIdx) partialIdx = pIdx;
+                 }
                }
              }
              if (partialIdx !== -1) {
@@ -141,9 +154,17 @@ function processStreamDelta(svc: any, chunk: { content?: string; reasoningConten
         }
       } else {
         // Buscando el final del bloque de pensamiento
-        let endIndex = textToProcess.indexOf(THINK_END);
-        if (endIndex === -1) {
-          endIndex = textToProcess.toLowerCase().indexOf(THINK_END);
+        let endIndex = -1;
+        let matchedTagLength = 0;
+        const textLower = textToProcess.toLowerCase();
+        
+        for (const tag of END_TAGS) {
+          let idx = textToProcess.indexOf(tag);
+          if (idx === -1) idx = textLower.indexOf(tag);
+          if (idx !== -1 && (endIndex === -1 || idx < endIndex)) {
+            endIndex = idx;
+            matchedTagLength = tag.length;
+          }
         }
 
         if (endIndex !== -1) {
@@ -151,16 +172,18 @@ function processStreamDelta(svc: any, chunk: { content?: string; reasoningConten
           svc.reasoningBuffer += thought;
           svc.totalReasoningLength += thought.length;
           svc.isParsingThinking = false;
-          textToProcess = textToProcess.slice(endIndex + THINK_END.length);
+          textToProcess = textToProcess.slice(endIndex + matchedTagLength);
         } else {
-          // No se encontró </think>. Verificar si hay etiqueta parcial al final
+          // No se encontró tag final. Verificar si hay etiqueta parcial al final
           const lastChar = textToProcess[textToProcess.length - 1];
           if (lastChar === '<' || textToProcess.includes('<')) {
             let partialIdx = -1;
-            for (let i = 1; i < THINK_END.length; i++) {
-              if (textToProcess.endsWith(THINK_END.slice(0, i))) {
-                partialIdx = textToProcess.length - i;
-                break;
+            for (const tag of END_TAGS) {
+              for (let i = 1; i < tag.length; i++) {
+                if (textLower.endsWith(tag.slice(0, i))) {
+                  const pIdx = textToProcess.length - i;
+                  if (partialIdx === -1 || pIdx < partialIdx) partialIdx = pIdx;
+                }
               }
             }
             if (partialIdx !== -1) {
@@ -202,6 +225,7 @@ export function buildToolLoopHandlersImpl(svc: any) {
       svc.reasoningBuffer = '';
       svc.tagBuffer = '';
       svc.isParsingThinking = false;
+      svc.hasNativeReasoning = false;
     },
     onFinalResponse: (content: string) => {
       svc.state.streamingContent = content;
@@ -241,6 +265,7 @@ export async function prepareGenerationImpl(svc: any, conversationId: string): P
   svc.tokenBuffer = '';
   svc.reasoningBuffer = '';
   svc.totalReasoningLength = 0;
+  svc.hasNativeReasoning = false;
   svc.remoteTimeToFirstToken = undefined;
   return true;
 }
@@ -331,7 +356,9 @@ export async function generateRemoteResponseImpl(
   const options: GenerationOptions = {
     temperature, maxTokens, topP,
     stopSequences: [],
-    enableThinking: thinkingEnabled && provider.capabilities.supportsThinking,
+    // Siempre enviar el setting del usuario — el servidor decide si lo soporta.
+    // El ThinkTagParser parsea <think> tags como fallback para servidores sin soporte nativo.
+    enableThinking: thinkingEnabled,
     thinkingLevel: thinkingLevel,
   };
 

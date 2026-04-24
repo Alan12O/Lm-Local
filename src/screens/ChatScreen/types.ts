@@ -2,13 +2,14 @@ import { Message } from '../../types';
 
 export type ChatMessageItem = {
   id: string;
-  role: 'assistant';
+  role: 'assistant' | 'system';
   content: string;
   reasoningContent?: string;
   timestamp: number;
   isThinking?: boolean;
   isStreaming?: boolean;
   isThinkingBlock?: boolean;
+  isCompacting?: boolean;
 };
 
 export type StreamingState = {
@@ -17,6 +18,7 @@ export type StreamingState = {
   streamingMessage: string;
   streamingReasoningContent: string;
   isStreamingForThisConversation: boolean;
+  isCompacting?: boolean;
 };
 
 export function getDisplayMessages(
@@ -24,7 +26,15 @@ export function getDisplayMessages(
   streaming: StreamingState,
 ): (Message | ChatMessageItem)[] {
   const validMessages = allMessages.filter(Boolean);
-  const { isThinking, isThinkingBlock, streamingMessage, streamingReasoningContent, isStreamingForThisConversation } = streaming;
+  const { isThinking, isThinkingBlock, streamingMessage, streamingReasoningContent, isStreamingForThisConversation, isCompacting } = streaming;
+  
+  if (isCompacting && isStreamingForThisConversation) {
+    return [
+      ...validMessages,
+      { id: 'compacting', role: 'system' as const, content: streamingMessage || 'Compactando el contexto de la conversación para ahorrar memoria...', timestamp: Date.now(), isStreaming: true, isCompacting: true, isSystemInfo: true } as any,
+    ];
+  }
+
   if (isThinking && isStreamingForThisConversation) {
     return [
       ...validMessages,

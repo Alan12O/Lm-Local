@@ -13,12 +13,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Feather';
-import { pick } from '@react-native-documents/picker';
+import { pick, keepLocalCopy } from '@react-native-documents/picker';
 import { useTheme, useThemedStyles } from '../theme';
 import { createStyles } from './KnowledgeBaseScreen.styles';
 import { useProjectStore } from '../stores';
 import { ragService } from '../services/rag';
 import type { RagDocument } from '../services/rag';
+import { WriteTextModal } from '../components/WriteTextModal';
 import { RootStackParamList } from '../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -38,6 +39,8 @@ export const KnowledgeBaseScreen: React.FC = () => {
 
   const [kbDocs, setKbDocs] = useState<RagDocument[]>([]);
   const [indexingFile, setIndexingFile] = useState<string | null>(null);
+  const [indexingProgress, setIndexingProgress] = useState<string>('');
+  const [showWriteText, setShowWriteText] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const project = useProjectStore((s) => s.getProject(projectId));
@@ -67,16 +70,31 @@ export const KnowledgeBaseScreen: React.FC = () => {
         const fileName = file.name || 'document';
         setIndexingFile(files.length > 1 ? `${fileName} (${i + 1}/${files.length})` : fileName);
 
-        // mode: 'import' means iOS already provided a local copy — original is untouched
-        let pathForDb = file.uri;
+        const copyResult = await keepLocalCopy({
+          files: [{ uri: file.uri, fileName }],
+          destination: 'cachesDirectory',
+        });
+        const copiedFile = copyResult[0];
+        if (copiedFile.status === 'error') {
+          throw new Error(copiedFile.copyError || 'Failed to keep local copy');
+        }
+
+        let uriToProcess = copiedFile.localUri;
+        let pathForDb = uriToProcess;
         try {
-          pathForDb = decodeURIComponent(file.uri).replace(/^file:\/\//, '');
+          pathForDb = decodeURIComponent(uriToProcess).replace(/^file:\/\//, '');
         } catch {
           // use uri as-is
         }
 
         try {
-          await ragService.indexDocument({ projectId, filePath: pathForDb, fileName, fileSize: file.size || 0 });
+          await ragService.indexDocument({ 
+            projectId, 
+            filePath: pathForDb, 
+            fileName, 
+            fileSize: file.size || 0,
+            onProgress: (progress) => setIndexingProgress(progress.message)
+          });
         } catch (indexErr: any) {
           Alert.alert('Error', `Failed to index "${fileName}": ${indexErr?.message || 'Unknown error'}`);
         }
@@ -88,6 +106,38 @@ export const KnowledgeBaseScreen: React.FC = () => {
       }
     } finally {
       setIndexingFile(null);
+      setIndexingProgress('');
+    }
+  };
+
+  const handleAddMenu = useCallback(() => {
+    Alert.alert(
+      'Añadir fuente',
+      '¿De dónde quieres obtener la información?',
+      [
+        { text: 'Escribir o Pegar Texto', onPress: () => setShowWriteText(true) },
+        { text: 'Subir un Documento', onPress: handleAddDocument },
+        { text: 'Cancelar', style: 'cancel' },
+      ]
+    );
+  }, []);
+
+  const handleSaveText = async (filePath: string, fileName: string) => {
+    try {
+      setIndexingFile(fileName);
+      await ragService.indexDocument({
+        projectId,
+        filePath,
+        fileName,
+        fileSize: 1024,
+        onProgress: (progress) => setIndexingProgress(progress.message),
+      });
+      await loadKbDocs();
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Error al indexar el texto');
+    } finally {
+      setIndexingFile(null);
+      setIndexingProgress('');
     }
   };
 
@@ -154,7 +204,7 @@ export const KnowledgeBaseScreen: React.FC = () => {
             {project?.name || 'Knowledge Base'}
           </Text>
         </View>
-        <TouchableOpacity onPress={handleAddDocument} style={styles.addButton} disabled={!!indexingFile}>
+        <TouchableOpacity onPress={handleAddMenu} style={styles.addButton} disabled={!!indexingFile}>
           {indexingFile ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
@@ -166,7 +216,14 @@ export const KnowledgeBaseScreen: React.FC = () => {
       {indexingFile && (
         <View style={styles.indexingBanner}>
           <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={styles.indexingText}>Indexing {indexingFile}...</Text>
+          <View style={{ flex: 1, marginLeft: 8 }}>
+            <Text style={styles.indexingText}>Indexing {indexingFile}...</Text>
+            {indexingProgress ? (
+              <Text style={{ color: colors.textMuted, fontSize: 12 }} numberOfLines={1}>
+                {indexingProgress}
+              </Text>
+            ) : null}
+          </View>
         </View>
       )}
 
@@ -194,6 +251,12 @@ export const KnowledgeBaseScreen: React.FC = () => {
           removeClippedSubviews={Platform.OS !== 'android'}
         />
       )}
+
+      <WriteTextModal 
+        visible={showWriteText} 
+        onClose={() => setShowWriteText(false)} 
+        onSave={handleSaveText}
+      />
     </SafeAreaView>
   );
 };

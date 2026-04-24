@@ -29,6 +29,7 @@ import { pick, types, isErrorWithCode, errorCodes } from '@react-native-document
 import { unzip } from 'react-native-zip-archive';
 import { Button, ModelSelectorModal } from '../components';
 import { modelManager, activeModelService, llmService, generationService } from '../services';
+import { localDreamGeneratorService } from '../services/localDreamGenerator';
 import { buildEnhancementMessages, cleanEnhancedPrompt } from '../services/imageGenerationHelpers';
 import { ONNXImageModel } from '../types';
 import logger from '../utils/logger';
@@ -56,14 +57,16 @@ export const ImageStudioScreen: React.FC<Props> = ({ navigation }) => {
     deviceInfo,
     generatedImages,
     removeGeneratedImage,
+    addGeneratedImage,
   } = useAppStore();
   
   const [genState, setGenState] = useState<ImageGenerationState>(imageGenerationService.getState());
   const [isPicking, setIsPicking] = useState(false);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [importProgress, setImportProgress] = useState<{ fraction: number; fileName: string } | null>(null);
-  const [loadingPhase, setLoadingPhase] = useState<'idle' | 'enhancing' | 'generating'>('idle');
+  const [loadingPhase, setLoadingPhase] = useState<'idle' | 'enhancing' | 'generating' | 'upscaling'>('idle');
   const [enhancedPrompt, setEnhancedPrompt] = useState<string | null>(null);
+  const [selectedStyleId, setSelectedStyleId] = useState<string>('none');
 
   const insets = useSafeAreaInsets();
   const activeModel = downloadedImageModels.find(m => m.id === activeImageModelId);
@@ -106,6 +109,26 @@ export const ImageStudioScreen: React.FC<Props> = ({ navigation }) => {
     
     setEnhancedPrompt(null);
     let finalPrompt = prompt.trim();
+    let finalNegative = '';
+
+    const styleOpt = [
+      { id: 'none', label: 'Ninguno' },
+      { id: 'photorealistic', label: 'Realista', prompt: 'masterpiece, best quality, ultra-detailed, realistic, 8k, raw photo, highly detailed', negative: 'cartoon, drawing, anime, ugly, lowres, blurry' },
+      { id: 'anime', label: 'Anime/2D', prompt: 'masterpiece, best quality, anime style, highly detailed, beautiful colors, perfect anatomy', negative: 'realistic, photo, 3d, out of focus, duplicate' },
+      { id: 'cinematic', label: 'Cinemático', prompt: 'cinematic lighting, dramatic tone, 4k, epic scene, highly detailed, movie still', negative: 'flat colors, overexposed, lowres, sketch' }
+    ].find(s => s.id === selectedStyleId);
+
+    if (styleOpt && styleOpt.prompt) {
+      finalPrompt += `, ${styleOpt.prompt}`;
+      finalNegative = styleOpt.negative || '';
+    }
+
+    if (activeModel?.defaultPrompt) {
+      finalPrompt = `${activeModel.defaultPrompt}, ${finalPrompt}`;
+    }
+    if (activeModel?.defaultNegativePrompt) {
+      finalNegative = finalNegative ? `${finalNegative}, ${activeModel.defaultNegativePrompt}` : activeModel.defaultNegativePrompt;
+    }
 
     try {
       if (useLLMEnhancement) {
@@ -119,7 +142,8 @@ export const ImageStudioScreen: React.FC<Props> = ({ navigation }) => {
       setLoadingPhase('generating');
       await imageGenerationService.generateImage({
         prompt: finalPrompt,
-        skipEnhancement: true // We already handled it or decided not to
+        negativePrompt: finalNegative,
+        skipEnhancement: true // We manually enhanced if required
       });
     } catch (error) {
        logger.error('[ImageStudio] Error en flujo de generación:', error);
@@ -217,6 +241,70 @@ export const ImageStudioScreen: React.FC<Props> = ({ navigation }) => {
     try {
       await Share.share({ url: `file://${imagePath}`, title: 'Imagen generada con IA' });
     } catch { /* usuario canceló */ }
+  };
+
+  const handleUpscaleImage = async () => {
+    const imagePath = genState.result?.imagePath;
+    if (!imagePath) return;
+    
+    // Find highest downloaded upscaler
+    const availableUpscalers = downloadedImageModels.filter(m => m.backend === 'upscaler');
+    if (availableUpscalers.length === 0) {
+      Alert.alert('Sin Upscaler', 'Ve a la pantalla de Modelos y descarga un modelo Upscaler (ej. RealESRGAN/UltraSharp) para usar esta función.');
+      return;
+    }
+    const upscaler = availableUpscalers[0];
+
+    try {
+      setLoadingPhase('upscaling');
+      triggerHaptic('impactMedium');
+      const upscaledUri = await localDreamGeneratorService.upscaleImage(imagePath, upscaler.modelPath);
+      
+      const newGenImg = {
+        id: `img_${Date.now()}`,
+        imagePath: upscaledUri.replace('file://', ''),
+        prompt: `Upscaled: ${genState.result?.prompt}`,
+        negativePrompt: genState.result?.negativePrompt,
+        seed: genState.result?.seed || 0,
+        steps: genState.result?.steps || 20,
+        width: (genState.result?.width || 512) * 4,
+        height: (genState.result?.height || 512) * 4,
+        modelId: genState.result?.modelId || 'upscale',
+        createdAt: new Date().toISOString()
+      };
+      
+      addGeneratedImage(newGenImg);
+      (imageGenerationService as any).updateState({ result: newGenImg, previewPath: null });
+      triggerHaptic('notificationSuccess');
+      Alert.alert('Éxito', `Imagen escalada exitosamente usando ${upscaler.name}.`);
+    } catch (e: any) {
+      logger.error('Error upscaling image:', e);
+      Alert.alert('Error', e.message || 'Error al escalar la imagen.');
+    } finally {
+      setLoadingPhase('idle');
+    }
+  };
+
+  const handleResetMotor = () => {
+    Alert.alert(
+      'Refuerzo de Motor NPU',
+      '¿Deseas reiniciar el backend de IA? Esto puede solucionar errores de ejecución si el hardware se quedó bloqueado por otra tarea.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Reiniciar', 
+          onPress: async () => {
+            triggerHaptic('impactHeavy');
+            try {
+              await localDreamGeneratorService.restartBackend();
+              // No mostramos alerta inmediata de éxito para no interrumpir el proceso de auto-healing
+            } catch (e) {
+              Alert.alert('Error', 'No se pudo reiniciar el motor.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handlePickModel = async () => {
@@ -353,7 +441,9 @@ export const ImageStudioScreen: React.FC<Props> = ({ navigation }) => {
           )}
         </View>
 
-        <View style={{ width: 24 }} />
+        <TouchableOpacity style={styles.resetButton} onPress={handleResetMotor} disabled={genState.isGenerating}>
+          <Icon name="refresh-cw" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView 
@@ -443,6 +533,38 @@ export const ImageStudioScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
+          <View style={{ marginTop: SPACING.md }}>
+            <Text style={[styles.stylePickerTitle, { color: colors.textMuted }]}>Estilo Visual</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stylePickerScroll}>
+              {[
+                { id: 'none', label: 'Ninguno' },
+                { id: 'photorealistic', label: 'Realista', prompt: 'masterpiece, best quality, ultra-detailed, realistic, 8k, raw photo, highly detailed', negative: 'cartoon, drawing, anime, ugly, lowres, blurry' },
+                { id: 'anime', label: 'Anime/2D', prompt: 'masterpiece, best quality, anime style, highly detailed, beautiful colors, perfect anatomy', negative: 'realistic, photo, 3d, out of focus, duplicate' },
+                { id: 'cinematic', label: 'Cinemático', prompt: 'cinematic lighting, dramatic tone, 4k, epic scene, highly detailed, movie still', negative: 'flat colors, overexposed, lowres, sketch' }
+              ].map(opt => (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={[
+                    styles.stylePickerPill,
+                    { 
+                      backgroundColor: selectedStyleId === opt.id ? colors.primary + '20' : colors.surface,
+                      borderColor: selectedStyleId === opt.id ? colors.primary : colors.borderLight,
+                      borderWidth: selectedStyleId === opt.id ? 2 : 1
+                    }
+                  ]}
+                  onPress={() => setSelectedStyleId(opt.id)}
+                >
+                  <Text style={{ 
+                    color: selectedStyleId === opt.id ? colors.primary : colors.text,
+                    fontWeight: selectedStyleId === opt.id ? 'bold' : 'normal'
+                  }}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
           {generatedImages.length > 0 && (
             <View style={styles.gallerySection}>
                <View style={styles.galleryHeader}>
@@ -503,10 +625,18 @@ export const ImageStudioScreen: React.FC<Props> = ({ navigation }) => {
             )}
           </View>
           {!!genState.result?.imagePath && !genState.isGenerating && (
-            <View style={styles.saveRow}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.saveRow}>
               <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => handleSaveImage()}>
                 <Icon name="download" size={16} color={colors.text} />
                 <Text style={[styles.saveButtonText, { color: colors.text }]}>Guardar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.saveButton, { backgroundColor: loadingPhase === 'upscaling' ? colors.border : colors.surface, borderColor: colors.primary }]} 
+                onPress={handleUpscaleImage}
+                disabled={loadingPhase === 'upscaling'}
+              >
+                {loadingPhase === 'upscaling' ? <ActivityIndicator size="small" color={colors.primary} /> : <Icon name="maximize" size={16} color={colors.primary} />}
+                <Text style={[styles.saveButtonText, { color: colors.primary }]}>{loadingPhase === 'upscaling' ? 'Escalando...' : 'Upscale'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => handleShareImage()}>
                 <Icon name="share-2" size={16} color={colors.text} />
@@ -516,7 +646,7 @@ export const ImageStudioScreen: React.FC<Props> = ({ navigation }) => {
                 <Icon name="trash-2" size={16} color={colors.error || '#FF4444'} />
                 <Text style={[styles.saveButtonText, { color: colors.error || '#FF4444' }]}>Borrar</Text>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
           )}
         </View>
       </KeyboardAvoidingView>
@@ -563,6 +693,10 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...TYPOGRAPHY.h2,
+  },
+  resetButton: {
+    padding: 4,
+    borderRadius: 8,
   },
   headerTitleContainer: {
     alignItems: 'center',
@@ -706,20 +840,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACING.sm,
     marginTop: SPACING.sm,
+    paddingVertical: 4,
+    minHeight: 45,
   },
   saveButton: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
-    borderRadius: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
     borderWidth: 1,
   },
   saveButtonText: {
     ...TYPOGRAPHY.bodySmall,
     fontWeight: '600',
+  },
+  stylePickerTitle: {
+    ...TYPOGRAPHY.label,
+    marginBottom: SPACING.xs,
+    marginLeft: 4,
+  },
+  stylePickerScroll: {
+    gap: SPACING.sm,
+    paddingBottom: SPACING.xs,
+  },
+  stylePickerPill: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 80,
+    alignItems: 'center',
   },
   generatingOverlay: {
     ...StyleSheet.absoluteFillObject,

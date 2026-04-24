@@ -169,14 +169,14 @@ export const useGalleryActions = (conversationId: string | undefined) => {
           buttonPositive: 'OK',
         }
       );
-      const picturesDir = `${RNFS.ExternalStorageDirectoryPath}/Pictures/OffgridMobile`;
+      const picturesDir = `${RNFS.ExternalStorageDirectoryPath}/Pictures/LmLocal`;
       if (!(await RNFS.exists(picturesDir))) {
         await RNFS.mkdir(picturesDir);
       }
       const timestamp = new Date().toISOString().replaceAll(/[:.]/g, '-');
       const fileName = `generated_${timestamp}.png`;
       await RNFS.copyFile(image.imagePath, `${picturesDir}/${fileName}`);
-      setAlertState(showAlert('Image Saved', `Saved to Pictures/OffgridMobile/${fileName}`));
+      setAlertState(showAlert('Image Saved', `Saved to Pictures/LmLocal/${fileName}`));
     } catch (error: any) {
       setAlertState(showAlert('Error', `Failed to save image: ${error?.message || 'Unknown error'}`));
     }

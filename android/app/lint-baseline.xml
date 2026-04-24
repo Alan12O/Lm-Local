@@ -18,7 +18,7 @@
         errorLine1="                if (currentModelPath == modelPath &amp;&amp; serverProcess?.isAlive == true &amp;&amp; isServerReady) {"
         errorLine2="                                                                    ~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/localdream/LocalDreamModule.kt"
+            file="src/main/java/ai/LmLocal/localdream/LocalDreamModule.kt"
             line="374"
             column="69"/>
     </issue>
@@ -29,7 +29,7 @@
         errorLine1="        val alive = serverProcess?.isAlive == true"
         errorLine2="                                   ~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/localdream/LocalDreamModule.kt"
+            file="src/main/java/ai/LmLocal/localdream/LocalDreamModule.kt"
             line="475"
             column="36"/>
     </issue>
@@ -40,7 +40,7 @@
         errorLine1="            if (serverProcess?.isAlive != true) {"
         errorLine2="                               ~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/localdream/LocalDreamModule.kt"
+            file="src/main/java/ai/LmLocal/localdream/LocalDreamModule.kt"
             line="500"
             column="32"/>
     </issue>
@@ -51,7 +51,7 @@
         errorLine1="                if (!proc.waitFor(5, TimeUnit.SECONDS)) {"
         errorLine2="                          ~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/localdream/LocalDreamModule.kt"
+            file="src/main/java/ai/LmLocal/localdream/LocalDreamModule.kt"
             line="558"
             column="27"/>
     </issue>
@@ -62,7 +62,7 @@
         errorLine1="                    proc.destroyForcibly()"
         errorLine2="                         ~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/localdream/LocalDreamModule.kt"
+            file="src/main/java/ai/LmLocal/localdream/LocalDreamModule.kt"
             line="559"
             column="26"/>
     </issue>
@@ -73,7 +73,7 @@
         errorLine1="        promise.resolve(serverProcess?.isAlive == true &amp;&amp; isServerReady)"
         errorLine2="                                       ~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/localdream/LocalDreamModule.kt"
+            file="src/main/java/ai/LmLocal/localdream/LocalDreamModule.kt"
             line="585"
             column="40"/>
     </issue>
@@ -84,7 +84,7 @@
         errorLine1="        val alive = serverProcess?.isAlive == true"
         errorLine2="                                   ~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/localdream/LocalDreamModule.kt"
+            file="src/main/java/ai/LmLocal/localdream/LocalDreamModule.kt"
             line="758"
             column="36"/>
     </issue>
@@ -95,7 +95,7 @@
         errorLine1="            if (!isServerReady || serverProcess?.isAlive != true) {"
         errorLine2="                                                 ~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/localdream/LocalDreamModule.kt"
+            file="src/main/java/ai/LmLocal/localdream/LocalDreamModule.kt"
             line="784"
             column="50"/>
     </issue>
@@ -128,7 +128,7 @@
         errorLine1="distributionUrl=https\://services.gradle.org/distributions/gradle-8.13-bin.zip"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="$HOME/wednesday/off-grid-mobile/android/gradle/wrapper/gradle-wrapper.properties"
+            file="$HOME/wednesday/lm-local-mobile/android/gradle/wrapper/gradle-wrapper.properties"
             line="3"
             column="17"/>
     </issue>
@@ -465,7 +465,7 @@
         errorLine1="        sharedPrefs.edit()"
         errorLine2="        ~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/download/DownloadCompleteBroadcastReceiver.kt"
+            file="src/main/java/ai/LmLocal/download/DownloadCompleteBroadcastReceiver.kt"
             line="37"
             column="9"/>
     </issue>
@@ -476,7 +476,7 @@
         errorLine1="                val request = DownloadManager.Request(Uri.parse(resolvedUrl))"
         errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/download/DownloadManagerModule.kt"
+            file="src/main/java/ai/LmLocal/download/DownloadManagerModule.kt"
             line="178"
             column="55"/>
     </issue>
@@ -487,7 +487,7 @@
         errorLine1="                    val uri = Uri.parse(localUri)"
         errorLine2="                              ~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/download/DownloadManagerModule.kt"
+            file="src/main/java/ai/LmLocal/download/DownloadManagerModule.kt"
             line="317"
             column="31"/>
     </issue>
@@ -498,7 +498,7 @@
         errorLine1="        sharedPrefs.edit().putString(DOWNLOADS_KEY, downloads.toString()).apply()"
         errorLine2="        ~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/download/DownloadManagerModule.kt"
+            file="src/main/java/ai/LmLocal/download/DownloadManagerModule.kt"
             line="583"
             column="9"/>
     </issue>
@@ -509,7 +509,7 @@
         errorLine1="        sharedPrefs.edit().putString(DOWNLOADS_KEY, newDownloads.toString()).apply()"
         errorLine2="        ~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/download/DownloadManagerModule.kt"
+            file="src/main/java/ai/LmLocal/download/DownloadManagerModule.kt"
             line="622"
             column="9"/>
     </issue>
@@ -520,7 +520,7 @@
         errorLine1="            sharedPrefs.edit().putString(DOWNLOADS_KEY, cleanedDownloads.toString()).apply()"
         errorLine2="            ~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/download/DownloadManagerModule.kt"
+            file="src/main/java/ai/LmLocal/download/DownloadManagerModule.kt"
             line="668"
             column="13"/>
     </issue>
@@ -531,7 +531,7 @@
         errorLine1="            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)"
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/localdream/LocalDreamModule.kt"
+            file="src/main/java/ai/LmLocal/localdream/LocalDreamModule.kt"
             line="150"
             column="26"/>
     </issue>
@@ -542,7 +542,7 @@
         errorLine1="                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)"
         errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/ai/offgridmobile/localdream/LocalDreamModule.kt"
+            file="src/main/java/ai/LmLocal/localdream/LocalDreamModule.kt"
             line="858"
             column="30"/>
     </issue>

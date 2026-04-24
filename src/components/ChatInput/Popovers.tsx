@@ -159,8 +159,7 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
                 </View>
               </TouchableOpacity>
 
-              {supportsThinking && (
-                <TouchableOpacity
+              <TouchableOpacity
                   testID="quick-thinking-toggle"
                   style={popoverStyles.row}
                   onPress={handleThinkingCycle}
@@ -173,7 +172,6 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
                     </Text>
                   </View>
                 </TouchableOpacity>
-              )}
 
               <TouchableOpacity
                 testID="quick-tools"

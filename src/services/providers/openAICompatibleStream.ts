@@ -30,21 +30,37 @@ export class ThinkTagParser {
    * Handle one iteration of the while loop when we are outside a think block.
    * Returns true if the while loop should break (buffer needs more data).
    */
-  private handleOutsideThink(openTag: string, onToken: (t: string) => void): boolean {
-    const idx = this.buffer.indexOf(openTag);
-    if (idx === -1) {
-      const partial = this.partialSuffix(this.buffer, openTag);
-      if (partial > 0) {
-        onToken(this.buffer.slice(0, this.buffer.length - partial));
-        this.buffer = this.buffer.slice(this.buffer.length - partial);
+  private handleOutsideThink(openTags: string[], onToken: (t: string) => void): boolean {
+    let startIndex = -1;
+    let matchedTagLength = 0;
+    const textLower = this.buffer.toLowerCase();
+
+    for (const tag of openTags) {
+      let idx = this.buffer.indexOf(tag);
+      if (idx === -1) idx = textLower.indexOf(tag);
+      if (idx !== -1 && (startIndex === -1 || idx < startIndex)) {
+        startIndex = idx;
+        matchedTagLength = tag.length;
+      }
+    }
+
+    if (startIndex === -1) {
+      let maxPartial = 0;
+      for (const tag of openTags) {
+        const partial = this.partialSuffix(this.buffer, tag, textLower);
+        if (partial > maxPartial) maxPartial = partial;
+      }
+      if (maxPartial > 0) {
+        onToken(this.buffer.slice(0, this.buffer.length - maxPartial));
+        this.buffer = this.buffer.slice(this.buffer.length - maxPartial);
         return true;
       }
       onToken(this.buffer);
       this.buffer = '';
       return true;
     }
-    if (idx > 0) onToken(this.buffer.slice(0, idx));
-    this.buffer = this.buffer.slice(idx + openTag.length);
+    if (startIndex > 0) onToken(this.buffer.slice(0, startIndex));
+    this.buffer = this.buffer.slice(startIndex + matchedTagLength);
     this.inThinkBlock = true;
     return false;
   }
@@ -53,40 +69,58 @@ export class ThinkTagParser {
    * Handle one iteration of the while loop when we are inside a think block.
    * Returns true if the while loop should break (buffer needs more data).
    */
-  private handleInsideThink(closeTag: string, onReasoning: (t: string) => void): boolean {
-    const idx = this.buffer.indexOf(closeTag);
-    if (idx === -1) {
-      const partial = this.partialSuffix(this.buffer, closeTag);
-      if (partial > 0) {
-        onReasoning(this.buffer.slice(0, this.buffer.length - partial));
-        this.buffer = this.buffer.slice(this.buffer.length - partial);
+  private handleInsideThink(closeTags: string[], onReasoning: (t: string) => void): boolean {
+    let endIndex = -1;
+    let matchedTagLength = 0;
+    const textLower = this.buffer.toLowerCase();
+
+    for (const tag of closeTags) {
+      let idx = this.buffer.indexOf(tag);
+      if (idx === -1) idx = textLower.indexOf(tag);
+      if (idx !== -1 && (endIndex === -1 || idx < endIndex)) {
+        endIndex = idx;
+        matchedTagLength = tag.length;
+      }
+    }
+
+    if (endIndex === -1) {
+      let maxPartial = 0;
+      for (const tag of closeTags) {
+        const partial = this.partialSuffix(this.buffer, tag, textLower);
+        if (partial > maxPartial) maxPartial = partial;
+      }
+      if (maxPartial > 0) {
+        onReasoning(this.buffer.slice(0, this.buffer.length - maxPartial));
+        this.buffer = this.buffer.slice(this.buffer.length - maxPartial);
         return true;
       }
       onReasoning(this.buffer);
       this.buffer = '';
       return true;
     }
-    if (idx > 0) onReasoning(this.buffer.slice(0, idx));
-    this.buffer = this.buffer.slice(idx + closeTag.length);
+    if (endIndex > 0) onReasoning(this.buffer.slice(0, endIndex));
+    this.buffer = this.buffer.slice(endIndex + matchedTagLength);
     this.inThinkBlock = false;
     return false;
   }
 
   private flush(onToken: (t: string) => void, onReasoning: (t: string) => void): void {
-    const openTag = '<think>';
-    const closeTag = '</think>';
+    const START_TAGS = ['<think>', '<|channel|>analysis<|message|>'];
+    const END_TAGS = ['</think>', '<|channel|>final<|message|>'];
     while (this.buffer.length > 0) {
       const shouldBreak = this.inThinkBlock
-        ? this.handleInsideThink(closeTag, onReasoning)
-        : this.handleOutsideThink(openTag, onToken);
+        ? this.handleInsideThink(END_TAGS, onReasoning)
+        : this.handleOutsideThink(START_TAGS, onToken);
       if (shouldBreak) break;
     }
   }
 
   /** Length of the longest suffix of text that is a prefix of tag. */
-  private partialSuffix(text: string, tag: string): number {
-    for (let len = Math.min(tag.length - 1, text.length); len > 0; len--) {
-      if (text.endsWith(tag.slice(0, len))) return len;
+  private partialSuffix(text: string, tag: string, textLower?: string): number {
+    const searchSpace = textLower || text.toLowerCase();
+    const targetTag = tag.toLowerCase();
+    for (let len = Math.min(targetTag.length - 1, searchSpace.length); len > 0; len--) {
+      if (searchSpace.endsWith(targetTag.slice(0, len))) return len;
     }
     return 0;
   }

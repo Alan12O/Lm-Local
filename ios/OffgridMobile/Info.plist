@@ -32,7 +32,7 @@
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Off Grid scans your local network to automatically discover LLM servers such as Ollama and LM Studio.</string>
+	<string>LM Local scans your local network to automatically discover LLM servers such as Ollama and LM Studio.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_http._tcp</string>

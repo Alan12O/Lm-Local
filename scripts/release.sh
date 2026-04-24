@@ -40,7 +40,7 @@ sed -i '' "s/versionCode .*/versionCode $VERSION_CODE/" android/app/build.gradle
 sed -i '' "s/versionName .*/versionName \"$NEW_VERSION\"/" android/app/build.gradle
 
 # Update iOS project.pbxproj (MARKETING_VERSION + CURRENT_PROJECT_VERSION)
-PBXPROJ="ios/OffgridMobile.xcodeproj/project.pbxproj"
+PBXPROJ="ios/LmLocal.xcodeproj/project.pbxproj"
 sed -i '' "s/MARKETING_VERSION = .*/MARKETING_VERSION = $NEW_VERSION;/" "$PBXPROJ"
 sed -i '' "s/CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = $VERSION_CODE;/" "$PBXPROJ"
 
@@ -100,7 +100,7 @@ info "Building release APK..."
 (cd android && ./gradlew assembleRelease)
 
 APK_SRC="android/app/build/outputs/apk/release/app-release.apk"
-APK_DST="android/app/build/outputs/apk/release/OffgridMobile-v${NEW_VERSION}.apk"
+APK_DST="android/app/build/outputs/apk/release/LmLocal-v${NEW_VERSION}.apk"
 [ -f "$APK_SRC" ] || error "APK not found at $APK_SRC"
 mv "$APK_SRC" "$APK_DST"
 info "APK ready: $APK_DST"
@@ -110,7 +110,7 @@ info "Building release AAB..."
 (cd android && ./gradlew bundleRelease)
 
 AAB_SRC="android/app/build/outputs/bundle/release/app-release.aab"
-AAB_DST="android/app/build/outputs/bundle/release/OffgridMobile-v${NEW_VERSION}.aab"
+AAB_DST="android/app/build/outputs/bundle/release/LmLocal-v${NEW_VERSION}.aab"
 [ -f "$AAB_SRC" ] || error "AAB not found at $AAB_SRC"
 mv "$AAB_SRC" "$AAB_DST"
 info "AAB ready: $AAB_DST (not uploaded — copy manually for Play Store)"
@@ -122,7 +122,7 @@ git push
 info "Creating GitHub release v${NEW_VERSION}..."
 gh release create "v${NEW_VERSION}" \
   "$APK_DST" \
-  --title "Off Grid v${NEW_VERSION}" \
+  --title "LM Local v${NEW_VERSION}" \
   --notes-file "$NOTES_FILE"
 
 # Clean up temp file
@@ -143,12 +143,12 @@ info "  GitHub: $(gh release view "v${NEW_VERSION}" --json url -q .url)"
 # ── 6. Build iOS Archive ──────────────────────────────────────────
 info "Building iOS archive..."
 ARCHIVE_DIR="$ROOT_DIR/build"
-ARCHIVE_PATH="$ARCHIVE_DIR/OffgridMobile-v${NEW_VERSION}.xcarchive"
+ARCHIVE_PATH="$ARCHIVE_DIR/LmLocal-v${NEW_VERSION}.xcarchive"
 mkdir -p "$ARCHIVE_DIR"
 
 xcodebuild archive \
-  -workspace ios/OffgridMobile.xcworkspace \
-  -scheme OffgridMobile \
+  -workspace ios/LmLocal.xcworkspace \
+  -scheme LmLocal \
   -configuration Release \
   -archivePath "$ARCHIVE_PATH" \
   -destination "generic/platform=iOS" \

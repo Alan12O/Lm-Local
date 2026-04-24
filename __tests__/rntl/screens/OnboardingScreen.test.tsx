@@ -67,7 +67,7 @@ jest.mock('../../../src/stores', () => ({
 jest.mock('../../../src/constants', () => ({
   ...jest.requireActual('../../../src/constants'),
   ONBOARDING_SLIDES: [
-    { id: 'slide1', keyword: 'Welcome', title: 'Off Grid', description: 'Your AI companion', accentColor: '#0066FF' },
+    { id: 'slide1', keyword: 'Welcome', title: 'LM Local', description: 'Your AI companion', accentColor: '#0066FF' },
     { id: 'slide2', keyword: 'Private', title: 'On-Device', description: 'Everything stays local', accentColor: '#00CC66' },
   ],
 }));
@@ -115,7 +115,7 @@ describe('OnboardingScreen', () => {
   it('renders first slide content', () => {
     const { getByText } = render(<OnboardingScreen navigation={navigation} />);
     expect(getByText('Welcome')).toBeTruthy();
-    expect(getByText('Off Grid')).toBeTruthy();
+    expect(getByText('LM Local')).toBeTruthy();
     expect(getByText('Your AI companion')).toBeTruthy();
   });
 

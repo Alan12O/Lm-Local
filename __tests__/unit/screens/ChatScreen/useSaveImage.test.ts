@@ -56,7 +56,7 @@ describe('saveImageToGallery', () => {
     await saveImageToGallery('file:///tmp/image.png', setAlertState);
     expect(mockCopyFile).toHaveBeenCalledWith(
       '/tmp/image.png', // NOSONAR
-      expect.stringContaining('/docs/OffgridMobile_Images/'),
+      expect.stringContaining('/docs/LmLocal_Images/'),
     );
   });
 
@@ -107,13 +107,13 @@ describe('saveImageToGallery', () => {
     (Platform as any).OS = 'android';
     await saveImageToGallery('file:///tmp/img.png', setAlertState);
     const [, dest] = mockCopyFile.mock.calls[0];
-    expect(dest).toContain('/ext/Pictures/OffgridMobile/');
+    expect(dest).toContain('/ext/Pictures/LmLocal/');
   });
 
   it('shows android-specific path in success alert', async () => {
     (Platform as any).OS = 'android';
     await saveImageToGallery('file:///tmp/img.png', setAlertState);
     const alert = setAlertState.mock.calls[0][0];
-    expect(alert.message).toContain('Pictures/OffgridMobile');
+    expect(alert.message).toContain('Pictures/LmLocal');
   });
 });
