@@ -66,28 +66,28 @@ Si te preguntan sobre ti, puedes mencionar que eres un asistente de IA local que
 // Onboarding slides
 export const ONBOARDING_SLIDES = [
   {
-    id: 'freedom',
-    keyword: 'TUYA',
-    title: 'Tu IA.\nSin ataduras.',
-    description: 'Sin suscripciones, sin registros y sin empresas leyendo tus chats. Una IA que vive en tu dispositivo y no responde a nadie más.',
+    id: 'welcome',
+    keyword: 'HOLA',
+    title: 'Conoce a tu\nnuevo asistente.',
+    description: 'Todo el poder de la Inteligencia Artificial, directamente en tus manos. Rápido, inteligente y sin complicaciones.',
   },
   {
-    id: 'magic',
-    keyword: 'MAGIA',
-    title: 'Solo habla.\nElla se encarga del resto.',
-    description: 'Describe una imagen y la crea. Muéstrale una foto y la entiende. Adjunta un documento y lo lee. Una sola conversación, sin modos, sin fricciones.',
+    id: 'privacy',
+    keyword: 'SEGURO',
+    title: 'Tus datos\nson solo tuyos.',
+    description: 'El procesamiento ocurre 100% en tu dispositivo. Nadie más tiene acceso a tus conversaciones, fotos o documentos.',
   },
   {
-    id: 'create',
+    id: 'creative',
     keyword: 'CREA',
-    title: 'Dilo simple.\nObtén algo increíble.',
-    description: 'Escribe "imagina un gato en la luna" y mira cómo tus palabras se vuelven una imagen vívida en segundos. La IA mejora tus ideas automáticamente, sin necesidad de ingeniería de prompts.',
+    title: 'Imagina y\nhazlo realidad.',
+    description: 'Escribe, resume o genera imágenes increíbles en segundos. Pide lo que necesites y la IA lo creará para ti.',
   },
   {
-    id: 'hardware',
-    keyword: 'READY',
-    title: 'Potencia\na tu manera.',
-    description: 'Ejecuta modelos en tu teléfono con aceleración de hardware, o conéctate a modelos potentes en tu red local. Encontraremos la mejor configuración para ti.',
+    id: 'ready',
+    keyword: 'LISTO',
+    title: 'Comienza la\nexperiencia.',
+    description: 'Configuraremos todo automáticamente para aprovechar al máximo el hardware de tu dispositivo. ¿Empezamos?',
   },
 ];
 

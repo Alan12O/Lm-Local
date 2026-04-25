@@ -38,14 +38,42 @@ const { width } = Dimensions.get('window');
 const SlideContent: React.FC<{
   item: typeof ONBOARDING_SLIDES[0];
   isActive: boolean;
-  styles: ReturnType<typeof createStyles>;
+  styles: any;
   accentColor: string;
+  scrollX: Animated.Value;
+  index: number;
 }> = ({
   item,
   isActive,
   styles,
   accentColor,
+  scrollX,
+  index,
 }) => {
+    const { width } = Dimensions.get('window');
+    const inputRange = [
+      (index - 1) * width,
+      index * width,
+      (index + 1) * width,
+    ];
+
+    const parallaxScale = scrollX.interpolate({
+      inputRange,
+      outputRange: [0.85, 1, 0.85],
+      extrapolate: 'clamp',
+    });
+
+    const parallaxOpacity = scrollX.interpolate({
+      inputRange,
+      outputRange: [0, 1, 0],
+      extrapolate: 'clamp',
+    });
+
+    const parallaxTranslateX = scrollX.interpolate({
+      inputRange,
+      outputRange: [width * 0.5, 0, -width * 0.5],
+      extrapolate: 'clamp',
+    });
     const keywordOpacity = useSharedValue(0);
     const keywordTranslateY = useSharedValue(24);
     const titleOpacity = useSharedValue(0);
@@ -101,7 +129,7 @@ const SlideContent: React.FC<{
 
     return (
       <View testID={`onboarding-slide-${item.id}`} style={styles.slide}>
-        <View style={styles.slideInner}>
+        <Animated.View style={[styles.slideInner, { opacity: parallaxOpacity, transform: [{ scale: parallaxScale }, { translateX: parallaxTranslateX }] }]}>
           {/* Hero keyword */}
           <ReanimatedAnimated.View style={keywordStyle}>
             <Text testID={`onboarding-keyword-${item.id}`} style={[styles.keyword, { color: accentColor }]}>
@@ -121,7 +149,7 @@ const SlideContent: React.FC<{
           <ReanimatedAnimated.View style={descStyle}>
             <Text style={styles.description}>{item.description}</Text>
           </ReanimatedAnimated.View>
-        </View>
+        </Animated.View>
       </View>
     );
   };
@@ -184,7 +212,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   };
 
   const renderSlide = ({ item, index }: { item: typeof ONBOARDING_SLIDES[0]; index: number }) => (
-    <SlideContent item={item} isActive={currentIndex === index} styles={styles} accentColor={colors.primary} />
+    <SlideContent item={item} isActive={currentIndex === index} styles={styles} accentColor={colors.primary} scrollX={scrollX} index={index} />
   );
 
   const renderDots = () => (
@@ -218,6 +246,42 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     </View>
   );
 
+  const renderAnimatedBackgroundA = () => {
+    const totalWidth = width * (ONBOARDING_SLIDES.length - 1);
+    
+    const rotate = scrollX.interpolate({
+      inputRange: [0, totalWidth],
+      outputRange: ['-15deg', '15deg'],
+      extrapolate: 'clamp',
+    });
+
+    const scale = scrollX.interpolate({
+      inputRange: [0, totalWidth / 2, totalWidth],
+      outputRange: [0.9, 1.2, 0.9],
+      extrapolate: 'clamp',
+    });
+
+    const opacity = scrollX.interpolate({
+      inputRange: [0, totalWidth / 2, totalWidth],
+      outputRange: [0.03, 0.08, 0.03],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <Animated.View
+        style={[
+          styles.backgroundAContainer,
+          {
+            opacity,
+            transform: [{ rotate }, { scale }]
+          }
+        ]}
+      >
+        <Text style={[styles.backgroundAText, { color: colors.primary }]}>A</Text>
+      </Animated.View>
+    );
+  };
+
   const isLastSlide = currentIndex === ONBOARDING_SLIDES.length - 1;
 
   return (
@@ -233,6 +297,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             />
           )}
         </View>
+
+        {renderAnimatedBackgroundA()}
 
         <FlatList
           ref={flatListRef}
@@ -320,5 +386,19 @@ const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
   },
   nextButton: {
     width: '100%' as const,
+  },
+  backgroundAContainer: {
+    position: 'absolute' as const,
+    top: '15%' as any,
+    left: 0,
+    right: 0,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    zIndex: -1,
+  },
+  backgroundAText: {
+    fontFamily: FONTS.mono,
+    fontSize: 500,
+    fontWeight: '900' as const,
   },
 });
