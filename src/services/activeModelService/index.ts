@@ -162,16 +162,14 @@ class ActiveModelService {
     if (this.textLoadPromise !== null) {
       await this.textLoadPromise;
     }
-    const isNativeLoaded = llmService.isModelLoaded();
-    if (!this.loadedTextModelId && !isNativeLoaded) {
-      return;
-    }
+    // "Blind" eviction: Always attempt unloadModel regardless of what JS
+    // thinks the native state is. After a background→foreground cycle the
+    // JS flag may be stale while native memory is still allocated. Calling
+    // unloadModel() when nothing is loaded is a safe no-op.
     this.loadingState.text = true;
     this.notifyListeners();
     try {
-      if (isNativeLoaded) {
-        await llmService.unloadModel();
-      }
+      await llmService.unloadModel();
       this.loadedTextModelId = null;
       // Do NOT unset activeModelId, so that ensureModelLoadedFn can seamlessly reload it later.
     } finally {

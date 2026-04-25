@@ -106,6 +106,12 @@ Explore our detailed guides:
 
 ---
 
+## 🤖 AI-Assisted Development
+
+Part of this codebase was developed with the assistance of AI tools (GitHub Copilot, Gemini, Claude). All AI-generated code has been reviewed, tested, and validated by the project maintainer before being merged.
+
+---
+
 ## 📜 Credits & Acknowledgments
 
 This application is based on the original work of **Wednesday** and the **Off Grid** application. We are grateful for their contributions to the local AI ecosystem.

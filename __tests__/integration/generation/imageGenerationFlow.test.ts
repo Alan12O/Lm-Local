@@ -1523,4 +1523,196 @@ describe('Image Generation Flow Integration', () => {
       expect(imageGenerationService.getState().error).toBe('No hay modelo de imagen seleccionado');
     });
   });
+
+  // ==========================================================================
+  // Bug fixes: loadResultFromHistory (Bug 4)
+  // ==========================================================================
+  describe('loadResultFromHistory', () => {
+    it('should load an image from history into the service state', () => {
+      const historyImage = createGeneratedImage({
+        id: 'hist-img-1',
+        prompt: 'A cat',
+        imagePath: '/gallery/cat.png',
+      });
+
+      imageGenerationService.loadResultFromHistory(historyImage);
+
+      const state = imageGenerationService.getState();
+      expect(state.result).toEqual(historyImage);
+      expect(state.previewPath).toBeNull();
+      expect(state.error).toBeNull();
+    });
+
+    it('should refuse to load from history while generating', async () => {
+      const imageModel = setupImageModelState();
+      mockActiveModelService.getActiveModels.mockReturnValue({
+        text: { model: null, isLoaded: false, isLoading: false },
+        image: { model: imageModel, isLoaded: true, isLoading: false },
+      });
+
+      let resolveGeneration: (value: any) => void;
+      mockLocalDreamService.generateImage.mockImplementation(async () => {
+        return new Promise((resolve) => { resolveGeneration = resolve; });
+      });
+
+      const genPromise = imageGenerationService.generateImage({ prompt: 'Test' });
+      await flushPromises();
+
+      // Should be generating
+      expect(imageGenerationService.getState().isGenerating).toBe(true);
+
+      // Try to load from history — should be silently ignored
+      const historyImage = createGeneratedImage({ id: 'hist-blocked' });
+      imageGenerationService.loadResultFromHistory(historyImage);
+
+      // Result should NOT be overwritten
+      expect(imageGenerationService.getState().result).not.toEqual(historyImage);
+
+      // Cleanup
+      resolveGeneration!(createGeneratedImage());
+      await genPromise;
+    });
+
+    it('should notify subscribers when loading from history', () => {
+      const updates: boolean[] = [];
+      const unsub = imageGenerationService.subscribe((state) => {
+        updates.push(state.result !== null);
+      });
+
+      const historyImage = createGeneratedImage({ id: 'hist-notify' });
+      imageGenerationService.loadResultFromHistory(historyImage);
+
+      unsub();
+
+      // The last notification should have result = true
+      expect(updates[updates.length - 1]).toBe(true);
+    });
+  });
+
+  // ==========================================================================
+  // Bug fixes: cancelGeneration stops LLM (Bug 3b)
+  // ==========================================================================
+  describe('cancelGeneration LLM cleanup', () => {
+    it('should stop LLM generation when cancelling during enhancement', async () => {
+      const imageModel = setupImageModelState();
+      mockActiveModelService.getActiveModels.mockReturnValue({
+        text: { model: null, isLoaded: false, isLoading: false },
+        image: { model: imageModel, isLoaded: true, isLoading: false },
+      });
+
+      // Simulate LLM actively generating (prompt enhancement in progress)
+      mockLlmService.isCurrentlyGenerating.mockReturnValue(true);
+      mockLlmService.isModelLoaded.mockReturnValue(true);
+
+      let resolveGeneration: (value: any) => void;
+      mockLocalDreamService.generateImage.mockImplementation(async () => {
+        return new Promise((resolve) => { resolveGeneration = resolve; });
+      });
+
+      const genPromise = imageGenerationService.generateImage({ prompt: 'Test' });
+      await flushPromises();
+
+      // Cancel while generating
+      await imageGenerationService.cancelGeneration();
+
+      // LLM should have been stopped and unloaded
+      expect(mockLlmService.stopGeneration).toHaveBeenCalled();
+      expect(mockLlmService.unloadModel).toHaveBeenCalled();
+
+      // State should be reset
+      expect(imageGenerationService.getState().isGenerating).toBe(false);
+    });
+
+    it('should not call stopGeneration if LLM is not generating', async () => {
+      const imageModel = setupImageModelState();
+      mockActiveModelService.getActiveModels.mockReturnValue({
+        text: { model: null, isLoaded: false, isLoading: false },
+        image: { model: imageModel, isLoaded: true, isLoading: false },
+      });
+
+      // LLM not generating
+      mockLlmService.isCurrentlyGenerating.mockReturnValue(false);
+      mockLlmService.isModelLoaded.mockReturnValue(false);
+
+      let resolveGeneration: (value: any) => void;
+      mockLocalDreamService.generateImage.mockImplementation(async () => {
+        return new Promise((resolve) => { resolveGeneration = resolve; });
+      });
+
+      const genPromise = imageGenerationService.generateImage({ prompt: 'Test' });
+      await flushPromises();
+
+      await imageGenerationService.cancelGeneration();
+
+      // stopGeneration should NOT be called since LLM wasn't generating
+      expect(mockLlmService.stopGeneration).not.toHaveBeenCalled();
+      expect(mockLlmService.unloadModel).not.toHaveBeenCalled();
+    });
+
+    it('should handle LLM cleanup errors gracefully', async () => {
+      const imageModel = setupImageModelState();
+      mockActiveModelService.getActiveModels.mockReturnValue({
+        text: { model: null, isLoaded: false, isLoading: false },
+        image: { model: imageModel, isLoaded: true, isLoading: false },
+      });
+
+      mockLlmService.isCurrentlyGenerating.mockReturnValue(true);
+      mockLlmService.isModelLoaded.mockReturnValue(true);
+      mockLlmService.stopGeneration.mockRejectedValue(new Error('LLM crash'));
+
+      let resolveGeneration: (value: any) => void;
+      mockLocalDreamService.generateImage.mockImplementation(async () => {
+        return new Promise((resolve) => { resolveGeneration = resolve; });
+      });
+
+      const genPromise = imageGenerationService.generateImage({ prompt: 'Test' });
+      await flushPromises();
+
+      // Should not throw even if LLM cleanup fails
+      await expect(imageGenerationService.cancelGeneration()).resolves.not.toThrow();
+
+      // State should still be reset
+      expect(imageGenerationService.getState().isGenerating).toBe(false);
+    });
+  });
+
+  // ==========================================================================
+  // Bug fix: Blind eviction (Bug 1 refuerzo)
+  // ==========================================================================
+  describe('Blind text model eviction for QNN/NPU models', () => {
+    it('should evict text model even when llmService reports not loaded', async () => {
+      const imageModel = createONNXImageModel({
+        id: 'img-model-1',
+        modelPath: '/mock/image-model',
+        backend: 'qnn',
+      });
+      useAppStore.setState({
+        downloadedImageModels: [imageModel],
+        activeImageModelId: 'img-model-1',
+        generatedImages: [],
+        settings: {
+          imageSteps: 20,
+          imageGuidanceScale: 7.5,
+          imageWidth: 512,
+          imageHeight: 512,
+          imageThreads: 4,
+        } as any,
+      });
+      mockLocalDreamService.getLoadedModelPath.mockResolvedValue(imageModel.modelPath);
+
+      mockActiveModelService.getActiveModels.mockReturnValue({
+        text: { model: null, isLoaded: false, isLoading: false },
+        image: { model: imageModel, isLoaded: true, isLoading: false },
+      });
+
+      // KEY: LLM reports NOT loaded (stale state after background cycle)
+      mockLlmService.isModelLoaded.mockReturnValue(false);
+
+      await imageGenerationService.generateImage({ prompt: 'Test QNN' });
+
+      // evictTextModel should still be called because QNN model forces eviction
+      // regardless of llmService.isModelLoaded() state (blind eviction)
+      expect(mockActiveModelService.evictTextModel).toHaveBeenCalled();
+    });
+  });
 });

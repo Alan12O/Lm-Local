@@ -52,12 +52,18 @@ jest.mock('react-native', () => {
     NativeModules: {
       LocalDreamModule: mockLocalDreamModule,
       CoreMLDiffusionModule: mockCoreMLModule,
+      // The actual service uses NativeModules.LocalDream directly
+      LocalDream: mockLocalDreamModule,
     },
     NativeEventEmitter: jest.fn().mockImplementation(() => ({
       addListener: mockAddListener,
       removeAllListeners: mockRemoveAllListeners,
     })),
     Platform: actualPlatform,
+    AppState: {
+      addEventListener: jest.fn(),
+      currentState: 'active',
+    },
   };
 });
 

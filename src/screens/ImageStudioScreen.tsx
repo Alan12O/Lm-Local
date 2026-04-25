@@ -162,17 +162,7 @@ export const ImageStudioScreen: React.FC<Props> = ({ navigation }) => {
   const handleSelectFromGallery = (image: any) => {
     triggerHaptic('selection');
     imageGenerationService.clearResult();
-    // Simulate a result state
-    imageGenerationService.subscribe((state) => {
-       // This is a bit tricky because imageGenerationService acts as a singleton
-       // and might be in 'idle' with result=null. 
-       // We can use the service but we need to update its internal state or just bypass it for display.
-       // Actually, ImageStudio uses genState which comes from imageGenerationService.
-       // We can update the service's state directly for this.
-    });
-    
-    // Better way: we can just update the service's state.
-    (imageGenerationService as any).updateState({ result: image, previewPath: null });
+    imageGenerationService.loadResultFromHistory(image);
   };
 
   const handleSaveImage = async () => {
@@ -274,7 +264,7 @@ export const ImageStudioScreen: React.FC<Props> = ({ navigation }) => {
       };
       
       addGeneratedImage(newGenImg);
-      (imageGenerationService as any).updateState({ result: newGenImg, previewPath: null });
+      imageGenerationService.loadResultFromHistory(newGenImg);
       triggerHaptic('notificationSuccess');
       Alert.alert('Éxito', `Imagen escalada exitosamente usando ${upscaler.name}.`);
     } catch (e: any) {

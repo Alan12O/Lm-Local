@@ -220,6 +220,21 @@ class ImageGenerationService {
     this.updateState({ result: null, previewPath: null, error: null, progress: null, status: null });
   }
 
+  /**
+   * Safely load a previously generated image from history into the
+   * current display state. This is the public API that screens should
+   * use instead of casting to `any` and calling updateState directly.
+   *
+   * Guards against overwriting state during an active generation.
+   */
+  public loadResultFromHistory(image: GeneratedImage): void {
+    if (this.state.isGenerating) {
+      logger.warn('[ImageGen] Cannot load from history while generating');
+      return;
+    }
+    this.updateState({ result: image, previewPath: null, error: null });
+  }
+
   private async _runGenerationAndSave(opts: RunGenerationOptions): Promise<GeneratedImage | null> {
     const { params, enhancedPrompt, activeImageModel, steps, guidanceScale, imageWidth, imageHeight, useOpenCL } = opts;
 
@@ -343,7 +358,11 @@ class ImageGenerationService {
       }
     }
 
-    if (forceEvict && llmService.isModelLoaded()) {
+    // Bug 1 refuerzo: Evicción "ciega" — no confiamos en llmService.isModelLoaded()
+    // porque después de un ciclo background→foreground el estado JS puede estar
+    // desincronizado del estado nativo. evictTextModel() ya maneja el caso
+    // de "no hay nada cargado" internamente, así que es seguro llamarlo siempre.
+    if (forceEvict) {
       logger.log('[ImageGen] Memory strategy: explicitly evicting text model to prevent OOM for image generation.');
       try {
         await activeModelService.evictTextModel();
@@ -364,6 +383,23 @@ class ImageGenerationService {
   async cancelGeneration(): Promise<void> {
     if (!this.state.isGenerating) return;
     this.cancelRequested = true;
+
+    // Bug 3b fix: Stop the LLM if it's still running prompt enhancement.
+    // Without this, the text model keeps consuming GPU/NPU in the background
+    // even after the user cancels the image generation.
+    try {
+      if (llmService.isCurrentlyGenerating()) {
+        logger.log('[ImageGen] 🛑 Stopping LLM enhancement (cancel requested)');
+        await llmService.stopGeneration();
+      }
+      if (llmService.isModelLoaded()) {
+        logger.log('[ImageGen] 🛑 Unloading LLM to free hardware for next generation');
+        await llmService.unloadModel();
+      }
+    } catch (e) {
+      logger.warn('[ImageGen] Failed to stop/unload LLM during cancel:', e);
+    }
+
     try { await onnxImageGeneratorService.cancelGeneration(); } catch { /* Ignore */ }
     this.resetState();
   }
