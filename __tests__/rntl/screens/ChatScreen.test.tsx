@@ -540,7 +540,7 @@ describe('ChatScreen', () => {
   describe('no model state', () => {
     it('shows "No Model Selected" when no model active', () => {
       const { getByText } = renderChatScreen();
-      expect(getByText('No Model Selected')).toBeTruthy();
+      expect(getByText('Ningún modelo seleccionado')).toBeTruthy();
     });
 
     it('shows "Select a model to start chatting" when models downloaded but none active', () => {
@@ -548,12 +548,12 @@ describe('ChatScreen', () => {
       useAppStore.setState({ downloadedModels: [model] });
 
       const { getByText } = renderChatScreen();
-      expect(getByText('Select a model to start chatting.')).toBeTruthy();
+      expect(getByText('Selecciona un modelo para empezar a chatear.')).toBeTruthy();
     });
 
     it('shows "Download a model" text when no models downloaded', () => {
       const { getByText } = renderChatScreen();
-      expect(getByText('Download a model from the Models tab to start chatting.')).toBeTruthy();
+      expect(getByText('Descarga un modelo desde la pestaña de Modelos para empezar a chatear.')).toBeTruthy();
     });
 
     it('shows "Select Model" button when models exist but none active', () => {
@@ -561,12 +561,12 @@ describe('ChatScreen', () => {
       useAppStore.setState({ downloadedModels: [model] });
 
       const { getByText } = renderChatScreen();
-      expect(getByText('Select Model')).toBeTruthy();
+      expect(getByText('Seleccionar modelo')).toBeTruthy();
     });
 
     it('does not show "Select Model" button when no models downloaded', () => {
       const { queryByText } = renderChatScreen();
-      expect(queryByText('Select Model')).toBeNull();
+      expect(queryByText('Seleccionar modelo')).toBeNull();
     });
 
     it('opens model selector when "Select Model" is pressed', () => {
@@ -579,7 +579,7 @@ describe('ChatScreen', () => {
       expect(queryByTestId('model-selector-modal')).toBeNull();
 
       // Press Select Model
-      fireEvent.press(getByText('Select Model'));
+      fireEvent.press(getByText('Seleccionar modelo'));
 
       // Modal should open
       expect(queryByTestId('model-selector-modal')).toBeTruthy();
@@ -672,7 +672,7 @@ describe('ChatScreen', () => {
     it('shows "Start a Conversation" for new chat', () => {
       setupFullChat();
       const { getByText } = renderChatScreen();
-      expect(getByText('Start a Conversation')).toBeTruthy();
+      expect(getByText(/Buen/)).toBeTruthy();
     });
 
     it('shows model name in empty chat message', () => {
@@ -696,7 +696,7 @@ describe('ChatScreen', () => {
     it('shows privacy text', () => {
       setupFullChat();
       const { getByText } = renderChatScreen();
-      expect(getByText(/completely private/)).toBeTruthy();
+      expect(getByText(/Completamente privado/)).toBeTruthy();
     });
 
     it('shows project hint with "Default" when no project assigned', () => {

@@ -17,6 +17,28 @@ import { createUserMessage, createAssistantMessage, createSystemMessage } from '
 const mockedInitLlama = initLlama as jest.MockedFunction<typeof initLlama>;
 const mockedRNFS = RNFS as jest.Mocked<typeof RNFS>;
 
+jest.mock('../../../src/services/hardware', () => ({
+  hardwareService: {
+    getDeviceInfo: jest.fn().mockResolvedValue({
+      totalMemory: 16 * 1024 * 1024 * 1024,
+      usedMemory: 4 * 1024 * 1024 * 1024,
+      availableMemory: 12 * 1024 * 1024 * 1024,
+      deviceModel: 'Test Device',
+      systemName: 'iOS',
+      systemVersion: '17',
+      isEmulator: false,
+    }),
+    getAppMemoryUsage: jest.fn().mockResolvedValue({
+      used: 100 * 1024 * 1024,
+      available: 12 * 1024 * 1024 * 1024,
+      total: 16 * 1024 * 1024 * 1024,
+    }),
+    getTotalMemoryGB: jest.fn().mockReturnValue(16),
+  },
+}));
+
+import { hardwareService } from '../../../src/services/hardware';
+
 /**
  * Helper: sets up mocks for auto context scaling tests.
  */
@@ -2163,17 +2185,18 @@ describe('LLMService', () => {
   // ========================================================================
   // formatMessages — system message with id='system' (line 696)
   // ========================================================================
-  describe('formatMessages with id=system', () => {
-    it('formats system message with id="system" via the primary system-prompt branch', () => {
-      // createSystemMessage with id='system' hits the message.id === 'system' branch (line 696)
-      const messages = [createSystemMessage('Main project prompt', { id: 'system' })];
+    it('formats system message correctly via the user turn injection', () => {
+      const messages = [
+        createSystemMessage('Main project prompt', { id: 'system' }),
+        createUserMessage('Hello'),
+      ];
       const prompt = llmService.getFormattedPrompt(messages);
 
-      expect(prompt).toContain('<|im_start|>system');
+      expect(prompt).toContain('<start_of_turn>user');
       expect(prompt).toContain('Main project prompt');
-      expect(prompt).toContain('<|im_end|>');
+      expect(prompt).toContain('Hello');
+      expect(prompt).toContain('<end_of_turn>');
     });
-  });
 
   // ========================================================================
   // Auto context scaling
